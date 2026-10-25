@@ -281,7 +281,7 @@ pub fn get_context_before(
 /// `extractLineClasses(type, output)`.
 fn extract_line_classes(
     ty: Option<String>,
-    output: &mut (Option<String>, Option<String>),
+    output: &mut (Option<Vec<String>>, Option<Vec<String>>),
 ) -> Option<String> {
     let mut ty = ty?;
     loop {
@@ -317,11 +317,10 @@ fn extract_line_classes(
         ty = format!("{}{}", &ty[..s], &ty[e..]);
         let slot = if bg { &mut output.0 } else { &mut output.1 };
         match slot {
-            None => *slot = Some(cls),
+            None => *slot = Some(vec![cls]),
             Some(cur) => {
-                if !cur.split_whitespace().any(|c| c == cls) {
-                    cur.push(' ');
-                    cur.push_str(&cls);
+                if !cur.contains(&cls) {
+                    cur.push(cls);
                 }
             }
         }
@@ -337,7 +336,7 @@ fn run_mode_line(
     text: &[u16],
     ctx: &mut Context,
     f: &mut dyn FnMut(usize, Option<String>),
-    line_classes: &mut (Option<String>, Option<String>),
+    line_classes: &mut (Option<Vec<String>>, Option<Vec<String>>),
     force_to_end: bool,
 ) {
     let mut flatten = hs.flatten_spans;
@@ -408,7 +407,7 @@ pub fn highlight_line(
     force_to_end: bool,
 ) -> Styles {
     let mut spans: Vec<(usize, Option<Rc<str>>)> = Vec::new();
-    let mut classes = (None, None);
+    let mut classes_vec = (None, None);
     run_mode_line(
         doc,
         mode,
@@ -416,8 +415,12 @@ pub fn highlight_line(
         text,
         ctx,
         &mut |end, style| spans.push((end, style.map(|s| Rc::from(s.as_str())))),
-        &mut classes,
+        &mut classes_vec,
         force_to_end,
+    );
+    let classes = (
+        classes_vec.0.map(|v| v.join(" ")),
+        classes_vec.1.map(|v| v.join(" "))
     );
     let classes = if classes.0.is_some() || classes.1.is_some() {
         Some(classes)
