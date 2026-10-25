@@ -1,0 +1,426 @@
+#VRML V2.0 utf8
+
+WorldInfo {
+  title "Morph Rig Cyclone Hauler"
+  info [
+    "Made By: BassMekanik"
+    "Uploaded: August, 2026"
+    "Limited To: UNLIMITED"
+    "Mall Price: 110 CC"
+  ]
+}
+
+DEF MorphRigCycloneHauler Group { children [
+  Group { children [
+  Shape { appearance DEF APP_PEARL Appearance { material DEF APP_PEARLMat Material {
+    diffuseColor 0.86 0.87 0.89
+    ambientIntensity 0.24
+    specularColor 0.55 0.55 0.6
+    emissiveColor 0 0 0
+    shininess 0.22 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_GRAY Appearance { material DEF APP_GRAYMat Material {
+    diffuseColor 0.58 0.62 0.66
+    ambientIntensity 0.22
+    specularColor 0.45 0.47 0.5
+    emissiveColor 0 0 0
+    shininess 0.2 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_GRAPHITE Appearance { material DEF APP_GRAPHITEMat Material {
+    diffuseColor 0.15 0.16 0.18
+    ambientIntensity 0.16
+    specularColor 0.3 0.31 0.34
+    emissiveColor 0 0 0
+    shininess 0.3 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_BLUE Appearance { material DEF APP_BLUEMat Material {
+    diffuseColor 0.1 0.2 0.52
+    ambientIntensity 0.2
+    specularColor 0.35 0.4 0.6
+    emissiveColor 0 0 0
+    shininess 0.35 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_YELLOW Appearance { material DEF APP_YELLOWMat Material {
+    diffuseColor 0.95 0.8 0.1
+    ambientIntensity 0.28
+    specularColor 0.6 0.55 0.3
+    emissiveColor 0 0 0
+    shininess 0.25 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_BLACK Appearance { material DEF APP_BLACKMat Material {
+    diffuseColor 0.05 0.05 0.06
+    ambientIntensity 0.12
+    specularColor 0.1 0.1 0.1
+    emissiveColor 0 0 0
+    shininess 0.15 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_ORANGE Appearance { material DEF APP_ORANGEMat Material {
+    diffuseColor 0.85 0.45 0.14
+    ambientIntensity 0.26
+    specularColor 0.5 0.35 0.2
+    emissiveColor 0 0 0
+    shininess 0.25 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_TIRE Appearance { material DEF APP_TIREMat Material {
+    diffuseColor 0.03 0.03 0.03
+    ambientIntensity 0.12
+    specularColor 0.08 0.08 0.08
+    emissiveColor 0 0 0
+    shininess 0.12 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_RIM Appearance { material DEF APP_RIMMat Material {
+    diffuseColor 0.62 0.64 0.66
+    ambientIntensity 0.2
+    specularColor 0.85 0.86 0.88
+    emissiveColor 0 0 0
+    shininess 0.85 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_WHITE Appearance { material DEF APP_WHITEMat Material {
+    diffuseColor 1 1 1
+    ambientIntensity 0.3
+    specularColor 0.2 0.2 0.2
+    emissiveColor 0 0 0
+    shininess 0.1 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_CANOPY Appearance { material DEF APP_CANOPYMat Material {
+    diffuseColor 0.3 0.72 0.86
+    ambientIntensity 0.3
+    specularColor 0.8 0.9 0.95
+    emissiveColor 0 0 0
+    shininess 0.7
+      transparency 0.55 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_SWITCHCAP Appearance { material DEF APP_SWITCHCAPMat Material {
+    diffuseColor 0.2 0.85 0.95
+    ambientIntensity 0.3
+    specularColor 0.7 0.9 0.95
+    emissiveColor 0 0 0
+    shininess 0.55 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_IND_CYAN Appearance { material DEF APP_IND_CYANMat Material {
+    diffuseColor 0.05 0.1 0.12
+    ambientIntensity 0.1
+    specularColor 0.2 0.3 0.3
+    emissiveColor 0 0 0
+    shininess 0.3 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_IND_AMBER Appearance { material DEF APP_IND_AMBERMat Material {
+    diffuseColor 0.12 0.08 0.03
+    ambientIntensity 0.1
+    specularColor 0.3 0.25 0.15
+    emissiveColor 0 0 0
+    shininess 0.3 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_IND_GREEN Appearance { material DEF APP_IND_GREENMat Material {
+    diffuseColor 0.04 0.1 0.05
+    ambientIntensity 0.1
+    specularColor 0.2 0.3 0.2
+    emissiveColor 0 0 0
+    shininess 0.3 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_TX_DASH Appearance {
+    material Material { diffuseColor 1 1 1 ambientIntensity 0.30 }
+    texture DEF AtlasTexture ImageTexture { url [ "morph-rig-cyclone-hauler-atlas.png" ] }
+    textureTransform TextureTransform { scale 0.48438 0.23438 translation 0.01613 3.23333 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_TX_WEATHER Appearance {
+    material Material { diffuseColor 1 1 1 ambientIntensity 0.30 }
+    texture USE AtlasTexture
+    textureTransform TextureTransform { scale 0.48438 0.23438 translation 1.04839 3.23333 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_TX_LABEL Appearance {
+    material Material { diffuseColor 1 1 1 ambientIntensity 0.30 }
+    texture USE AtlasTexture
+    textureTransform TextureTransform { scale 0.48438 0.23438 translation 0.01613 2.16667 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_TX_SERIAL Appearance {
+    material Material { diffuseColor 1 1 1 ambientIntensity 0.30 }
+    texture USE AtlasTexture
+    textureTransform TextureTransform { scale 0.48438 0.23438 translation 1.04839 2.16667 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_TX_INSIGNIA Appearance {
+    material Material { diffuseColor 1 1 1 ambientIntensity 0.30 }
+    texture USE AtlasTexture
+    textureTransform TextureTransform { scale 0.48438 0.48438 translation 0.01613 0.01613 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  Shape { appearance DEF APP_TX_DOTS Appearance {
+    material Material { diffuseColor 1 1 1 ambientIntensity 0.30 }
+    texture USE AtlasTexture
+    textureTransform TextureTransform { scale 0.48438 0.48438 translation 1.04839 0.01613 } }
+    geometry PointSet { coord Coordinate { point [ ] } } }
+  ] }
+  Group { children [
+    Transform { translation 2.6200 -1.2500 0.4000 rotation 0 1 0 0.00000 children [
+      DEF WHEEL Group { children [
+        Transform { translation 0.0000 0.0000 0.0000 rotation 0 0 1 1.5708 children [
+          Shape { appearance USE APP_TIRE geometry Cylinder { radius 0.5000 height 0.3100 } } ] }
+        Transform { translation 0.0853 0.0000 0.0000 rotation 0 0 1 1.5708 children [
+          Shape { appearance USE APP_RIM geometry Cylinder { radius 0.2750 height 0.0775 } } ] }
+        Transform { translation -0.0853 0.0000 0.0000 rotation 0 0 1 1.5708 children [
+          Shape { appearance USE APP_RIM geometry Cylinder { radius 0.2750 height 0.0775 } } ] }
+        Transform { translation 0 0.2100 0.0000 rotation 1 0 0 0.00000 children [
+          Shape { appearance USE APP_RIM geometry Box { size 0.09 0.34 0.05 } } ] }
+        Transform { translation 0 0.0649 0.1997 rotation 1 0 0 1.25664 children [
+          Shape { appearance USE APP_RIM geometry Box { size 0.09 0.34 0.05 } } ] }
+        Transform { translation 0 -0.1699 0.1234 rotation 1 0 0 2.51327 children [
+          Shape { appearance USE APP_RIM geometry Box { size 0.09 0.34 0.05 } } ] }
+        Transform { translation 0 -0.1699 -0.1234 rotation 1 0 0 3.76991 children [
+          Shape { appearance USE APP_RIM geometry Box { size 0.09 0.34 0.05 } } ] }
+        Transform { translation 0 0.0649 -0.1997 rotation 1 0 0 5.02655 children [
+          Shape { appearance USE APP_RIM geometry Box { size 0.09 0.34 0.05 } } ] }
+      ] }
+    ] }
+    Transform { translation 2.6200 -1.2500 -0.8000 rotation 0 1 0 0.00000 children [
+      USE WHEEL
+    ] }
+    Transform { translation 2.6200 -1.2500 -2.1000 rotation 0 1 0 0.00000 children [
+      USE WHEEL
+    ] }
+    Transform { translation -2.6200 -1.2500 0.4000 rotation 0 1 0 3.14159 children [
+      USE WHEEL
+    ] }
+    Transform { translation -2.6200 -1.2500 -0.8000 rotation 0 1 0 3.14159 children [
+      USE WHEEL
+    ] }
+    Transform { translation -2.6200 -1.2500 -2.1000 rotation 0 1 0 3.14159 children [
+      USE WHEEL
+    ] }
+  ] }
+  Group { children [
+    Transform { translation 0.0000 -0.8250 -0.7750 children [
+      Shape { appearance USE APP_GRAPHITE geometry Box { size 4.6000 0.5500 3.1500 } } ] }
+    Transform { translation 2.3050 -1.0400 -0.7750 children [
+      Shape { appearance USE APP_YELLOW geometry Box { size 0.0200 0.1000 2.9500 } } ] }
+    Transform { translation -2.3050 -1.0400 -0.7750 children [
+      Shape { appearance USE APP_YELLOW geometry Box { size 0.0200 0.1000 2.9500 } } ] }
+    Transform { translation 2.3060 -0.7500 -1.6000 children [
+      Shape { appearance USE APP_TX_SERIAL geometry Box { size 0.0120 0.1800 0.3600 } } ] }
+  ] }
+  Group { children [
+    Transform { translation 0.0000 -0.2250 -0.8250 children [
+      Shape { appearance USE APP_PEARL geometry Box { size 5.1000 0.6500 2.4500 } } ] }
+    Transform { translation 0.0000 0.0950 -0.5500 children [
+      Shape { appearance USE APP_GRAPHITE geometry Box { size 5.0800 0.0100 0.0300 } } ] }
+    Transform { translation 0.0000 0.0950 -1.3500 children [
+      Shape { appearance USE APP_GRAPHITE geometry Box { size 5.0800 0.0100 0.0300 } } ] }
+    Transform { translation 0.0000 -0.1000 -2.0560 children [
+      Shape { appearance USE APP_TX_DOTS geometry Box { size 0.3000 0.3000 0.0120 } } ] }
+  ] }
+  Group { children [
+    Shape {
+      appearance USE APP_PEARL
+      geometry IndexedFaceSet {
+        creaseAngle 0.5
+        solid TRUE
+        coord Coordinate { point [ -2.55 -0.55 0.4, 2.55 -0.55 0.4, 2.55 0.1 0.4, -2.55 0.1 0.4, -0.15 -0.35 0.985, 0.15 -0.35 0.985, 0.15 -0.15 0.985, -0.15 -0.15 0.985 ] }
+        coordIndex [ 0 1 5 4 -1, 1 2 6 5 -1, 2 3 7 6 -1, 3 0 4 7 -1, 3 2 1 0 -1, 4 5 6 7 -1 ]
+      }
+    }
+    Transform { translation 0.0000 -0.2500 0.9910 children [
+      Shape { appearance USE APP_TX_INSIGNIA geometry Box { size 0.2600 0.1600 0.0120 } } ] }
+    Transform { translation 1.3500 -0.2000 0.7000 children [
+      Shape { appearance USE APP_YELLOW geometry Box { size 0.1600 0.0900 0.3200 } } ] }
+    Transform { translation 1.2000 -0.2000 0.8600 children [
+      Shape { appearance USE APP_BLACK geometry Box { size 0.1000 0.0900 0.0600 } } ] }
+    Transform { translation -1.3500 -0.2000 0.7000 children [
+      Shape { appearance USE APP_YELLOW geometry Box { size 0.1600 0.0900 0.3200 } } ] }
+    Transform { translation -1.2000 -0.2000 0.8600 children [
+      Shape { appearance USE APP_BLACK geometry Box { size 0.1000 0.0900 0.0600 } } ] }
+  ] }
+  DEF CabMount Transform { translation 0.0000 0.1000 -0.5500 children [
+    Transform { translation 0.0000 0.0150 -0.9200 children [
+      Shape { appearance USE APP_GRAPHITE geometry Box { size 2.3000 0.0300 0.0500 } } ] }
+    Transform { translation 0.0000 0.0150 0.9200 children [
+      Shape { appearance USE APP_GRAPHITE geometry Box { size 2.3000 0.0300 0.0500 } } ] }
+    Transform { translation -1.1200 0.0150 0.0000 children [
+      Shape { appearance USE APP_GRAPHITE geometry Box { size 0.0500 0.0300 1.9000 } } ] }
+    Transform { translation 1.1200 0.0150 0.0000 children [
+      Shape { appearance USE APP_GRAPHITE geometry Box { size 0.0500 0.0300 1.9000 } } ] }
+    DEF CabMove Transform { translation 0 0 0 children [
+      Transform { translation 0.0000 0.3250 0.0000 children [
+        Shape { appearance USE APP_GRAY geometry Box { size 2.2000 0.6500 1.8000 } } ] }
+      Transform { translation 0.0000 0.5300 0.9060 children [
+        Shape { appearance USE APP_TX_DASH geometry Box { size 0.5000 0.2000 0.0120 } } ] }
+      Transform { translation 1.1060 0.4900 0.0000 children [
+        Shape { appearance USE APP_TX_WEATHER geometry Box { size 0.0120 0.1600 0.3200 } } ] }
+      Transform { translation 0.0000 0.8000 0.0000 children [
+        Shape { appearance USE APP_CANOPY geometry Box { size 2.0000 0.3000 1.6000 } } ] }
+    ] }
+  ] }
+  Group { children [
+    DEF LeftPodShape Group { children [
+      Transform { translation -0.1500 0.0000 -0.5000 children [
+        Shape { appearance USE APP_GRAY geometry Box { size 0.3000 0.5500 1.0000 } } ] }
+      Transform { translation -0.3140 0.0000 -0.1200 children [
+        Shape { appearance USE APP_GRAPHITE geometry Box { size 0.0260 0.5000 0.1100 } } ] }
+      Transform { translation -0.3140 0.0000 -0.3400 children [
+        Shape { appearance USE APP_GRAPHITE geometry Box { size 0.0260 0.5000 0.1100 } } ] }
+      Transform { translation -0.3140 0.0000 -0.5600 children [
+        Shape { appearance USE APP_GRAPHITE geometry Box { size 0.0260 0.5000 0.1100 } } ] }
+      Transform { translation -0.3140 0.0000 -0.7800 children [
+        Shape { appearance USE APP_GRAPHITE geometry Box { size 0.0260 0.5000 0.1100 } } ] }
+      Transform { translation -0.1500 0.1800 -0.9000 children [
+        Shape { appearance USE APP_ORANGE geometry Box { size 0.2400 0.0300 0.1400 } } ] }
+      Transform { translation -0.3060 0.0000 -0.5500 children [
+        Shape { appearance USE APP_TX_LABEL geometry Box { size 0.0120 0.2200 0.4400 } } ] }
+    ] }
+    DEF LeftPodHinge Transform { translation -2.5500 -0.1500 -0.1500 children [
+      DEF LeftPodSwing Transform { rotation 0 1 0 0 children [
+        USE LeftPodShape
+      ] }
+    ] }
+    DEF RightPodShape Group { children [
+      Transform { translation 0.1500 0.0000 -0.5000 children [
+        Shape { appearance USE APP_GRAY geometry Box { size 0.3000 0.5500 1.0000 } } ] }
+      Transform { translation 0.3140 0.0000 -0.1200 children [
+        Shape { appearance USE APP_GRAPHITE geometry Box { size 0.0260 0.5000 0.1100 } } ] }
+      Transform { translation 0.3140 0.0000 -0.3400 children [
+        Shape { appearance USE APP_GRAPHITE geometry Box { size 0.0260 0.5000 0.1100 } } ] }
+      Transform { translation 0.3140 0.0000 -0.5600 children [
+        Shape { appearance USE APP_GRAPHITE geometry Box { size 0.0260 0.5000 0.1100 } } ] }
+      Transform { translation 0.3140 0.0000 -0.7800 children [
+        Shape { appearance USE APP_GRAPHITE geometry Box { size 0.0260 0.5000 0.1100 } } ] }
+      Transform { translation 0.1500 0.1800 -0.9000 children [
+        Shape { appearance USE APP_ORANGE geometry Box { size 0.2400 0.0300 0.1400 } } ] }
+      Transform { translation 0.3060 0.0000 -0.5500 children [
+        Shape { appearance USE APP_TX_LABEL geometry Box { size 0.0120 0.2200 0.4400 } } ] }
+    ] }
+    DEF RightPodHinge Transform { translation 2.5500 -0.1500 -0.1500 children [
+      DEF RightPodSwing Transform { rotation 0 1 0 0 children [
+        USE RightPodShape
+      ] }
+    ] }
+  ] }
+  Group { children [
+      DEF LegShape Group { children [
+        Transform { translation 0.0000 -0.3500 0.0000 children [
+          Shape { appearance USE APP_GRAPHITE geometry Cylinder { radius 0.0850 height 0.7000 } } ] }
+        Transform { translation 0.0000 -0.7250 0.0000 children [
+          Shape { appearance USE APP_YELLOW geometry Cylinder { radius 0.1600 height 0.0500 } } ] }
+      ] }
+    DEF LeftLegHinge Transform { translation -1.9500 -1.0500 -0.7000 rotation 1 0 0 1.74533 children [
+      USE LegShape
+    ] }
+    DEF RightLegHinge Transform { translation 1.9500 -1.0500 -0.7000 rotation 1 0 0 1.74533 children [
+      USE LegShape
+    ] }
+  ] }
+  DEF MastHinge Transform { translation 0.0000 0.1000 -1.9500 rotation 1 0 0 3.14159 children [
+    Transform { translation 0.0000 0.4250 0.0000 children [
+      Shape { appearance USE APP_GRAPHITE geometry Cylinder { radius 0.0700 height 0.8500 } } ] }
+    DEF DishFoldPivot Transform { translation 0 0.8500 0 rotation 1 0 0 1.57080 children [
+      DEF DishSpin Transform { rotation 0 1 0 0 children [
+        Transform { translation 0.0000 0.0000 0.0000 rotation 1 0 0 1.5708 children [
+          Shape { appearance USE APP_GRAY geometry Cylinder { radius 0.3400 height 0.0700 } } ] }
+        Transform { translation 0 0 0.1450 rotation 1 0 0 -1.5708 children [
+          Shape { appearance USE APP_BLUE geometry Cone { bottomRadius 0.0500 height 0.2200 } }
+        ] }
+      ] }
+    ] }
+  ] }
+  Transform { translation 0.8500 0.1500 -1.6500 children [
+    Transform { translation 0.0000 0.0250 0.0000 children [
+      Shape { appearance USE APP_GRAY geometry Cylinder { radius 0.1000 height 0.0500 } } ] }
+    DEF SwitchCapMove Transform { translation 0 0.0500 0 children [
+      DEF RoofTouch TouchSensor { }
+      Shape { appearance USE APP_SWITCHCAP
+        geometry Cylinder { radius 0.0750 height 0.0350 } }
+    ] }
+  ] }
+  Group { children [
+    Transform { translation -0.3000 0.1050 -1.6000 children [
+      Shape { appearance USE APP_IND_CYAN geometry Box { size 0.2200 0.0120 0.0500 } } ] }
+    Transform { translation 0.0000 0.1050 -1.6000 children [
+      Shape { appearance USE APP_IND_AMBER geometry Box { size 0.2200 0.0120 0.0500 } } ] }
+    Transform { translation 0.3000 0.1050 -1.6000 children [
+      Shape { appearance USE APP_IND_GREEN geometry Box { size 0.2200 0.0120 0.0500 } } ] }
+  ] }
+  DEF DeployScript Script {
+    eventIn SFTime touch
+    eventIn SFFloat tick
+    eventOut SFFloat progress_changed
+    eventOut SFRotation scanRotation_changed
+    eventOut SFBool clockRun_changed
+    field SFBool target FALSE
+    field SFFloat progress 0
+    field SFTime lastTime -1
+    field SFBool clockOn FALSE
+    field SFFloat scanAngle 0
+    url [ "javascript:function touch(v) {target = !target;if (!clockOn) { lastTime = -1.0; clockOn = true; clockRun_changed = true; } }function tick(v, ts) {if (lastTime < 0.0) { lastTime = ts; return; }var dt = ts - lastTime;lastTime = ts;var dir = 0.22222222;if (!target) dir = -0.22222222;progress = progress + dir*dt;if (progress > 1.0) progress = 1.0;if (progress < 0.0) progress = 0.0;progress_changed = progress;var scanning = false;if (target) { if (progress >= 1.0) scanning = true; }if (scanning) {scanAngle = scanAngle + 1.04719755*dt;if (scanAngle > 6.28318531) scanAngle = scanAngle - 6.28318531;} else { scanAngle = 0.0; }scanRotation_changed = new SFRotation(0, 1, 0, scanAngle);if (progress <= 0.0 && !target && clockOn) { clockOn = false; clockRun_changed = false; } }" ]
+  }
+  DEF CabRiseInterp PositionInterpolator {
+    key [ 0.00000, 0.11110, 0.48890, 1.00000 ]
+    keyValue [ 0.00000 0.00000 0.00000, 0.00000 0.00000 0.00000, 0.00000 1.35000 0.00000, 0.00000 1.35000 0.00000 ]
+  }
+  DEF LeftPodSwingInterp OrientationInterpolator {
+    key [ 0.00000, 0.11110, 0.48890, 1.00000 ]
+    keyValue [ 0.00000 1.00000 0.00000 0.000000, 0.00000 1.00000 0.00000 0.000000, 0.00000 1.00000 0.00000 1.186824, 0.00000 1.00000 0.00000 1.186824 ]
+  }
+  DEF RightPodSwingInterp OrientationInterpolator {
+    key [ 0.00000, 0.11110, 0.48890, 1.00000 ]
+    keyValue [ 0.00000 1.00000 0.00000 0.000000, 0.00000 1.00000 0.00000 0.000000, 0.00000 1.00000 0.00000 -1.186824, 0.00000 1.00000 0.00000 -1.186824 ]
+  }
+  DEF LegInterp OrientationInterpolator {
+    key [ 0.00000, 0.31110, 0.66670, 1.00000 ]
+    keyValue [ 1.00000 0.00000 0.00000 1.745329, 1.00000 0.00000 0.00000 1.745329, 1.00000 0.00000 0.00000 0.000000, 1.00000 0.00000 0.00000 0.000000 ]
+  }
+  DEF MastInterp OrientationInterpolator {
+    key [ 0.00000, 0.48890, 0.68890, 0.88890, 1.00000 ]
+    keyValue [ 1.00000 0.00000 0.00000 3.141593, 1.00000 0.00000 0.00000 3.141593, 1.00000 0.00000 0.00000 4.712389, 1.00000 0.00000 0.00000 6.283185, 1.00000 0.00000 0.00000 6.283185 ]
+  }
+  DEF DishUnfoldInterp OrientationInterpolator {
+    key [ 0.00000, 0.48890, 0.88890, 1.00000 ]
+    keyValue [ 1.00000 0.00000 0.00000 1.570800, 1.00000 0.00000 0.00000 1.570800, 1.00000 0.00000 0.00000 0.000000, 1.00000 0.00000 0.00000 0.000000 ]
+  }
+  DEF IndCyanInterp ColorInterpolator {
+    key [ 0.00000, 0.66670, 1.00000 ]
+    keyValue [ 0.00000 0.00000 0.00000, 0.00000 0.00000 0.00000, 0.15000 0.90000 1.00000 ]
+  }
+  DEF IndAmberInterp ColorInterpolator {
+    key [ 0.00000, 0.66670, 1.00000 ]
+    keyValue [ 0.00000 0.00000 0.00000, 0.00000 0.00000 0.00000, 1.00000 0.65000 0.05000 ]
+  }
+  DEF IndGreenInterp ColorInterpolator {
+    key [ 0.00000, 0.66670, 1.00000 ]
+    keyValue [ 0.00000 0.00000 0.00000, 0.00000 0.00000 0.00000, 0.15000 0.95000 0.35000 ]
+  }
+  DEF SwitchDepressInterp PositionInterpolator {
+    key [ 0 0.5 1 ]
+    keyValue [ 0.00000 0.05000 0.00000, 0.00000 0.03200 0.00000, 0.00000 0.05000 0.00000 ]
+  }
+  DEF SwitchGlowInterp ColorInterpolator {
+    key [ 0 0.3 1 ]
+    keyValue [ 0.00000 0.00000 0.00000, 0.30000 0.95000 1.00000, 0.00000 0.00000 0.00000 ]
+  }
+  DEF Clock TimeSensor { loop TRUE enabled FALSE cycleInterval 0.1 }
+  DEF SwitchPulse TimeSensor { loop FALSE cycleInterval 0.4 }
+] }
+
+ROUTE RoofTouch.touchTime TO DeployScript.touch
+ROUTE RoofTouch.touchTime TO SwitchPulse.set_startTime
+ROUTE Clock.fraction_changed TO DeployScript.tick
+ROUTE DeployScript.clockRun_changed TO Clock.set_enabled
+ROUTE DeployScript.progress_changed TO CabRiseInterp.set_fraction
+ROUTE CabRiseInterp.value_changed TO CabMove.set_translation
+ROUTE DeployScript.progress_changed TO LeftPodSwingInterp.set_fraction
+ROUTE LeftPodSwingInterp.value_changed TO LeftPodSwing.set_rotation
+ROUTE DeployScript.progress_changed TO RightPodSwingInterp.set_fraction
+ROUTE RightPodSwingInterp.value_changed TO RightPodSwing.set_rotation
+ROUTE DeployScript.progress_changed TO LegInterp.set_fraction
+ROUTE LegInterp.value_changed TO LeftLegHinge.set_rotation
+ROUTE LegInterp.value_changed TO RightLegHinge.set_rotation
+ROUTE DeployScript.progress_changed TO MastInterp.set_fraction
+ROUTE MastInterp.value_changed TO MastHinge.set_rotation
+ROUTE DeployScript.progress_changed TO DishUnfoldInterp.set_fraction
+ROUTE DishUnfoldInterp.value_changed TO DishFoldPivot.set_rotation
+ROUTE DeployScript.scanRotation_changed TO DishSpin.set_rotation
+ROUTE DeployScript.progress_changed TO IndCyanInterp.set_fraction
+ROUTE IndCyanInterp.value_changed TO APP_IND_CYANMat.set_emissiveColor
+ROUTE DeployScript.progress_changed TO IndAmberInterp.set_fraction
+ROUTE IndAmberInterp.value_changed TO APP_IND_AMBERMat.set_emissiveColor
+ROUTE DeployScript.progress_changed TO IndGreenInterp.set_fraction
+ROUTE IndGreenInterp.value_changed TO APP_IND_GREENMat.set_emissiveColor
+ROUTE SwitchPulse.fraction_changed TO SwitchDepressInterp.set_fraction
+ROUTE SwitchDepressInterp.value_changed TO SwitchCapMove.set_translation
+ROUTE SwitchPulse.fraction_changed TO SwitchGlowInterp.set_fraction
+ROUTE SwitchGlowInterp.value_changed TO APP_SWITCHCAPMat.set_emissiveColor

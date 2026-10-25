@@ -1,0 +1,209 @@
+{
+ "shapes": [
+  {
+   "zone": "PAINT",
+   "instances": 1,
+   "parts": [
+    "Ragnum_PAINT"
+   ],
+   "verts": 5561,
+   "verts_before_weld": 5561,
+   "weld": {
+    "merged": 0,
+    "refused": 0
+   },
+   "faces": 6097,
+   "tris": 6097
+  },
+  {
+   "zone": "GLASS",
+   "instances": 1,
+   "parts": [
+    "Ragnum_GLASS"
+   ],
+   "verts": 215,
+   "verts_before_weld": 215,
+   "weld": {
+    "merged": 0,
+    "refused": 0
+   },
+   "faces": 244,
+   "tris": 244
+  },
+  {
+   "zone": "TRIM",
+   "instances": 1,
+   "parts": [
+    "Ragnum_TRIM"
+   ],
+   "verts": 2060,
+   "verts_before_weld": 2060,
+   "weld": {
+    "merged": 0,
+    "refused": 0
+   },
+   "faces": 1816,
+   "tris": 1816
+  },
+  {
+   "zone": "CHROME",
+   "instances": 1,
+   "parts": [
+    "Ragnum_CHROME"
+   ],
+   "verts": 268,
+   "verts_before_weld": 268,
+   "weld": {
+    "merged": 0,
+    "refused": 0
+   },
+   "faces": 206,
+   "tris": 206
+  },
+  {
+   "zone": "EXHAUST",
+   "instances": 1,
+   "parts": [
+    "Ragnum_EXHAUST"
+   ],
+   "verts": 128,
+   "verts_before_weld": 128,
+   "weld": {
+    "merged": 0,
+    "refused": 0
+   },
+   "faces": 128,
+   "tris": 128
+  },
+  {
+   "zone": "LENSCLEAR",
+   "instances": 1,
+   "parts": [
+    "Ragnum_LENSCLEAR"
+   ],
+   "verts": 66,
+   "verts_before_weld": 66,
+   "weld": {
+    "merged": 0,
+    "refused": 0
+   },
+   "faces": 96,
+   "tris": 96
+  },
+  {
+   "zone": "HEADLAMP",
+   "instances": 1,
+   "parts": [
+    "Ragnum_HEADLAMP"
+   ],
+   "verts": 74,
+   "verts_before_weld": 74,
+   "weld": {
+    "merged": 0,
+    "refused": 0
+   },
+   "faces": 135,
+   "tris": 135
+  },
+  {
+   "zone": "AMBER",
+   "instances": 1,
+   "parts": [
+    "Ragnum_AMBER"
+   ],
+   "verts": 12,
+   "verts_before_weld": 12,
+   "weld": {
+    "merged": 0,
+    "refused": 0
+   },
+   "faces": 8,
+   "tris": 8
+  },
+  {
+   "zone": "TAILLENS",
+   "instances": 1,
+   "parts": [
+    "Ragnum_TAILLENS"
+   ],
+   "verts": 116,
+   "verts_before_weld": 116,
+   "weld": {
+    "merged": 0,
+    "refused": 0
+   },
+   "faces": 116,
+   "tris": 116
+  },
+  {
+   "zone": "TYRE",
+   "instances": 4,
+   "parts": [
+    "wheel/TYRE"
+   ],
+   "verts": 192,
+   "faces": 192,
+   "tris": 384
+  },
+  {
+   "zone": "RIM",
+   "instances": 4,
+   "parts": [
+    "wheel/RIM"
+   ],
+   "verts": 304,
+   "faces": 264,
+   "tris": 516
+  },
+  {
+   "zone": "RIMDARK",
+   "instances": 4,
+   "parts": [
+    "wheel/RIMDARK"
+   ],
+   "verts": 238,
+   "faces": 264,
+   "tris": 416
+  }
+ ],
+ "runtime_shapes": 21,
+ "stored_tris": 10162,
+ "runtime_tris": 14110,
+ "stored_verts": 9234,
+ "runtime_verts": 11436,
+ "scale": 0.31571465,
+ "root_translation": [
+  -0.0,
+  -1.6856,
+  -1.6514
+ ],
+ "bounds": {
+  "x": [
+   -1.02687,
+   1.02687
+  ],
+  "y": [
+   -1.75,
+   -0.23954
+  ],
+  "z": [
+   -3.951,
+   0.999
+  ]
+ },
+ "dims": [
+  2.0537,
+  1.5105,
+  4.95
+ ],
+ "body_width": 1.8949,
+ "encoder": "pigz -11 -I 50 (Zopfli)",
+ "sha256": "bf5f7704d154f15f69bf223521c0582ddc9d3c18b095a2ca15c52dcbaefa45a2",
+ "raw_bytes": 335924,
+ "gzip_bytes": 72820,
+ "headroom_80000": 7180,
+ "headroom_81920": 9100,
+ "dp": 3,
+ "reordered": true,
+ "welded": false
+}

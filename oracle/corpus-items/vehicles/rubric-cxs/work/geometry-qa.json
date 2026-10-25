@@ -1,0 +1,282 @@
+{
+ "objects": {
+  "RX_Body": {
+   "tris": 3072,
+   "faces": 1514,
+   "verts": 1646,
+   "boundary_edges": 174,
+   "doubled_edges": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0,
+   "duplicate_faces": 0,
+   "volume": 6.3443802,
+   "symmetric": true
+  },
+  "RX_Exhaust": {
+   "tris": 256,
+   "faces": 160,
+   "verts": 132,
+   "boundary_edges": 0,
+   "doubled_edges": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0,
+   "duplicate_faces": 0,
+   "volume": 0.00303433
+  },
+  "RX_Grille": {
+   "tris": 456,
+   "faces": 228,
+   "verts": 296,
+   "boundary_edges": 0,
+   "doubled_edges": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0,
+   "duplicate_faces": 0,
+   "volume": 0.00089223
+  },
+  "RX_Wheel_FL": {
+   "tris": 1632,
+   "faces": 888,
+   "verts": 920,
+   "boundary_edges": 0,
+   "doubled_edges": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0,
+   "duplicate_faces": 0,
+   "volume": 0.07082815
+  },
+  "RX_Wheel_FR": {
+   "tris": 1632,
+   "faces": 888,
+   "verts": 920,
+   "boundary_edges": 0,
+   "doubled_edges": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0,
+   "duplicate_faces": 0,
+   "volume": 0.07082847
+  },
+  "RX_Wheel_RL": {
+   "tris": 1632,
+   "faces": 888,
+   "verts": 920,
+   "boundary_edges": 0,
+   "doubled_edges": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0,
+   "duplicate_faces": 0,
+   "volume": 0.07082814
+  },
+  "RX_Wheel_RR": {
+   "tris": 1632,
+   "faces": 888,
+   "verts": 920,
+   "boundary_edges": 0,
+   "doubled_edges": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0,
+   "duplicate_faces": 0,
+   "volume": 0.07082802
+  }
+ },
+ "wheel_fit": {
+  "RX_Wheel_FL": {
+   "min_margin": 0.00606,
+   "at_y": -1.64,
+   "outer_x": 0.89976,
+   "ok": true
+  },
+  "RX_Wheel_FR": {
+   "min_margin": 0.00606,
+   "at_y": -1.64,
+   "outer_x": 0.89976,
+   "ok": true
+  },
+  "RX_Wheel_RL": {
+   "min_margin": 0.02906,
+   "at_y": 1.66,
+   "outer_x": 0.89976,
+   "ok": true
+  },
+  "RX_Wheel_RR": {
+   "min_margin": 0.02906,
+   "at_y": 1.66,
+   "outer_x": 0.89976,
+   "ok": true
+  }
+ },
+ "wheel_exposure": {
+  "RX_Wheel_FL": {
+   "exposed_samples": 41,
+   "of": 72,
+   "fraction": 0.569,
+   "ok": true
+  },
+  "RX_Wheel_FR": {
+   "exposed_samples": 41,
+   "of": 72,
+   "fraction": 0.569,
+   "ok": true
+  },
+  "RX_Wheel_RL": {
+   "exposed_samples": 50,
+   "of": 72,
+   "fraction": 0.694,
+   "ok": true
+  },
+  "RX_Wheel_RR": {
+   "exposed_samples": 50,
+   "of": 72,
+   "fraction": 0.694,
+   "ok": true
+  }
+ },
+ "stance": {
+  "contact_z": 0.0,
+  "body_floor_z": 0.1808,
+  "clearance": 0.1808
+ },
+ "built": {
+  "RX_Grille": {
+   "tris": 456,
+   "verts": 296,
+   "symmetric": true,
+   "bounds": {
+    "lo": [
+     -0.4097,
+     -2.338,
+     0.5384
+    ],
+    "hi": [
+     0.4097,
+     -2.1997,
+     0.7874
+    ]
+   },
+   "materials": [
+    "RX_BRIGHTWORK"
+   ]
+  },
+  "RX_Exhaust": {
+   "tris": 256,
+   "verts": 132,
+   "symmetric": true,
+   "bounds": {
+    "lo": [
+     -0.9444,
+     0.7289,
+     0.2209
+    ],
+    "hi": [
+     0.9444,
+     0.9426,
+     0.3383
+    ]
+   },
+   "materials": [
+    "RX_BRIGHTWORK",
+    "RX_UNDERBODY"
+   ]
+  }
+ },
+ "bore_sight": {
+  "ok": true,
+  "per_side": [
+   {
+    "side": "right",
+    "sight_lines": 356,
+    "occluded": 1,
+    "dark_surface_hits": 356,
+    "body_hits": 0,
+    "body_hit_sample": []
+   },
+   {
+    "side": "left",
+    "sight_lines": 356,
+    "occluded": 1,
+    "dark_surface_hits": 356,
+    "body_hits": 0,
+    "body_hit_sample": []
+   }
+  ]
+ },
+ "wheel_qa": {
+  "coplanar_count": 0,
+  "centre_count": 0,
+  "press_fit_count": 88,
+  "occluded_count": 24,
+  "clearance": {
+   "centre_max_radius": 0.038182,
+   "centre_x": [
+    0.010929,
+    0.040071
+   ],
+   "face_min_radius": 0.041116,
+   "face_x": [
+    0.013479,
+    0.04161
+   ],
+   "radial_gap": 0.002933
+  },
+  "layers": {
+   "front_planes": {
+    "0.0387": 24,
+    "0.04161": 24
+   },
+   "back_planes": {
+    "0.01348": 24,
+    "0.01639": 24
+   }
+  },
+  "ok": true
+ },
+ "measured_wheels": {
+  "RX_Wheel_FR": {
+   "outer_x": 0.89976,
+   "axle_y": -1.32983,
+   "axle_z": 0.32899,
+   "radius": 0.32899,
+   "half_width": 0.1275
+  },
+  "RX_Wheel_FL": {
+   "outer_x": 0.89976,
+   "axle_y": -1.32983,
+   "axle_z": 0.32899,
+   "radius": 0.32899,
+   "half_width": 0.1275
+  },
+  "RX_Wheel_RR": {
+   "outer_x": 0.89976,
+   "axle_y": 1.3669,
+   "axle_z": 0.32899,
+   "radius": 0.32899,
+   "half_width": 0.1275
+  },
+  "RX_Wheel_RL": {
+   "outer_x": 0.89976,
+   "axle_y": 1.3669,
+   "axle_z": 0.32899,
+   "radius": 0.32899,
+   "half_width": 0.1275
+  }
+ },
+ "materials_in_use": [
+  "RX_BRIGHTWORK",
+  "RX_CHROME",
+  "RX_GLASS",
+  "RX_LAMPAMBER",
+  "RX_LAMPCLEAR",
+  "RX_LAMPRED",
+  "RX_PAINT",
+  "RX_RIM",
+  "RX_RIMDARK",
+  "RX_TRIM",
+  "RX_TYRE",
+  "RX_UNDERBODY"
+ ],
+ "orphan_materials": [],
+ "images": [],
+ "stored_tris": 10312,
+ "problems": [],
+ "ok": true
+}

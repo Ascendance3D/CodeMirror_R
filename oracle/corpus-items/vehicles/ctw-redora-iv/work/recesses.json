@@ -1,0 +1,200 @@
+{
+  "recessed_faces": 180,
+  "before_symmetry": 211,
+  "selection": {
+    "field": {
+      "admissible": 743,
+      "symmetrised": 93
+    },
+    "seeds": 221,
+    "grown": 4,
+    "after_slot_trim": 211,
+    "slot_trims": [
+      {
+        "component_faces": 66,
+        "trimmed_to": 52,
+        "dropped": [
+          384,
+          403,
+          404,
+          481,
+          482,
+          489,
+          490,
+          1870,
+          1889,
+          1890,
+          1967,
+          1968,
+          1975,
+          1976
+        ],
+        "kind": "slot",
+        "x": [
+          -0.1954,
+          0.1931
+        ]
+      }
+    ]
+  },
+  "symmetry": {
+    "dropped": [
+      [
+        "small",
+        1
+      ],
+      [
+        "small",
+        1
+      ],
+      [
+        "small",
+        1
+      ],
+      [
+        "small",
+        1
+      ],
+      [
+        "small",
+        1
+      ],
+      [
+        "small",
+        1
+      ],
+      [
+        "small",
+        1
+      ],
+      [
+        "small",
+        1
+      ],
+      [
+        "small",
+        1
+      ],
+      [
+        "orphan",
+        5
+      ],
+      [
+        "orphan",
+        15
+      ],
+      [
+        "small",
+        1
+      ],
+      [
+        "small",
+        1
+      ]
+    ],
+    "mirror_completed": 0,
+    "components": [
+      {
+        "role": "centre",
+        "faces": 50,
+        "twinned": 50,
+        "symmetric": true,
+        "x": [
+          -0.1305,
+          0.1283
+        ],
+        "z": [
+          0.2187,
+          0.2501
+        ],
+        "area_cm2": 98.2
+      },
+      {
+        "role": "centre",
+        "faces": 42,
+        "twinned": 42,
+        "symmetric": true,
+        "x": [
+          -0.0624,
+          0.0601
+        ],
+        "z": [
+          0.1356,
+          0.1706
+        ],
+        "area_cm2": 66.9
+      },
+      {
+        "role": "lower scoop X+",
+        "faces": 36,
+        "twinned": 36,
+        "symmetric": true,
+        "x": [
+          0.0881,
+          0.2043
+        ],
+        "z": [
+          0.1363,
+          0.1693
+        ],
+        "area_cm2": 65.4
+      },
+      {
+        "role": "lower scoop X-",
+        "faces": 36,
+        "twinned": 36,
+        "symmetric": true,
+        "x": [
+          -0.2065,
+          -0.0904
+        ],
+        "z": [
+          0.1363,
+          0.1693
+        ],
+        "area_cm2": 65.4
+      },
+      {
+        "role": "corner vent X+",
+        "faces": 8,
+        "twinned": 8,
+        "symmetric": true,
+        "x": [
+          0.2853,
+          0.3111
+        ],
+        "z": [
+          0.1272,
+          0.1605
+        ],
+        "area_cm2": 33.5
+      },
+      {
+        "role": "corner vent X-",
+        "faces": 8,
+        "twinned": 8,
+        "symmetric": true,
+        "x": [
+          -0.3134,
+          -0.2875
+        ],
+        "z": [
+          0.1272,
+          0.1605
+        ],
+        "area_cm2": 33.5
+      }
+    ],
+    "asymmetric_components": []
+  },
+  "occlusion": {
+    "min": 0.308,
+    "median": 0.538,
+    "max": 0.923
+  },
+  "slots": [
+    "RD_Clay",
+    "RD_Intake"
+  ],
+  "added_triangles": 0
+}

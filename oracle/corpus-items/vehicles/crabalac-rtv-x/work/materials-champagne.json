@@ -1,0 +1,98 @@
+{
+ "Black_Red_Sheen": {
+  "diffuseColor": "0.0292 0.0263 0.027",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.9388 0.055 0.055",
+  "ambientIntensity": "0.256",
+  "shininess": "0.6",
+  "transparency": "0"
+ },
+ "Champagne_Pearl": {
+  "diffuseColor": "0.73 0.65 0.49",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.78 0.66 0.42",
+  "ambientIntensity": "0.24",
+  "shininess": "0.35",
+  "transparency": "0"
+ },
+ "CRB_Caliper": {
+  "diffuseColor": "0.62 0.045 0.035",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.55 0.3 0.3",
+  "ambientIntensity": "0.25",
+  "shininess": "0.45",
+  "transparency": "0"
+ },
+ "CRB_GraphiteRim": {
+  "diffuseColor": "0.095 0.098 0.105",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.42 0.43 0.46",
+  "ambientIntensity": "0.16",
+  "shininess": "0.3",
+  "transparency": "0"
+ },
+ "CRB_GrilleSurround": {
+  "diffuseColor": "0.3 0.31 0.33",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.62 0.63 0.66",
+  "ambientIntensity": "0.28",
+  "shininess": "0.62",
+  "transparency": "0"
+ },
+ "CRB_HeadlampSmoke": {
+  "diffuseColor": "0.16 0.165 0.175",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.72 0.74 0.78",
+  "ambientIntensity": "0.22",
+  "shininess": "0.78",
+  "transparency": "0"
+ },
+ "CRB_LampAmber": {
+  "diffuseColor": "0.75 0.38 0.03",
+  "emissiveColor": "0.3 0.13 0",
+  "specularColor": "0.6 0.6 0.6",
+  "ambientIntensity": "0.2",
+  "shininess": "0.7",
+  "transparency": "0"
+ },
+ "CRB_LampRed": {
+  "diffuseColor": "0.42 0.03 0.03",
+  "emissiveColor": "0.26 0 0",
+  "specularColor": "0.6 0.6 0.6",
+  "ambientIntensity": "0.2",
+  "shininess": "0.7",
+  "transparency": "0"
+ },
+ "CRB_Tire": {
+  "diffuseColor": "0.05 0.05 0.055",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.02 0.02 0.02",
+  "ambientIntensity": "0.15",
+  "shininess": "0.05",
+  "transparency": "0"
+ },
+ "CRB_Trim": {
+  "diffuseColor": "0.115 0.12 0.125",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.18 0.18 0.185",
+  "ambientIntensity": "0.2",
+  "shininess": "0.25",
+  "transparency": "0"
+ },
+ "CRB_Underbody": {
+  "diffuseColor": "0.055 0.055 0.06",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.03 0.03 0.03",
+  "ambientIntensity": "0.15",
+  "shininess": "0.08",
+  "transparency": "0"
+ },
+ "CRB_WheelHub": {
+  "diffuseColor": "0.22 0.23 0.24",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.35 0.35 0.36",
+  "ambientIntensity": "0.2",
+  "shininess": "0.4",
+  "transparency": "0"
+ }
+}

@@ -1,0 +1,31 @@
+{
+  "note": "world-space click targets emitted by the build; floor is Y = -1.75",
+  "targets": {
+    "a speaker cone": [
+      0.149,
+      -1.142,
+      0.2581
+    ],
+    "the core column": [
+      0.0,
+      -1.53,
+      0.1891
+    ],
+    "the ion dome": [
+      0.0,
+      -0.806,
+      0.0
+    ],
+    "the plinth accent": [
+      0.0,
+      -1.707,
+      0.2859
+    ],
+    "the power collar": [
+      0.0,
+      -1.166,
+      0.2
+    ]
+  },
+  "wrl_sha_source": "ion-garden-speaker.wrl"
+}

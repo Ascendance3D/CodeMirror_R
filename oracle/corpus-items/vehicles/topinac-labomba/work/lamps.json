@@ -1,0 +1,53 @@
+{
+ "parts": [
+  {
+   "name": "LB_HeadLens",
+   "verts": 148,
+   "faces": 148,
+   "tris": 280,
+   "volume": 0.00025056
+  },
+  {
+   "name": "LB_HeadRing",
+   "verts": 192,
+   "faces": 192,
+   "tris": 384,
+   "volume": 0.00010987
+  },
+  {
+   "name": "LB_TailHousing",
+   "verts": 16,
+   "faces": 12,
+   "tris": 24,
+   "volume": 0.00048
+  },
+  {
+   "name": "LB_TailLens",
+   "verts": 72,
+   "faces": 60,
+   "tris": 120,
+   "volume": 0.00015873
+  },
+  {
+   "name": "LB_Brightwork",
+   "verts": 88,
+   "faces": 68,
+   "tris": 136,
+   "volume": 7.789e-05
+  },
+  {
+   "name": "LB_LatchBarrel",
+   "verts": 20,
+   "faces": 12,
+   "tris": 36,
+   "volume": 9.9e-07
+  }
+ ],
+ "tris": 980,
+ "headlamps": 4,
+ "tail_segments": 6,
+ "occluded_faces_removed": {
+  "LB_Trim": 100,
+  "LB_Body": 8
+ }
+}

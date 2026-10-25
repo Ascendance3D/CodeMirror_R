@@ -1,0 +1,121 @@
+#VRML V2.0 utf8
+Background { skyColor [ 0 0 0 ] }
+WorldInfo {
+ title "Event Horizon"
+ info [
+ "Picture © Ryan Bundy 2026"
+ "Price: 50cc"
+ "Limit: 20"
+ "Artist: BassMekanik"
+ "Date: October 2026"
+ ]
+}
+## Vizthumbnail  thumbnail.jpg
+DEF Art_Group Transform {
+ translation 0 -1.016 0
+ children [
+  DEF Backing Shape {
+   appearance Appearance {
+    material DEF White Material {
+     ambientIntensity 0.2
+     shininess 0.2
+     diffuseColor 1 1 1
+     emissiveColor .25098 .25098 .25098
+    }
+   }
+   geometry IndexedFaceSet {
+    creaseAngle 0.524
+    coordIndex [
+     0 1 2 -1
+     0 2 3 -1
+     2 4 5 -1
+     2 5 3 -1
+     3 5 6 -1
+     3 6 0 -1
+     0 6 7 -1
+     0 7 1 -1
+     4 7 6 -1
+     4 6 5 -1
+    ]
+    coord Coordinate {
+     point [
+      -0.65 0.65 -0.01
+      -0.65 0.65 0.01
+      0.65 0.65 0.01
+      0.65 0.65 -0.01
+      0.65 -0.65 0.01
+      0.65 -0.65 -0.01
+      -0.65 -0.65 -0.01
+      -0.65 -0.65 0.01
+     ]
+    }
+   }
+  }
+  DEF Picture Shape {
+   appearance Appearance {
+    texture ImageTexture {
+     repeatS FALSE
+     repeatT FALSE
+     url [
+      "event-horizon.jpg"
+     ]
+    }
+    material USE White
+   }
+   geometry IndexedFaceSet {
+    creaseAngle 0.524
+    coordIndex [
+     0 1 2 -1
+     0 2 3 -1
+    ]
+    texCoordIndex [
+     0 1 2 -1
+     0 2 3 -1
+    ]
+    coord Coordinate {
+     point [
+      -0.65 0.65 0.01
+      -0.65 -0.65 0.01
+      0.65 -0.65 0.01
+      0.65 0.65 0.01
+     ]
+    }
+    texCoord TextureCoordinate {
+     point [ 0 1 0 0 1 0 1 1 ]
+    }
+   }
+  }
+ ]
+}
+DEF Frame_Group Transform {
+ translation 0 -1.016 0
+ children [
+  DEF Frame Shape {
+   appearance Appearance {
+    material DEF Satin_Gold Material {
+      diffuseColor 0.2223 0.1543 0
+      emissiveColor 0 0 0
+      specularColor 0.7143 0.6966 0.5566
+      ambientIntensity 0.2564
+      shininess 0.1633
+      transparency 0
+     }
+   }
+   geometry DEF Frame_Geo Extrusion {
+    creaseAngle 0.524
+    convex FALSE
+    solid TRUE
+    ccw TRUE
+    crossSection [
+     -0.011 0.0073, 0.0037 0.0164, 0.0164 0.0164, 0.0237 0.0055, 0.0402 0.0256, 0.073 0.0073, 0.084 0.0073, 0.084 -0.0256, -0.011 -0.0256, -0.011 0.0073
+    ]
+    spine [
+     0.6463 -0.65 0, 0.65 -0.65 0, 0.65 -0.6463 0, 0.65 0.6463 0, 0.65 0.65 0, 0.6463 0.65 0, -0.6463 0.65 0, -0.65 0.65 0, -0.65 0.6463 0, -0.65 -0.6463 0, -0.65 -0.65 0, -0.6463 -0.65 0, 0.6463 -0.65 0
+    ]
+    scale [
+     1 1, 1.4142 1, 1 1, 1 1, 1.4142 1, 1 1, 1 1, 1.4142 1, 1 1, 1 1, 1.4142 1, 1 1, 1 1
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,251 @@
+{
+  "capped": [
+    {
+      "object": "RD_Glass",
+      "why": "backlight -- the aperture across the back of the cabin was never filled",
+      "loop_edges": 16,
+      "faces": 16,
+      "outward_agreement": -0.326,
+      "distance_to_target_mm": 0.5,
+      "triangles_added": 16,
+      "centre": [
+        -0.0,
+        -0.4136,
+        0.5193
+      ],
+      "boundary_edges_left": 64,
+      "non_manifold_left": 0
+    },
+    {
+      "what": "cabin rear bulkhead (OWNER APPROVED -- no tonneau)",
+      "object": "RD_Body",
+      "material": "RD_Intake",
+      "extra_runtime_shapes": 0,
+      "perimeter_vertices_reused": 19,
+      "new_vertices": 3,
+      "top_edge_vertices": 5,
+      "faces": 16,
+      "shoulder_span_mm": 530.3,
+      "top_z": 0.5206,
+      "sill_z": 0.4226,
+      "height_mm": 97.9,
+      "max_face_area_m2": 0.024899,
+      "off_segment_max_m": 0.0,
+      "top_edge_rise_to_glass_mm": [
+        13.39,
+        13.87,
+        13.42
+      ],
+      "face_normal_y_min": -0.516,
+      "face_normal_y_area_weighted": 0.742,
+      "flipped_to_agree_with_shell": false,
+      "doubled_directed_before": 0,
+      "doubled_directed_after": 0,
+      "bbox_growth_m": 7.4e-08,
+      "boundary_edges_before": 213,
+      "triangles_added": 20,
+      "boundary_edges_after": 213,
+      "non_manifold_after": 0
+    },
+    {
+      "what": "missing source triangles at boundary 3-cycles",
+      "object": "RD_Body",
+      "faces": 2,
+      "doubled_directed_before": 0,
+      "doubled_directed_after": 0,
+      "centres": [
+        [
+          -0.2414,
+          -0.3933,
+          0.5434
+        ],
+        [
+          0.2392,
+          -0.3933,
+          0.5434
+        ]
+      ],
+      "triangles_added": 2
+    },
+    {
+      "what": "seal every glazed aperture rim to the glazing",
+      "object": "RD_Body",
+      "apertures": 3,
+      "runs": 5,
+      "faces": 75,
+      "rings_skipped": [
+        {
+          "edges": 100,
+          "why": "not a simple ring"
+        },
+        {
+          "edges": 22,
+          "glazed_fraction": 0.0,
+          "why": "not a glazed aperture"
+        },
+        {
+          "edges": 4,
+          "glazed_fraction": 0.25,
+          "why": "not a glazed aperture"
+        },
+        {
+          "edges": 4,
+          "glazed_fraction": 0.25,
+          "why": "not a glazed aperture"
+        }
+      ],
+      "doubled_directed_before": 0,
+      "doubled_directed_after": 0,
+      "detail": [
+        {
+          "ring_edges": 18,
+          "glazed_fraction": 0.833,
+          "rim_vertices": 19,
+          "faces": 18,
+          "standoff_mm": [
+            5.7,
+            5.7,
+            6.3,
+            6.5,
+            0.4,
+            0.5,
+            0.8,
+            1.0,
+            1.0,
+            0.8,
+            0.6,
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.7,
+            6.0,
+            5.9,
+            5.7
+          ],
+          "at": [
+            0.3374,
+            -0.6536,
+            0.4276
+          ]
+        },
+        {
+          "ring_edges": 40,
+          "glazed_fraction": 0.7,
+          "rim_vertices": 8,
+          "faces": 7,
+          "standoff_mm": [
+            32.6,
+            0.7,
+            10.9,
+            10.9,
+            11.1,
+            11.8,
+            14.2,
+            0.0
+          ],
+          "at": [
+            -0.2594,
+            -0.4044,
+            0.5153
+          ]
+        },
+        {
+          "ring_edges": 40,
+          "glazed_fraction": 0.7,
+          "rim_vertices": 8,
+          "faces": 7,
+          "standoff_mm": [
+            0.0,
+            12.7,
+            11.2,
+            10.5,
+            10.3,
+            10.6,
+            0.3,
+            34.6
+          ],
+          "at": [
+            0.2349,
+            -0.3923,
+            0.5389
+          ]
+        },
+        {
+          "ring_edges": 40,
+          "glazed_fraction": 0.7,
+          "rim_vertices": 25,
+          "faces": 24,
+          "standoff_mm": [
+            34.6,
+            0.6,
+            0.5,
+            0.4,
+            0.3,
+            0.3,
+            0.4,
+            0.6,
+            0.8,
+            0.9,
+            0.9,
+            0.9,
+            0.9,
+            1.0,
+            1.3,
+            1.8,
+            2.3,
+            2.4,
+            2.4,
+            2.3,
+            2.0,
+            1.7,
+            1.3,
+            0.9,
+            32.6
+          ],
+          "at": [
+            -0.0011,
+            -0.9842,
+            0.3931
+          ]
+        },
+        {
+          "ring_edges": 19,
+          "glazed_fraction": 0.684,
+          "rim_vertices": 20,
+          "faces": 19,
+          "standoff_mm": [
+            2.4,
+            2.0,
+            1.5,
+            1.0,
+            0.9,
+            0.5,
+            7.2,
+            7.0,
+            6.7,
+            6.6,
+            7.5,
+            0.9,
+            7.8,
+            1.0,
+            1.2,
+            1.8,
+            2.6,
+            2.7,
+            2.7,
+            2.4
+          ],
+          "at": [
+            -0.2442,
+            -0.717,
+            0.539
+          ]
+        }
+      ],
+      "triangles_added": 144
+    }
+  ],
+  "owner_decision": "TONNEAU REJECTED / REAR CABIN BULKHEAD APPROVED / OPEN REDORA DECK PRESERVED",
+  "added_triangles": 182
+}

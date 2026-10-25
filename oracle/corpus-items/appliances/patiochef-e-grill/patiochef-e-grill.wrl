@@ -1,0 +1,926 @@
+#VRML V2.0 utf8
+# PatioChef E Grill
+# Original VRML97 outdoor kitchen for the Cybertown Revival Mall Kitchen Store Contest.
+# CyberChef product family: charcoal body, brushed silver trim, warm stone counter, cyan accents.
+# - One level worktop across the whole unit, with a vented hood on a rear upright.
+# - 5 electric burners: two left, two right, one wide griddle burner in the centre.
+# - All ten controls sit on the front panel facing the viewer. Every TouchSensor
+#   lives in its own grouping node with only its own control geometry, so no
+#   unrelated grill surface is clickable.
+# - Flames scale in place at their burner (scale 0 = off). No flame geometry ever
+#   exists or animates below the Mall floor.
+# - Every clock starts at sentinel startTime 4102444800 (2100-01-01 UTC), stopTime 0,
+#   so nothing animates until a real touchTime replaces it.
+# - Bounds: X 3.80 m, Y 2.09 m, Z 1.02 m. Lowest Y = -1.75, max Z = +0.32.
+
+WorldInfo {
+  title "PatioChef E Grill"
+  info [
+    "Made By: BassMekanik"
+    "Uploaded: July, 2026"
+    "Limited To: UNLIMITED"
+    "Mall Price: 60 CC"
+    "Kitchen Store Contest"
+  ]
+}
+
+DEF PatioChefEGrill Transform {
+  children [
+
+    # ---------- Feet ----------
+    Transform { translation -1.6 -1.71 -0.5 children [
+      Shape { appearance Appearance { material DEF M_Dark Material { ambientIntensity 0.18 diffuseColor 0.025 0.035 0.055 specularColor 0.38 0.42 0.50 shininess 0.55 } }
+        geometry DEF G_Foot Cylinder { radius 0.06 height 0.08 } }
+    ] }
+    Transform { translation -1.6 -1.71 0.05 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry USE G_Foot }
+    ] }
+    Transform { translation 1.6 -1.71 -0.5 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry USE G_Foot }
+    ] }
+    Transform { translation 1.6 -1.71 0.05 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry USE G_Foot }
+    ] }
+
+    # ---------- Cabinet run + plinth ----------
+    Transform { translation 0 -1.27 -0.25 children [
+      Shape { appearance Appearance { material DEF M_Body Material { ambientIntensity 0.24 diffuseColor 0.10 0.12 0.17 specularColor 0.30 0.34 0.42 shininess 0.42 } }
+        geometry Box { size 3.70 0.90 0.90 } }
+    ] }
+    Transform { translation 0 -1.69 0.21 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry Box { size 3.70 0.12 0.02 } }
+    ] }
+    Transform { translation -1.85 -1.69 -0.25 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry Box { size 0.02 0.12 0.90 } }
+    ] }
+    Transform { translation 1.85 -1.69 -0.25 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry Box { size 0.02 0.12 0.90 } }
+    ] }
+    Transform { translation -1.86 -1.27 -0.25 children [
+      Shape { appearance Appearance { material DEF M_Metal Material { ambientIntensity 0.30 diffuseColor 0.62 0.66 0.72 specularColor 0.92 0.94 0.98 shininess 0.72 } }
+        geometry Box { size 0.02 0.90 0.90 } }
+    ] }
+    Transform { translation 1.86 -1.27 -0.25 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry Box { size 0.02 0.90 0.90 } }
+    ] }
+
+    # ---------- Cabinet doors + pulls ----------
+    Transform { translation -1.55 -1.39 0.21 children [
+      Shape { appearance Appearance { material DEF M_Door Material { ambientIntensity 0.24 diffuseColor 0.13 0.17 0.27 specularColor 0.36 0.40 0.50 shininess 0.46 } }
+        geometry DEF G_CabDoor Box { size 0.56 0.46 0.02 } }
+    ] }
+    Transform { translation -1.55 -1.39 0.232 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry DEF G_DoorPull Cylinder { radius 0.016 height 0.34 } }
+    ] }
+    Transform { translation -1.55 -1.22 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry DEF G_PullCap Cylinder { radius 0.022 height 0.03 } }
+    ] }
+    Transform { translation -1.55 -1.56 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+    Transform { translation -0.93 -1.39 0.21 children [
+      Shape { appearance Appearance { material USE M_Door }
+        geometry USE G_CabDoor }
+    ] }
+    Transform { translation -0.93 -1.39 0.232 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_DoorPull }
+    ] }
+    Transform { translation -0.93 -1.22 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+    Transform { translation -0.93 -1.56 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+    Transform { translation -0.31 -1.39 0.21 children [
+      Shape { appearance Appearance { material USE M_Door }
+        geometry USE G_CabDoor }
+    ] }
+    Transform { translation -0.31 -1.39 0.232 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_DoorPull }
+    ] }
+    Transform { translation -0.31 -1.22 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+    Transform { translation -0.31 -1.56 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+    Transform { translation 0.31 -1.39 0.21 children [
+      Shape { appearance Appearance { material USE M_Door }
+        geometry USE G_CabDoor }
+    ] }
+    Transform { translation 0.31 -1.39 0.232 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_DoorPull }
+    ] }
+    Transform { translation 0.31 -1.22 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+    Transform { translation 0.31 -1.56 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+    Transform { translation 0.93 -1.39 0.21 children [
+      Shape { appearance Appearance { material USE M_Door }
+        geometry USE G_CabDoor }
+    ] }
+    Transform { translation 0.93 -1.39 0.232 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_DoorPull }
+    ] }
+    Transform { translation 0.93 -1.22 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+    Transform { translation 0.93 -1.56 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+    Transform { translation 1.55 -1.39 0.21 children [
+      Shape { appearance Appearance { material USE M_Door }
+        geometry USE G_CabDoor }
+    ] }
+    Transform { translation 1.55 -1.39 0.232 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_DoorPull }
+    ] }
+    Transform { translation 1.55 -1.22 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+    Transform { translation 1.55 -1.56 0.242 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry USE G_PullCap }
+    ] }
+
+    # ---------- Level worktop (single height across the whole unit) ----------
+    Transform { translation 0 -0.77 -0.19 children [
+      Shape { appearance Appearance { material DEF M_Counter Material { ambientIntensity 0.30 diffuseColor 0.78 0.70 0.56 specularColor 0.34 0.34 0.34 shininess 0.38 } }
+        geometry Box { size 3.80 0.10 1.02 } }
+    ] }
+    Transform { translation 0 -0.80 0.31 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry Box { size 3.80 0.02 0.02 } }
+    ] }
+    Transform { translation 0 -0.845 0.305 children [
+      Shape { appearance Appearance { material DEF M_Cyan Material { ambientIntensity 0.10 diffuseColor 0.00 0.62 0.68 emissiveColor 0.00 0.48 0.54 specularColor 0.30 0.55 0.60 shininess 0.55 } }
+        geometry Box { size 3.80 0.025 0.025 } }
+    ] }
+    Transform { translation 0 -0.7125 -0.19 children [
+      Shape { appearance Appearance { material DEF M_Cooktop Material { ambientIntensity 0.20 diffuseColor 0.06 0.07 0.10 specularColor 0.40 0.44 0.50 shininess 0.55 } }
+        geometry Box { size 3.30 0.015 0.92 } }
+    ] }
+
+    # ---------- Burner hardware ----------
+    # burner 1
+    Transform { translation -1.35 -0.700 -0.36 children [
+      Shape { appearance Appearance { material DEF M_BurnerRing Material { ambientIntensity 0.25 diffuseColor 0.20 0.22 0.26 specularColor 0.55 0.58 0.65 shininess 0.65 } }
+        geometry DEF G_BurnerRing Cylinder { radius 0.095 height 0.018 } }
+    ] }
+    Transform { translation -1.35 -0.689 -0.36 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry DEF G_BurnerDisc Cylinder { radius 0.075 height 0.008 } }
+    ] }
+    Transform { translation -1.35 -0.638 -0.36 children [
+      Shape { appearance Appearance { material DEF M_Trivet Material { ambientIntensity 0.30 diffuseColor 0.55 0.60 0.66 specularColor 0.85 0.88 0.92 shininess 0.75 } }
+        geometry DEF G_Trivet Cylinder { radius 0.070 height 0.012 } }
+    ] }
+    # burner 2
+    Transform { translation -1.35 -0.700 0.02 children [
+      Shape { appearance Appearance { material USE M_BurnerRing }
+        geometry USE G_BurnerRing }
+    ] }
+    Transform { translation -1.35 -0.689 0.02 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry USE G_BurnerDisc }
+    ] }
+    Transform { translation -1.35 -0.638 0.02 children [
+      Shape { appearance Appearance { material USE M_Trivet }
+        geometry USE G_Trivet }
+    ] }
+    # burner 3
+    Transform { translation 1.35 -0.700 -0.36 children [
+      Shape { appearance Appearance { material USE M_BurnerRing }
+        geometry USE G_BurnerRing }
+    ] }
+    Transform { translation 1.35 -0.689 -0.36 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry USE G_BurnerDisc }
+    ] }
+    Transform { translation 1.35 -0.638 -0.36 children [
+      Shape { appearance Appearance { material USE M_Trivet }
+        geometry USE G_Trivet }
+    ] }
+    # burner 4
+    Transform { translation 1.35 -0.700 0.02 children [
+      Shape { appearance Appearance { material USE M_BurnerRing }
+        geometry USE G_BurnerRing }
+    ] }
+    Transform { translation 1.35 -0.689 0.02 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry USE G_BurnerDisc }
+    ] }
+    Transform { translation 1.35 -0.638 0.02 children [
+      Shape { appearance Appearance { material USE M_Trivet }
+        geometry USE G_Trivet }
+    ] }
+    # burner 5 (wide centre griddle)
+    Transform { translation 0.0 -0.700 -0.19 children [
+      Shape { appearance Appearance { material USE M_BurnerRing }
+        geometry Cylinder { radius 0.22 height 0.020 } }
+    ] }
+    Transform { translation 0.0 -0.689 -0.19 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry Cylinder { radius 0.19 height 0.008 } }
+    ] }
+    Transform { translation 0.0 -0.638 -0.32 children [
+      Shape { appearance Appearance { material USE M_Trivet }
+        geometry Box { size 0.44 0.012 0.035 } }
+    ] }
+    Transform { translation 0.0 -0.638 -0.19 children [
+      Shape { appearance Appearance { material USE M_Trivet }
+        geometry Box { size 0.44 0.012 0.035 } }
+    ] }
+    Transform { translation 0.0 -0.638 -0.06 children [
+      Shape { appearance Appearance { material USE M_Trivet }
+        geometry Box { size 0.44 0.012 0.035 } }
+    ] }
+
+    # ---------- Rear upright (hood support) ----------
+    Transform { translation 0 -0.27 -0.68 children [
+      Shape { appearance Appearance { material USE M_Body }
+        geometry Box { size 3.70 0.90 0.04 } }
+    ] }
+    Transform { translation 0 -0.1 -0.655 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry Box { size 2.60 0.022 0.015 } }
+    ] }
+    Transform { translation 0 -0.17 -0.655 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry Box { size 2.60 0.022 0.015 } }
+    ] }
+    Transform { translation 0 -0.24 -0.655 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry Box { size 2.60 0.022 0.015 } }
+    ] }
+    Transform { translation 0 -0.31 -0.655 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry Box { size 2.60 0.022 0.015 } }
+    ] }
+    Transform { translation 0 -0.38 -0.655 children [
+      Shape { appearance Appearance { material USE M_Dark }
+        geometry Box { size 2.60 0.022 0.015 } }
+    ] }
+    Transform { translation 0 -0.60 -0.645 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry Box { size 3.40 0.025 0.04 } }
+    ] }
+    Transform { translation -1.7 -0.60 -0.645 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry Cylinder { radius 0.025 height 0.04 } }
+    ] }
+    Transform { translation 1.7 -0.60 -0.645 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry Cylinder { radius 0.025 height 0.04 } }
+    ] }
+    Transform { translation -1.5 -0.65 -0.645 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry Cylinder { radius 0.012 height 0.10 } }
+    ] }
+    Transform { translation -1.35 -0.65 -0.645 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry Cylinder { radius 0.012 height 0.10 } }
+    ] }
+    Transform { translation -1.2 -0.65 -0.645 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry Cylinder { radius 0.012 height 0.10 } }
+    ] }
+    Transform { translation 1.40 -0.70 -0.62 children [
+      Shape { appearance Appearance { material DEF M_Towel Material { ambientIntensity 0.25 diffuseColor 0.55 0.30 0.18 specularColor 0.40 0.30 0.25 shininess 0.35 } }
+        geometry Box { size 0.40 0.25 0.02 } }
+    ] }
+
+    # ---------- Hood ----------
+    Transform { translation 0 0.25 -0.20 children [
+      Shape { appearance Appearance { material USE M_Body }
+        geometry Box { size 3.70 0.14 1.00 } }
+    ] }
+    Transform { translation 0 0.325 -0.20 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry Box { size 3.74 0.03 1.04 } }
+    ] }
+    Transform { translation 0 0.17 -0.20 children [
+      Shape { appearance Appearance { material DEF M_Cavity Material { ambientIntensity 0.12 diffuseColor 0.015 0.020 0.030 specularColor 0.18 0.22 0.28 shininess 0.35 } }
+        geometry Box { size 3.60 0.02 0.96 } }
+    ] }
+    Transform { translation 0 0.07 0.28 children [
+      Shape { appearance Appearance { material USE M_Body }
+        geometry Box { size 3.70 0.22 0.04 } }
+    ] }
+    Transform { translation 0 0.17 0.295 children [
+      Shape { appearance Appearance { material USE M_Metal }
+        geometry Box { size 3.74 0.03 0.03 } }
+    ] }
+    Transform { translation 0 -0.02 0.305 children [
+      Shape { appearance Appearance { material USE M_Cyan }
+        geometry Box { size 3.40 0.03 0.03 } }
+    ] }
+    Transform { translation -0.27 0.09 0.303 children [
+      Shape { appearance Appearance { material DEF M_Digit Material { ambientIntensity 0.05 diffuseColor 0.00 0.10 0.13 emissiveColor 0.00 0.55 0.65 specularColor 0.20 0.50 0.55 shininess 0.40 } }
+        geometry Box { size 0.06 0.05 0.006 } }
+    ] }
+    Transform { translation -0.09 0.09 0.303 children [
+      Shape { appearance Appearance { material USE M_Digit }
+        geometry Box { size 0.06 0.05 0.006 } }
+    ] }
+    Transform { translation 0.09 0.09 0.303 children [
+      Shape { appearance Appearance { material USE M_Digit }
+        geometry Box { size 0.06 0.05 0.006 } }
+    ] }
+    Transform { translation 0.27 0.09 0.303 children [
+      Shape { appearance Appearance { material USE M_Digit }
+        geometry Box { size 0.06 0.05 0.006 } }
+    ] }
+    Transform { translation 0.95 0.09 0.303 children [
+      Shape { appearance Appearance { material USE M_Cyan }
+        geometry Cylinder { radius 0.012 height 0.006 } }
+    ] }
+    Transform { translation 1.0 0.09 0.303 children [
+      Shape { appearance Appearance { material USE M_Cyan }
+        geometry Cylinder { radius 0.012 height 0.006 } }
+    ] }
+    Transform { translation 1.05 0.09 0.303 children [
+      Shape { appearance Appearance { material USE M_Cyan }
+        geometry Cylinder { radius 0.012 height 0.006 } }
+    ] }
+
+    # ---------- Front control panel ----------
+    Transform { translation 0 -0.97 0.215 children [
+      Shape { appearance Appearance { material DEF M_Panel Material { ambientIntensity 0.22 diffuseColor 0.07 0.09 0.14 specularColor 0.32 0.36 0.44 shininess 0.50 } }
+        geometry Box { size 3.40 0.26 0.03 } }
+    ] }
+
+    # ---------- Burner controls (all face the viewer on +Z) ----------
+    # Each control is its own grouping node holding ONLY its TouchSensor, its
+    # visible control geometry and its own local hitbox. A cabinet door,
+    # worktop, hood or burner click reaches no sensor at all, and a start
+    # hitbox never overlaps its stop hitbox.
+    # -- burner 1: START knob (upper) --
+    DEF B1StartControl Transform {
+      translation -1.5 -0.925 0.234
+      rotation 1 0 0 1.5708
+      children [
+        DEF B1StartTouch TouchSensor { description "Start burner 1" }
+        Shape { appearance Appearance { material USE M_Dark }
+          geometry DEF G_KnobBezel Cylinder { radius 0.062 height 0.012 } }
+        Transform { translation 0 0.020 0 children [
+          Shape { appearance Appearance { material USE M_Metal }
+            geometry DEF G_KnobBody Cylinder { radius 0.055 height 0.040 } }
+        ] }
+        Transform { translation 0 0.043 0 children [
+          Shape { appearance Appearance { material USE M_Dark }
+            geometry DEF G_KnobCap Cylinder { radius 0.045 height 0.006 } }
+        ] }
+        Transform { translation 0 0.046 -0.020 children [
+          Shape { appearance Appearance { material USE M_Cyan }
+            geometry DEF G_KnobMark Box { size 0.008 0.004 0.030 } }
+        ] }
+        Transform { translation 0 0.026 0 children [
+          Shape { appearance Appearance { material DEF M_TouchSensorInvisible Material { ambientIntensity 0 diffuseColor 0 0 0 transparency 1.0 } }
+            geometry DEF G_StartHit Box { size 0.12 0.06 0.12 } }
+        ] }
+      ]
+    }
+    # -- burner 1: STOP button (lower, clear of the knob hitbox) --
+    DEF B1StopControl Transform {
+      translation -1.5 -1.065 0.229
+      rotation 1 0 0 1.5708
+      children [
+        DEF B1StopTouch TouchSensor { description "Stop burner 1" }
+        Transform { translation 0 0.009 0 children [
+          Shape { appearance Appearance { material USE M_Cyan }
+            geometry DEF G_StopButton Cylinder { radius 0.016 height 0.018 } }
+        ] }
+        Transform { translation 0 0.016 0 children [
+          Shape { appearance Appearance { material USE M_TouchSensorInvisible }
+            geometry DEF G_StopHit Box { size 0.07 0.05 0.06 } }
+        ] }
+      ]
+    }
+    # -- burner 2: START knob (upper) --
+    DEF B2StartControl Transform {
+      translation -0.75 -0.925 0.234
+      rotation 1 0 0 1.5708
+      children [
+        DEF B2StartTouch TouchSensor { description "Start burner 2" }
+        Shape { appearance Appearance { material USE M_Dark }
+          geometry USE G_KnobBezel }
+        Transform { translation 0 0.020 0 children [
+          Shape { appearance Appearance { material USE M_Metal }
+            geometry USE G_KnobBody }
+        ] }
+        Transform { translation 0 0.043 0 children [
+          Shape { appearance Appearance { material USE M_Dark }
+            geometry USE G_KnobCap }
+        ] }
+        Transform { translation 0 0.046 -0.020 children [
+          Shape { appearance Appearance { material USE M_Cyan }
+            geometry USE G_KnobMark }
+        ] }
+        Transform { translation 0 0.026 0 children [
+          Shape { appearance Appearance { material USE M_TouchSensorInvisible }
+            geometry USE G_StartHit }
+        ] }
+      ]
+    }
+    # -- burner 2: STOP button (lower, clear of the knob hitbox) --
+    DEF B2StopControl Transform {
+      translation -0.75 -1.065 0.229
+      rotation 1 0 0 1.5708
+      children [
+        DEF B2StopTouch TouchSensor { description "Stop burner 2" }
+        Transform { translation 0 0.009 0 children [
+          Shape { appearance Appearance { material USE M_Cyan }
+            geometry USE G_StopButton }
+        ] }
+        Transform { translation 0 0.016 0 children [
+          Shape { appearance Appearance { material USE M_TouchSensorInvisible }
+            geometry USE G_StopHit }
+        ] }
+      ]
+    }
+    # -- burner 3: START knob (upper) --
+    DEF B3StartControl Transform {
+      translation 0.75 -0.925 0.234
+      rotation 1 0 0 1.5708
+      children [
+        DEF B3StartTouch TouchSensor { description "Start burner 3" }
+        Shape { appearance Appearance { material USE M_Dark }
+          geometry USE G_KnobBezel }
+        Transform { translation 0 0.020 0 children [
+          Shape { appearance Appearance { material USE M_Metal }
+            geometry USE G_KnobBody }
+        ] }
+        Transform { translation 0 0.043 0 children [
+          Shape { appearance Appearance { material USE M_Dark }
+            geometry USE G_KnobCap }
+        ] }
+        Transform { translation 0 0.046 -0.020 children [
+          Shape { appearance Appearance { material USE M_Cyan }
+            geometry USE G_KnobMark }
+        ] }
+        Transform { translation 0 0.026 0 children [
+          Shape { appearance Appearance { material USE M_TouchSensorInvisible }
+            geometry USE G_StartHit }
+        ] }
+      ]
+    }
+    # -- burner 3: STOP button (lower, clear of the knob hitbox) --
+    DEF B3StopControl Transform {
+      translation 0.75 -1.065 0.229
+      rotation 1 0 0 1.5708
+      children [
+        DEF B3StopTouch TouchSensor { description "Stop burner 3" }
+        Transform { translation 0 0.009 0 children [
+          Shape { appearance Appearance { material USE M_Cyan }
+            geometry USE G_StopButton }
+        ] }
+        Transform { translation 0 0.016 0 children [
+          Shape { appearance Appearance { material USE M_TouchSensorInvisible }
+            geometry USE G_StopHit }
+        ] }
+      ]
+    }
+    # -- burner 4: START knob (upper) --
+    DEF B4StartControl Transform {
+      translation 1.5 -0.925 0.234
+      rotation 1 0 0 1.5708
+      children [
+        DEF B4StartTouch TouchSensor { description "Start burner 4" }
+        Shape { appearance Appearance { material USE M_Dark }
+          geometry USE G_KnobBezel }
+        Transform { translation 0 0.020 0 children [
+          Shape { appearance Appearance { material USE M_Metal }
+            geometry USE G_KnobBody }
+        ] }
+        Transform { translation 0 0.043 0 children [
+          Shape { appearance Appearance { material USE M_Dark }
+            geometry USE G_KnobCap }
+        ] }
+        Transform { translation 0 0.046 -0.020 children [
+          Shape { appearance Appearance { material USE M_Cyan }
+            geometry USE G_KnobMark }
+        ] }
+        Transform { translation 0 0.026 0 children [
+          Shape { appearance Appearance { material USE M_TouchSensorInvisible }
+            geometry USE G_StartHit }
+        ] }
+      ]
+    }
+    # -- burner 4: STOP button (lower, clear of the knob hitbox) --
+    DEF B4StopControl Transform {
+      translation 1.5 -1.065 0.229
+      rotation 1 0 0 1.5708
+      children [
+        DEF B4StopTouch TouchSensor { description "Stop burner 4" }
+        Transform { translation 0 0.009 0 children [
+          Shape { appearance Appearance { material USE M_Cyan }
+            geometry USE G_StopButton }
+        ] }
+        Transform { translation 0 0.016 0 children [
+          Shape { appearance Appearance { material USE M_TouchSensorInvisible }
+            geometry USE G_StopHit }
+        ] }
+      ]
+    }
+    # -- wide centre burner: START knob (upper) --
+    DEF B5StartControl Transform {
+      translation 0.0 -0.925 0.234
+      rotation 1 0 0 1.5708
+      children [
+        DEF B5StartTouch TouchSensor { description "Start wide centre burner" }
+        Shape { appearance Appearance { material USE M_Dark }
+          geometry USE G_KnobBezel }
+        Transform { translation 0 0.020 0 children [
+          Shape { appearance Appearance { material USE M_Metal }
+            geometry USE G_KnobBody }
+        ] }
+        Transform { translation 0 0.043 0 children [
+          Shape { appearance Appearance { material USE M_Dark }
+            geometry USE G_KnobCap }
+        ] }
+        Transform { translation 0 0.046 -0.020 children [
+          Shape { appearance Appearance { material USE M_Cyan }
+            geometry USE G_KnobMark }
+        ] }
+        Transform { translation 0 0.026 0 children [
+          Shape { appearance Appearance { material USE M_TouchSensorInvisible }
+            geometry USE G_StartHit }
+        ] }
+      ]
+    }
+    # -- wide centre burner: STOP button (lower, clear of the knob hitbox) --
+    DEF B5StopControl Transform {
+      translation 0.0 -1.065 0.229
+      rotation 1 0 0 1.5708
+      children [
+        DEF B5StopTouch TouchSensor { description "Stop wide centre burner" }
+        Transform { translation 0 0.009 0 children [
+          Shape { appearance Appearance { material USE M_Cyan }
+            geometry USE G_StopButton }
+        ] }
+        Transform { translation 0 0.016 0 children [
+          Shape { appearance Appearance { material USE M_TouchSensorInvisible }
+            geometry USE G_StopHit }
+        ] }
+      ]
+    }
+
+    # ---------- Flames ----------
+    # Each flame is a child of a state Transform parked at scale 0 0 0 and
+    # anchored at its own burner. Ignition/extinguish drive set_scale ONLY, so a
+    # flame never leaves the burner and nothing is ever hidden under the floor.
+    DEF B1FlameState Transform {
+      translation -1.35 -0.7 -0.36
+      scale 0 0 0
+      children [
+        DEF B1FlameLoop Transform {
+          children [
+          DEF G_FlameBody Group {
+            children [
+              Shape { appearance Appearance { material DEF M_FlameBase Material {
+                ambientIntensity 0.10 diffuseColor 0.30 0.85 1.00 emissiveColor 0.20 0.70 0.95
+                transparency 0.25 specularColor 0.50 0.85 0.95 shininess 0.50 } }
+                geometry Sphere { radius 0.045 } }
+              Transform { translation 0 0.080 0 children [
+                Shape { appearance Appearance { material DEF M_FlameInner Material {
+                  ambientIntensity 0.10 diffuseColor 1.00 0.95 0.70 emissiveColor 1.00 0.85 0.40
+                  transparency 0.30 specularColor 0.95 0.90 0.70 shininess 0.40 } }
+                  geometry Cone { bottomRadius 0.030 height 0.16 } }
+              ] }
+              Transform { translation 0 0.090 0.005 children [
+                Shape { appearance Appearance { material DEF M_FlameOuter Material {
+                  ambientIntensity 0.10 diffuseColor 1.00 0.55 0.20 emissiveColor 0.95 0.40 0.10
+                  transparency 0.55 specularColor 0.90 0.50 0.25 shininess 0.30 } }
+                  geometry Cone { bottomRadius 0.050 height 0.20 } }
+              ] }
+              Transform { translation -0.030 0.065 0.020 children [
+                Shape { appearance Appearance { material USE M_FlameOuter }
+                  geometry Cone { bottomRadius 0.025 height 0.13 } }
+              ] }
+              Transform { translation 0.030 0.060 0.020 children [
+                Shape { appearance Appearance { material USE M_FlameOuter }
+                  geometry Cone { bottomRadius 0.022 height 0.11 } }
+              ] }
+            ]
+          }
+          ]
+        }
+      ]
+    }
+    DEF B2FlameState Transform {
+      translation -1.35 -0.7 0.02
+      scale 0 0 0
+      children [
+        DEF B2FlameLoop Transform {
+          children [
+            USE G_FlameBody
+          ]
+        }
+      ]
+    }
+    DEF B3FlameState Transform {
+      translation 1.35 -0.7 -0.36
+      scale 0 0 0
+      children [
+        DEF B3FlameLoop Transform {
+          children [
+            USE G_FlameBody
+          ]
+        }
+      ]
+    }
+    DEF B4FlameState Transform {
+      translation 1.35 -0.7 0.02
+      scale 0 0 0
+      children [
+        DEF B4FlameLoop Transform {
+          children [
+            USE G_FlameBody
+          ]
+        }
+      ]
+    }
+    DEF B5FlameState Transform {
+      translation 0.0 -0.7 -0.19
+      scale 0 0 0
+      children [
+        DEF B5FlameLoop Transform {
+          children [
+            Transform { translation -0.13 0 0 children [ USE G_FlameBody ] }
+            Transform { translation 0.0 0.02 0 children [ USE G_FlameBody ] }
+            Transform { translation 0.13 0 0 children [ USE G_FlameBody ] }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+# ---------- Timing model ----------
+# Every clock is parked at a far-future sentinel start (4102444800 = 2100-01-01
+# UTC) with stopTime 0, so no TimeSensor is active when the world loads. A real
+# touchTime always replaces the sentinel, so the sentinel is never reached.
+
+# ---------- Burner B1 animation ----------
+DEF B1Loop TimeSensor {
+  cycleInterval 1.40
+  loop TRUE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B1Ignite TimeSensor {
+  cycleInterval 0.45
+  loop FALSE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B1Douse TimeSensor {
+  cycleInterval 0.35
+  loop FALSE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B1Bob PositionInterpolator {
+  key [0 0.30 0.55 0.80 1]
+  keyValue [0 0.000 0, 0.008 0.022 0, -0.006 0.012 0, 0.005 0.018 0, 0 0.000 0]
+}
+DEF B1IgniteScale PositionInterpolator {
+  key [0 0.75 1]
+  keyValue [0 0 0, 1 1.12 1, 1 1 1]
+}
+DEF B1DouseScale PositionInterpolator {
+  key [0 1]
+  keyValue [1 1 1, 0 0 0]
+}
+
+# ---------- Burner B2 animation ----------
+DEF B2Loop TimeSensor {
+  cycleInterval 1.40
+  loop TRUE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B2Ignite TimeSensor {
+  cycleInterval 0.45
+  loop FALSE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B2Douse TimeSensor {
+  cycleInterval 0.35
+  loop FALSE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B2Bob PositionInterpolator {
+  key [0 0.30 0.55 0.80 1]
+  keyValue [0 0.000 0, 0.008 0.022 0, -0.006 0.012 0, 0.005 0.018 0, 0 0.000 0]
+}
+DEF B2IgniteScale PositionInterpolator {
+  key [0 0.75 1]
+  keyValue [0 0 0, 1 1.12 1, 1 1 1]
+}
+DEF B2DouseScale PositionInterpolator {
+  key [0 1]
+  keyValue [1 1 1, 0 0 0]
+}
+
+# ---------- Burner B3 animation ----------
+DEF B3Loop TimeSensor {
+  cycleInterval 1.40
+  loop TRUE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B3Ignite TimeSensor {
+  cycleInterval 0.45
+  loop FALSE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B3Douse TimeSensor {
+  cycleInterval 0.35
+  loop FALSE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B3Bob PositionInterpolator {
+  key [0 0.30 0.55 0.80 1]
+  keyValue [0 0.000 0, 0.008 0.022 0, -0.006 0.012 0, 0.005 0.018 0, 0 0.000 0]
+}
+DEF B3IgniteScale PositionInterpolator {
+  key [0 0.75 1]
+  keyValue [0 0 0, 1 1.12 1, 1 1 1]
+}
+DEF B3DouseScale PositionInterpolator {
+  key [0 1]
+  keyValue [1 1 1, 0 0 0]
+}
+
+# ---------- Burner B4 animation ----------
+DEF B4Loop TimeSensor {
+  cycleInterval 1.40
+  loop TRUE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B4Ignite TimeSensor {
+  cycleInterval 0.45
+  loop FALSE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B4Douse TimeSensor {
+  cycleInterval 0.35
+  loop FALSE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B4Bob PositionInterpolator {
+  key [0 0.30 0.55 0.80 1]
+  keyValue [0 0.000 0, 0.008 0.022 0, -0.006 0.012 0, 0.005 0.018 0, 0 0.000 0]
+}
+DEF B4IgniteScale PositionInterpolator {
+  key [0 0.75 1]
+  keyValue [0 0 0, 1 1.12 1, 1 1 1]
+}
+DEF B4DouseScale PositionInterpolator {
+  key [0 1]
+  keyValue [1 1 1, 0 0 0]
+}
+
+# ---------- Burner B5 animation ----------
+DEF B5Loop TimeSensor {
+  cycleInterval 1.40
+  loop TRUE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B5Ignite TimeSensor {
+  cycleInterval 0.55
+  loop FALSE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B5Douse TimeSensor {
+  cycleInterval 0.35
+  loop FALSE
+  startTime 4102444800
+  stopTime 0
+}
+DEF B5Bob PositionInterpolator {
+  key [0 0.30 0.55 0.80 1]
+  keyValue [0 0.000 0, 0.008 0.022 0, -0.006 0.012 0, 0.005 0.018 0, 0 0.000 0]
+}
+DEF B5IgniteScale PositionInterpolator {
+  key [0 0.75 1]
+  keyValue [0 0 0, 1 1.18 1, 1 1 1]
+}
+DEF B5DouseScale PositionInterpolator {
+  key [0 1]
+  keyValue [1 1 1, 0 0 0]
+}
+
+# ---------- Routes ----------
+
+# Burner B1: start cancels the extinguish clock, runs ignition scaling and the
+# flicker loop; stop cancels ignition, halts the loop and scales back to zero.
+ROUTE B1StartTouch.touchTime TO B1Douse.set_stopTime
+ROUTE B1StartTouch.touchTime TO B1Ignite.set_startTime
+ROUTE B1StartTouch.touchTime TO B1Loop.set_startTime
+ROUTE B1StopTouch.touchTime TO B1Ignite.set_stopTime
+ROUTE B1StopTouch.touchTime TO B1Douse.set_startTime
+ROUTE B1StopTouch.touchTime TO B1Loop.set_stopTime
+ROUTE B1Ignite.fraction_changed TO B1IgniteScale.set_fraction
+ROUTE B1IgniteScale.value_changed TO B1FlameState.set_scale
+ROUTE B1Douse.fraction_changed TO B1DouseScale.set_fraction
+ROUTE B1DouseScale.value_changed TO B1FlameState.set_scale
+ROUTE B1Loop.fraction_changed TO B1Bob.set_fraction
+ROUTE B1Bob.value_changed TO B1FlameLoop.set_translation
+
+# Burner B2: start cancels the extinguish clock, runs ignition scaling and the
+# flicker loop; stop cancels ignition, halts the loop and scales back to zero.
+ROUTE B2StartTouch.touchTime TO B2Douse.set_stopTime
+ROUTE B2StartTouch.touchTime TO B2Ignite.set_startTime
+ROUTE B2StartTouch.touchTime TO B2Loop.set_startTime
+ROUTE B2StopTouch.touchTime TO B2Ignite.set_stopTime
+ROUTE B2StopTouch.touchTime TO B2Douse.set_startTime
+ROUTE B2StopTouch.touchTime TO B2Loop.set_stopTime
+ROUTE B2Ignite.fraction_changed TO B2IgniteScale.set_fraction
+ROUTE B2IgniteScale.value_changed TO B2FlameState.set_scale
+ROUTE B2Douse.fraction_changed TO B2DouseScale.set_fraction
+ROUTE B2DouseScale.value_changed TO B2FlameState.set_scale
+ROUTE B2Loop.fraction_changed TO B2Bob.set_fraction
+ROUTE B2Bob.value_changed TO B2FlameLoop.set_translation
+
+# Burner B3: start cancels the extinguish clock, runs ignition scaling and the
+# flicker loop; stop cancels ignition, halts the loop and scales back to zero.
+ROUTE B3StartTouch.touchTime TO B3Douse.set_stopTime
+ROUTE B3StartTouch.touchTime TO B3Ignite.set_startTime
+ROUTE B3StartTouch.touchTime TO B3Loop.set_startTime
+ROUTE B3StopTouch.touchTime TO B3Ignite.set_stopTime
+ROUTE B3StopTouch.touchTime TO B3Douse.set_startTime
+ROUTE B3StopTouch.touchTime TO B3Loop.set_stopTime
+ROUTE B3Ignite.fraction_changed TO B3IgniteScale.set_fraction
+ROUTE B3IgniteScale.value_changed TO B3FlameState.set_scale
+ROUTE B3Douse.fraction_changed TO B3DouseScale.set_fraction
+ROUTE B3DouseScale.value_changed TO B3FlameState.set_scale
+ROUTE B3Loop.fraction_changed TO B3Bob.set_fraction
+ROUTE B3Bob.value_changed TO B3FlameLoop.set_translation
+
+# Burner B4: start cancels the extinguish clock, runs ignition scaling and the
+# flicker loop; stop cancels ignition, halts the loop and scales back to zero.
+ROUTE B4StartTouch.touchTime TO B4Douse.set_stopTime
+ROUTE B4StartTouch.touchTime TO B4Ignite.set_startTime
+ROUTE B4StartTouch.touchTime TO B4Loop.set_startTime
+ROUTE B4StopTouch.touchTime TO B4Ignite.set_stopTime
+ROUTE B4StopTouch.touchTime TO B4Douse.set_startTime
+ROUTE B4StopTouch.touchTime TO B4Loop.set_stopTime
+ROUTE B4Ignite.fraction_changed TO B4IgniteScale.set_fraction
+ROUTE B4IgniteScale.value_changed TO B4FlameState.set_scale
+ROUTE B4Douse.fraction_changed TO B4DouseScale.set_fraction
+ROUTE B4DouseScale.value_changed TO B4FlameState.set_scale
+ROUTE B4Loop.fraction_changed TO B4Bob.set_fraction
+ROUTE B4Bob.value_changed TO B4FlameLoop.set_translation
+
+# Burner B5: start cancels the extinguish clock, runs ignition scaling and the
+# flicker loop; stop cancels ignition, halts the loop and scales back to zero.
+ROUTE B5StartTouch.touchTime TO B5Douse.set_stopTime
+ROUTE B5StartTouch.touchTime TO B5Ignite.set_startTime
+ROUTE B5StartTouch.touchTime TO B5Loop.set_startTime
+ROUTE B5StopTouch.touchTime TO B5Ignite.set_stopTime
+ROUTE B5StopTouch.touchTime TO B5Douse.set_startTime
+ROUTE B5StopTouch.touchTime TO B5Loop.set_stopTime
+ROUTE B5Ignite.fraction_changed TO B5IgniteScale.set_fraction
+ROUTE B5IgniteScale.value_changed TO B5FlameState.set_scale
+ROUTE B5Douse.fraction_changed TO B5DouseScale.set_fraction
+ROUTE B5DouseScale.value_changed TO B5FlameState.set_scale
+ROUTE B5Loop.fraction_changed TO B5Bob.set_fraction
+ROUTE B5Bob.value_changed TO B5FlameLoop.set_translation

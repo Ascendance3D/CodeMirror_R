@@ -1,0 +1,104 @@
+{
+ "shapes": [
+  {
+   "zone": "PAINT",
+   "verts": 487,
+   "tris": 702
+  },
+  {
+   "zone": "ROOF",
+   "verts": 35,
+   "tris": 48
+  },
+  {
+   "zone": "BONNET",
+   "verts": 63,
+   "tris": 100
+  },
+  {
+   "zone": "TRIM",
+   "verts": 272,
+   "tris": 334
+  },
+  {
+   "zone": "UNDER",
+   "verts": 137,
+   "tris": 202
+  },
+  {
+   "zone": "GLASS",
+   "verts": 99,
+   "tris": 98
+  },
+  {
+   "zone": "CHROME",
+   "verts": 525,
+   "tris": 816
+  },
+  {
+   "zone": "HEADLAMP",
+   "verts": 60,
+   "tris": 80
+  },
+  {
+   "zone": "AMBER",
+   "verts": 46,
+   "tris": 62
+  },
+  {
+   "zone": "RED",
+   "verts": 16,
+   "tris": 12
+  },
+  {
+   "zone": "TYRE",
+   "verts": 192,
+   "tris": 384,
+   "instances": 4
+  },
+  {
+   "zone": "RIM",
+   "verts": 474,
+   "tris": 864,
+   "instances": 4
+  },
+  {
+   "zone": "RIMDARK",
+   "verts": 252,
+   "tris": 432,
+   "instances": 4
+  }
+ ],
+ "stored_tris": 4134,
+ "runtime_tris": 9174,
+ "runtime_shapes": 22,
+ "bounds": {
+  "x": [
+   -0.998,
+   0.998
+  ],
+  "y": [
+   -1.75,
+   -0.0962
+  ],
+  "z": [
+   -2.797,
+   0.999
+  ]
+ },
+ "wheel": {
+  "style": "d-eightwin",
+  "canonical": "tooling/wheel-families/wheels/d-eightwin.wrl",
+  "verified": "generator == d-eightwin.wrl, 1120 points",
+  "placed_radius": 0.3244
+ },
+ "root_translation": [
+  0.0,
+  -0.8712,
+  -0.899
+ ],
+ "encoder": "pigz -11 -I 50 (Zopfli)",
+ "raw_bytes": 142162,
+ "gzip_bytes": 35197,
+ "sha256_wrl": "105ef1b170222d23604493b8028079b2be5bbf7a35953583dd289bfa50a6131e"
+}

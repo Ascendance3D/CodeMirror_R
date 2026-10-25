@@ -1,0 +1,77 @@
+{
+  "atlas": {
+    "image": "GreenTexture.png",
+    "sha256": "8f5fde73edfec88eeba87c2c39e7ddbd1183b5b4bf5649948c71b676df57d98c",
+    "size": [
+      512,
+      512
+    ]
+  },
+  "cell_face_counts": {
+    "GREEN": 1055,
+    "cell0": 281,
+    "cell2": 652,
+    "cell3": 390,
+    "cell5": 68,
+    "cell6": 32
+  },
+  "parts": {
+    "BODY": {
+      "faces": 1125,
+      "tris": 2230,
+      "verts": 1792
+    },
+    "CHROME": {
+      "faces": 164,
+      "tris": 344,
+      "verts": 244
+    },
+    "GLASS": {
+      "faces": 54,
+      "tris": 120,
+      "verts": 95
+    },
+    "GRILLE": {
+      "faces": 277,
+      "tris": 558,
+      "verts": 553
+    },
+    "HEADLAMP": {
+      "faces": 172,
+      "tris": 344,
+      "verts": 278
+    },
+    "LAMP_AMBER": {
+      "faces": 68,
+      "tris": 152,
+      "verts": 96
+    },
+    "LAMP_RED": {
+      "faces": 32,
+      "tris": 60,
+      "verts": 44
+    },
+    "TRIM": {
+      "faces": 305,
+      "tris": 630,
+      "verts": 572
+    },
+    "UNDERBODY": {
+      "faces": 281,
+      "tris": 588,
+      "verts": 609
+    }
+  },
+  "plate": {
+    "faces": 22,
+    "verts": 88
+  },
+  "removed": [
+    "Cylinder.000",
+    "mesh:Circle.001",
+    "mesh:Cylinder.009",
+    "material:Matricula.002"
+  ],
+  "straddling_faces": 0,
+  "views_retinted": 1
+}

@@ -1,0 +1,12 @@
+{
+ "clover": {
+  "crease_study": {
+   "30": "412dbb3e4b7d2fcf7b03cfe940ba1a0ffa16e1fb5a71cf6512ff9043fb3de2aa",
+   "40": "3a289acc69e203b8e3c6ce0b8f9beb0991154660061aca470643bd52a5e6cb2d",
+   "50": "2bb1c05caa0cf86950c4d9cbdb35fdd11293e743f8531863d6244ffe70c3b66b",
+   "60": "cdade88c6e99917124139e1cefa06a9cd337ad5f5fda0c8aa174e7931b8d0304"
+  }
+ },
+ "gpu": "\"ANGLE (NVIDIA, Vulkan 1.4.329 (NVIDIA NVIDIA GeForce RTX 3060 Ti (0x00002414)), NVIDIA)\"",
+ "xver": "\"{\\\"name\\\":\\\"X_ITE\\\",\\\"version\\\":\\\"15.1.10\\\"}\""
+}

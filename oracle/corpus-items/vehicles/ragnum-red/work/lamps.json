@@ -1,0 +1,179 @@
+{
+ "before": {
+  "Ragnum_AMBER": {
+   "tris": 8,
+   "verts": 12
+  },
+  "Ragnum_CHROME": {
+   "tris": 662,
+   "verts": 822
+  },
+  "Ragnum_EXHAUST": {
+   "tris": 128,
+   "verts": 128
+  },
+  "Ragnum_GLASS": {
+   "tris": 244,
+   "verts": 215
+  },
+  "Ragnum_HEADLAMP": {
+   "tris": 8,
+   "verts": 14
+  },
+  "Ragnum_LAMPBODY": {
+   "tris": 24,
+   "verts": 26
+  },
+  "Ragnum_LENSCLEAR": {
+   "tris": 3012,
+   "verts": 1558
+  },
+  "Ragnum_PAINT": {
+   "tris": 6106,
+   "verts": 5567
+  },
+  "Ragnum_TAILLENS": {
+   "tris": 118,
+   "verts": 118
+  },
+  "Ragnum_TRIM": {
+   "tris": 1844,
+   "verts": 2087
+  },
+  "TOTAL": {
+   "tris": 12154,
+   "verts": 10547
+  }
+ },
+ "headlamps": {
+  "lamp_box": {
+   "y": [
+    -7.95,
+    -6.45
+   ],
+   "z": [
+    1.8,
+    2.72
+   ],
+   "x": [
+    1.55,
+    2.78
+   ]
+  },
+  "x_keep": 2.545,
+  "x_hull": 2.615,
+  "assembly_removed": {
+   "CHROME": {
+    "before": 662,
+    "removed": 394,
+    "after": 268
+   },
+   "LAMPBODY": {
+    "before": 24,
+    "removed": 24,
+    "after": 0
+   },
+   "LENSCLEAR": {
+    "before": 3012,
+    "removed": 2916,
+    "after": 96
+   },
+   "HEADLAMP": {
+    "before": 8,
+    "removed": 8,
+    "after": 0
+   }
+  },
+  "removed_total": 3342,
+  "lens": {
+   "sides": {
+    "-1": {
+     "input_points": 900,
+     "verts": 37,
+     "tris": 70
+    },
+    "+1": {
+     "input_points": 900,
+     "verts": 37,
+     "tris": 70
+    }
+   },
+   "verts": 74,
+   "tris": 140
+  },
+  "emptied_zones": [
+   "Ragnum_LAMPBODY"
+  ]
+ },
+ "degenerate": {
+  "per_object": {
+   "Ragnum_HEADLAMP": {
+    "zero_area": 3,
+    "sliver": 2,
+    "total": 5
+   },
+   "Ragnum_PAINT": {
+    "zero_area": 7,
+    "sliver": 2,
+    "total": 9
+   },
+   "Ragnum_TAILLENS": {
+    "zero_area": 2,
+    "sliver": 0,
+    "total": 2
+   },
+   "Ragnum_TRIM": {
+    "zero_area": 7,
+    "sliver": 19,
+    "total": 26
+   }
+  },
+  "total": 42,
+  "area_eps": 1e-07,
+  "sliver_alt": 0.0016,
+  "largest_dropped_area": 9.73301714371421e-08,
+  "widest_dropped_sliver": 0.0014786662504375667
+ },
+ "after": {
+  "Ragnum_AMBER": {
+   "tris": 8,
+   "verts": 12
+  },
+  "Ragnum_CHROME": {
+   "tris": 268,
+   "verts": 348
+  },
+  "Ragnum_EXHAUST": {
+   "tris": 128,
+   "verts": 128
+  },
+  "Ragnum_GLASS": {
+   "tris": 244,
+   "verts": 215
+  },
+  "Ragnum_HEADLAMP": {
+   "tris": 135,
+   "verts": 74
+  },
+  "Ragnum_LENSCLEAR": {
+   "tris": 96,
+   "verts": 66
+  },
+  "Ragnum_PAINT": {
+   "tris": 6097,
+   "verts": 5561
+  },
+  "Ragnum_TAILLENS": {
+   "tris": 116,
+   "verts": 116
+  },
+  "Ragnum_TRIM": {
+   "tris": 1818,
+   "verts": 2062
+  },
+  "TOTAL": {
+   "tris": 8910,
+   "verts": 8582
+  }
+ }
+}

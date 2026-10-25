@@ -1,0 +1,57 @@
+{
+  "images_dropped": [
+    "deora.png",
+    "deoraW.png",
+    "GreenTexture.png",
+    "ztwheel.png"
+  ],
+  "deleted_faces": 307,
+  "deleted_triangles": 307,
+  "loose_verts_removed": 0,
+  "before": {
+    "tris": 2884,
+    "faces": 2884,
+    "bbox": [
+      [
+        -0.396179,
+        0.393957
+      ],
+      [
+        -1.027901,
+        0.845119
+      ],
+      [
+        0.044569,
+        0.600125
+      ]
+    ],
+    "by_material": {
+      "RD_Intake": 180,
+      "RD_Clay": 2704
+    }
+  },
+  "after": {
+    "tris": 2577,
+    "faces": 2577,
+    "bbox": [
+      [
+        -0.396179,
+        0.393957
+      ],
+      [
+        -1.027901,
+        0.845119
+      ],
+      [
+        0.044569,
+        0.600125
+      ]
+    ],
+    "by_material": {
+      "RD_Intake": 180,
+      "RD_Clay": 2397
+    }
+  },
+  "glass_transparency": 0.0,
+  "glass_opaque": true
+}

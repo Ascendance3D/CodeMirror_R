@@ -1,0 +1,61 @@
+{
+ "scale": 1.10254,
+ "translation": [
+  0.0,
+  -1.750007,
+  -1.331789
+ ],
+ "rotation": [
+  0,
+  1,
+  0,
+  3.141593
+ ],
+ "source_length_m": 4.3479,
+ "placed_length_m": 4.7937,
+ "x": [
+  -1.17182,
+  1.17182
+ ],
+ "y": [
+  -1.75,
+  -0.14074
+ ],
+ "z": [
+  -3.79375,
+  1.0
+ ],
+ "dims": [
+  2.3436,
+  1.6093,
+  4.7938
+ ],
+ "centre_x": 0.0,
+ "checks": {
+  "centred_on_x": true,
+  "lowest_y": true,
+  "max_z": true,
+  "fits_cube": true
+ },
+ "def": "The206",
+ "blend_bounds": {
+  "x": [
+   -1.062837,
+   1.062837
+  ],
+  "y": [
+   -2.114924,
+   2.232989
+  ],
+  "z": [
+   6e-06,
+   1.459598
+  ]
+ },
+ "resting_on": [
+  "The206_wheel_FL_tyre",
+  "The206_wheel_FR_tyre",
+  "The206_wheel_RL_tyre",
+  "The206_wheel_RR_tyre"
+ ]
+}

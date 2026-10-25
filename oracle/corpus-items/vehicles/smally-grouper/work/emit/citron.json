@@ -1,0 +1,99 @@
+{
+ "shapes": [
+  {
+   "zone": "PAINT",
+   "verts": 522,
+   "tris": 750
+  },
+  {
+   "zone": "BONNET",
+   "verts": 63,
+   "tris": 100
+  },
+  {
+   "zone": "TRIM",
+   "verts": 272,
+   "tris": 334
+  },
+  {
+   "zone": "UNDER",
+   "verts": 137,
+   "tris": 202
+  },
+  {
+   "zone": "GLASS",
+   "verts": 99,
+   "tris": 98
+  },
+  {
+   "zone": "CHROME",
+   "verts": 525,
+   "tris": 816
+  },
+  {
+   "zone": "HEADLAMP",
+   "verts": 60,
+   "tris": 80
+  },
+  {
+   "zone": "AMBER",
+   "verts": 46,
+   "tris": 62
+  },
+  {
+   "zone": "RED",
+   "verts": 16,
+   "tris": 12
+  },
+  {
+   "zone": "TYRE",
+   "verts": 192,
+   "tris": 384,
+   "instances": 4
+  },
+  {
+   "zone": "RIM",
+   "verts": 334,
+   "tris": 580,
+   "instances": 4
+  },
+  {
+   "zone": "RIMDARK",
+   "verts": 238,
+   "tris": 416,
+   "instances": 4
+  }
+ ],
+ "stored_tris": 3834,
+ "runtime_tris": 7974,
+ "runtime_shapes": 21,
+ "bounds": {
+  "x": [
+   -0.998,
+   0.998
+  ],
+  "y": [
+   -1.75,
+   -0.0962
+  ],
+  "z": [
+   -2.797,
+   0.999
+  ]
+ },
+ "wheel": {
+  "style": "b-turbofan",
+  "canonical": "tooling/wheel-families/wheels/b-turbofan.wrl",
+  "verified": "generator == b-turbofan.wrl, 996 points",
+  "placed_radius": 0.3244
+ },
+ "root_translation": [
+  0.0,
+  -0.8712,
+  -0.899
+ ],
+ "encoder": "pigz -11 -I 50 (Zopfli)",
+ "raw_bytes": 135825,
+ "gzip_bytes": 33981,
+ "sha256_wrl": "53eb0631a0cbe6fffde780fa16647fe15d7fa4dce1ec67cc51633947a3b5b570"
+}

@@ -1,0 +1,289 @@
+{
+ "body": "RX_Body",
+ "slots": [
+  "PAINT",
+  "GLASS",
+  "BRIGHTWORK",
+  "UNDERBODY",
+  "TRIM",
+  "LAMPRED",
+  "LAMPCLEAR",
+  "LAMPAMBER",
+  "CHROME"
+ ],
+ "faces_by_role": {
+  "PAINT": 810,
+  "GLASS": 20,
+  "BRIGHTWORK": 88,
+  "UNDERBODY": 184,
+  "TRIM": 368,
+  "LAMPRED": 16,
+  "LAMPCLEAR": 12,
+  "LAMPAMBER": 14,
+  "CHROME": 2
+ },
+ "faces_by_swatch": {
+  "BODY": 852,
+  "3": 34,
+  "2": 432,
+  "6": 16,
+  "0": 166,
+  "5": 14
+ },
+ "rear_guards": {
+  "faces": 42,
+  "repainted": 42,
+  "size": [
+   0.0394,
+   0.0886,
+   0.1462
+  ],
+  "role": "TRIM"
+ },
+ "grille_panel": {
+  "faces": 18,
+  "role": "UNDERBODY"
+ },
+ "roles": {
+  "PAINT": {
+   "def_name": "Candy_Apple_Red_High_Gloss",
+   "diffuse": [
+    0.52,
+    0.018,
+    0.026
+   ],
+   "specular": [
+    0.96,
+    0.94,
+    0.94
+   ],
+   "shininess": 0.93,
+   "ambient": 0.25,
+   "emissive": [
+    0,
+    0,
+    0
+   ]
+  },
+  "GLASS": {
+   "def_name": "Rubric_Black_Tint_Purple_Gloss",
+   "diffuse": [
+    0.018,
+    0.012,
+    0.028
+   ],
+   "specular": [
+    0.58,
+    0.26,
+    0.96
+   ],
+   "shininess": 0.95,
+   "ambient": 0.06,
+   "emissive": [
+    0,
+    0,
+    0
+   ]
+  },
+  "TRIM": {
+   "def_name": "Rubric_Satin_Blackout_Trim",
+   "diffuse": [
+    0.072,
+    0.072,
+    0.078
+   ],
+   "specular": [
+    0.18,
+    0.18,
+    0.2
+   ],
+   "shininess": 0.22,
+   "ambient": 0.14,
+   "emissive": [
+    0,
+    0,
+    0
+   ]
+  },
+  "UNDERBODY": {
+   "def_name": "Rubric_Underbody_Black",
+   "diffuse": [
+    0.026,
+    0.026,
+    0.028
+   ],
+   "specular": [
+    0.04,
+    0.04,
+    0.04
+   ],
+   "shininess": 0.05,
+   "ambient": 0.1,
+   "emissive": [
+    0,
+    0,
+    0
+   ]
+  },
+  "CHROME": {
+   "def_name": "Rubric_Polished_Chrome",
+   "diffuse": [
+    0.62,
+    0.635,
+    0.66
+   ],
+   "specular": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "shininess": 0.95,
+   "ambient": 0.3,
+   "emissive": [
+    0,
+    0,
+    0
+   ]
+  },
+  "BRIGHTWORK": {
+   "def_name": "Rubric_Burnt_Chrome_Moulding",
+   "diffuse": [
+    0.3,
+    0.27,
+    0.25
+   ],
+   "specular": [
+    0.62,
+    0.54,
+    0.46
+   ],
+   "shininess": 0.72,
+   "ambient": 0.18,
+   "emissive": [
+    0,
+    0,
+    0
+   ]
+  },
+  "LAMPCLEAR": {
+   "def_name": "Rubric_Sealed_Beam_Lens",
+   "diffuse": [
+    0.86,
+    0.855,
+    0.8
+   ],
+   "specular": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "shininess": 0.95,
+   "ambient": 0.4,
+   "emissive": [
+    0.1,
+    0.098,
+    0.088
+   ]
+  },
+  "LAMPAMBER": {
+   "def_name": "Rubric_Amber_Indicator_Lens",
+   "diffuse": [
+    0.86,
+    0.36,
+    0.03
+   ],
+   "specular": [
+    1.0,
+    0.75,
+    0.35
+   ],
+   "shininess": 0.85,
+   "ambient": 0.3,
+   "emissive": [
+    0.16,
+    0.055,
+    0.004
+   ]
+  },
+  "LAMPRED": {
+   "def_name": "Rubric_Deep_Ruby_Lens",
+   "diffuse": [
+    0.26,
+    0.013,
+    0.017
+   ],
+   "specular": [
+    0.9,
+    0.4,
+    0.4
+   ],
+   "shininess": 0.9,
+   "ambient": 0.2,
+   "emissive": [
+    0.22,
+    0.01,
+    0.014
+   ]
+  },
+  "TYRE": {
+   "def_name": "Rubric_Tyre_Rubber",
+   "diffuse": [
+    0.038,
+    0.038,
+    0.04
+   ],
+   "specular": [
+    0.05,
+    0.05,
+    0.05
+   ],
+   "shininess": 0.06,
+   "ambient": 0.18,
+   "emissive": [
+    0,
+    0,
+    0
+   ]
+  },
+  "RIM": {
+   "def_name": "Rubric_Finemesh_Polished",
+   "diffuse": [
+    0.7,
+    0.71,
+    0.73
+   ],
+   "specular": [
+    0.95,
+    0.96,
+    1.0
+   ],
+   "shininess": 0.9,
+   "ambient": 0.32,
+   "emissive": [
+    0,
+    0,
+    0
+   ]
+  },
+  "RIMDARK": {
+   "def_name": "Rubric_Finemesh_Recess",
+   "diffuse": [
+    0.14,
+    0.145,
+    0.155
+   ],
+   "specular": [
+    0.3,
+    0.31,
+    0.34
+   ],
+   "shininess": 0.35,
+   "ambient": 0.18,
+   "emissive": [
+    0,
+    0,
+    0
+   ]
+  }
+ }
+}

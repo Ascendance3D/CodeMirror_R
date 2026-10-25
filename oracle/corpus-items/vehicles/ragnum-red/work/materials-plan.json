@@ -1,0 +1,310 @@
+{
+ "cyclone_check": "TYRE/RIM/RIMDARK match cyclone-touring-blue exactly",
+ "zones": [
+  "AMBER",
+  "CHROME",
+  "EXHAUST",
+  "GLASS",
+  "HEADLAMP",
+  "LENSCLEAR",
+  "PAINT",
+  "RIM",
+  "RIMDARK",
+  "TAILLENS",
+  "TRIM",
+  "TYRE"
+ ],
+ "stripped": {
+  "uv_layers": [
+   "Circle/UVMap",
+   "Cube.015/UVMap",
+   "Cube.019/UVMap",
+   "Ragnum_AMBER_mesh/UVMap",
+   "Ragnum_CHROME_mesh/UVMap",
+   "Ragnum_EXHAUST_mesh/UVMap",
+   "Ragnum_GLASS_mesh/UVMap",
+   "Ragnum_HEADLAMP_mesh/UVMap",
+   "Ragnum_LAMPBODY_mesh/UVMap",
+   "Ragnum_LENSCLEAR_mesh/UVMap",
+   "Ragnum_PAINT_mesh/UVMap",
+   "Ragnum_TAILLENS_mesh/UVMap",
+   "Ragnum_TRIM_mesh/UVMap"
+  ],
+  "color_attributes": [],
+  "images": [
+   "magnumlights",
+   "wheels"
+  ],
+  "texture_nodes": [
+   "Lights/Image Texture",
+   "WHEELS/Image Texture"
+  ],
+  "textures": []
+ },
+ "verified": true,
+ "materials": {
+  "Ragnum_AMBER": {
+   "diffuseColor": [
+    0.62,
+    0.33,
+    0.045
+   ],
+   "specularColor": [
+    0.55,
+    0.42,
+    0.2
+   ],
+   "emissiveColor": [
+    0.05,
+    0.025,
+    0.0
+   ],
+   "ambientIntensity": 0.28,
+   "shininess": 0.72,
+   "transparency": 0.0
+  },
+  "Ragnum_CHROME": {
+   "diffuseColor": [
+    0.6,
+    0.62,
+    0.645
+   ],
+   "specularColor": [
+    0.88,
+    0.9,
+    0.92
+   ],
+   "emissiveColor": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ambientIntensity": 0.28,
+   "shininess": 0.88,
+   "transparency": 0.0
+  },
+  "Ragnum_EXHAUST": {
+   "diffuseColor": [
+    0.26,
+    0.26,
+    0.265
+   ],
+   "specularColor": [
+    0.62,
+    0.62,
+    0.64
+   ],
+   "emissiveColor": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ambientIntensity": 0.18,
+   "shininess": 0.52,
+   "transparency": 0.0
+  },
+  "Ragnum_GLASS": {
+   "diffuseColor": [
+    0.022,
+    0.024,
+    0.03
+   ],
+   "specularColor": [
+    0.3,
+    0.32,
+    0.38
+   ],
+   "emissiveColor": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ambientIntensity": 0.1,
+   "shininess": 0.86,
+   "transparency": 0.0
+  },
+  "Ragnum_HEADLAMP": {
+   "diffuseColor": [
+    0.74,
+    0.75,
+    0.76
+   ],
+   "specularColor": [
+    0.88,
+    0.9,
+    0.94
+   ],
+   "emissiveColor": [
+    0.05,
+    0.049,
+    0.045
+   ],
+   "ambientIntensity": 0.32,
+   "shininess": 0.86,
+   "transparency": 0.0
+  },
+  "Ragnum_LENSCLEAR": {
+   "diffuseColor": [
+    0.44,
+    0.445,
+    0.46
+   ],
+   "specularColor": [
+    0.58,
+    0.58,
+    0.61
+   ],
+   "emissiveColor": [
+    0.03,
+    0.03,
+    0.03
+   ],
+   "ambientIntensity": 0.22,
+   "shininess": 0.78,
+   "transparency": 0.0
+  },
+  "Ragnum_PAINT": {
+   "diffuseColor": [
+    0.55,
+    0.04,
+    0.052
+   ],
+   "specularColor": [
+    0.62,
+    0.34,
+    0.34
+   ],
+   "emissiveColor": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ambientIntensity": 0.24,
+   "shininess": 0.78,
+   "transparency": 0.0
+  },
+  "Ragnum_RIM": {
+   "diffuseColor": [
+    0.56,
+    0.58,
+    0.6
+   ],
+   "specularColor": [
+    0.82,
+    0.84,
+    0.86
+   ],
+   "emissiveColor": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ambientIntensity": 0.26,
+   "shininess": 0.8,
+   "transparency": 0.0
+  },
+  "Ragnum_RIMDARK": {
+   "diffuseColor": [
+    0.09,
+    0.092,
+    0.098
+   ],
+   "specularColor": [
+    0.12,
+    0.12,
+    0.13
+   ],
+   "emissiveColor": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ambientIntensity": 0.14,
+   "shininess": 0.2,
+   "transparency": 0.0
+  },
+  "Ragnum_TAILLENS": {
+   "diffuseColor": [
+    0.15,
+    0.012,
+    0.018
+   ],
+   "specularColor": [
+    0.72,
+    0.36,
+    0.36
+   ],
+   "emissiveColor": [
+    0.11,
+    0.004,
+    0.004
+   ],
+   "ambientIntensity": 0.16,
+   "shininess": 0.9,
+   "transparency": 0.0
+  },
+  "Ragnum_TRIM": {
+   "diffuseColor": [
+    0.048,
+    0.049,
+    0.053
+   ],
+   "specularColor": [
+    0.12,
+    0.12,
+    0.13
+   ],
+   "emissiveColor": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ambientIntensity": 0.14,
+   "shininess": 0.2,
+   "transparency": 0.0
+  },
+  "Ragnum_TYRE": {
+   "diffuseColor": [
+    0.043,
+    0.043,
+    0.046
+   ],
+   "specularColor": [
+    0.05,
+    0.05,
+    0.05
+   ],
+   "emissiveColor": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ambientIntensity": 0.1,
+   "shininess": 0.06,
+   "transparency": 0.0
+  }
+ },
+ "shapes": {
+  "Ragnum_AMBER": "Ragnum_AMBER",
+  "Ragnum_CHROME": "Ragnum_CHROME",
+  "Ragnum_EXHAUST": "Ragnum_EXHAUST",
+  "Ragnum_GLASS": "Ragnum_GLASS",
+  "Ragnum_HEADLAMP": "Ragnum_HEADLAMP",
+  "Ragnum_LENSCLEAR": "Ragnum_LENSCLEAR",
+  "Ragnum_PAINT": "Ragnum_PAINT",
+  "Ragnum_RIMDARK_FL": "Ragnum_RIMDARK",
+  "Ragnum_RIMDARK_FR": "Ragnum_RIMDARK",
+  "Ragnum_RIMDARK_RL": "Ragnum_RIMDARK",
+  "Ragnum_RIMDARK_RR": "Ragnum_RIMDARK",
+  "Ragnum_RIM_FL": "Ragnum_RIM",
+  "Ragnum_RIM_FR": "Ragnum_RIM",
+  "Ragnum_RIM_RL": "Ragnum_RIM",
+  "Ragnum_RIM_RR": "Ragnum_RIM",
+  "Ragnum_TAILLENS": "Ragnum_TAILLENS",
+  "Ragnum_TRIM": "Ragnum_TRIM",
+  "Ragnum_TYRE_FL": "Ragnum_TYRE",
+  "Ragnum_TYRE_FR": "Ragnum_TYRE",
+  "Ragnum_TYRE_RL": "Ragnum_TYRE",
+  "Ragnum_TYRE_RR": "Ragnum_TYRE"
+ }
+}

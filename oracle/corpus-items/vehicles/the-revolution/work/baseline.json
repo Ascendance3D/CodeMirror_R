@@ -1,0 +1,1141 @@
+{
+ "source": "/home/ryan/Projects/cybertown/new-items/item-categories/vehicles/evolution/evolution.blend",
+ "sha256": "bde54c70e39c791e7d1358042831cab1f059d8b4912e297b29a43f32a8e77954",
+ "blender": "5.2.0 LTS",
+ "unit_scale": 1.0,
+ "unit_system": "METRIC",
+ "objects": [
+  {
+   "name": "17c80c0899c1427d845fec7416f4577a.fbx",
+   "type": "EMPTY",
+   "parent": null,
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    0.70711,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    0.01,
+    0.01,
+    0.01
+   ],
+   "matrix_world": [
+    [
+     0.01,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.01,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.01,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ]
+  },
+  {
+   "name": "Body",
+   "type": "EMPTY",
+   "parent": "RootNode",
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    0.70711,
+    -0.70711,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    100.0,
+    100.0,
+    100.0
+   ],
+   "matrix_world": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     -0.0,
+     1.0,
+     0.0
+    ],
+    [
+     0.0,
+     -1.0,
+     -0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ]
+  },
+  {
+   "name": "Body_Vehicle_0",
+   "type": "MESH",
+   "parent": "Body",
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "matrix_world": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     -0.0,
+     1.0,
+     0.0
+    ],
+    [
+     0.0,
+     -1.0,
+     -0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ],
+   "world_min": [
+    -1.01995,
+    -2.32377,
+    0.0346
+   ],
+   "world_max": [
+    1.01995,
+    2.32414,
+    1.40677
+   ],
+   "world_dims": [
+    2.0399,
+    4.64791,
+    1.37217
+   ],
+   "data": "Body_Vehicle_0",
+   "materials": [
+    "Vehicle"
+   ],
+   "stats": {
+    "verts": 4879,
+    "edges": 8212,
+    "faces": 3912,
+    "tris": 3912,
+    "ngon_hist": {
+     "3": 3912
+    },
+    "boundary_edges": 4688,
+    "nonmanifold_edges": 0,
+    "wire_edges": 0,
+    "loose_verts": 0,
+    "zero_area_faces": 0,
+    "same_dir_edges": 0,
+    "components": 615,
+    "sharp_edges": 0,
+    "seam_edges": 0,
+    "smooth_faces": 2994,
+    "has_custom_normals": true,
+    "attributes": [
+     ".corner_edge",
+     ".corner_vert",
+     ".edge_verts",
+     ".select_edge",
+     ".select_poly",
+     ".select_vert",
+     "UVMap",
+     "custom_normal",
+     "material_index",
+     "position",
+     "sharp_edge",
+     "sharp_face"
+    ],
+    "uv_layers": [
+     "UVMap"
+    ],
+    "dihedral_hist_10deg": {
+     "0": 2908,
+     "10": 260,
+     "20": 108,
+     "30": 92,
+     "40": 78,
+     "50": 54,
+     "60": 6,
+     "70": 2,
+     "80": 6,
+     "90": 6,
+     "100": 2,
+     "130": 2
+    },
+    "faces_per_material": {
+     "Vehicle": 3912
+    }
+   }
+  },
+  {
+   "name": "FLW",
+   "type": "EMPTY",
+   "parent": "RootNode",
+   "location": [
+    85.10191,
+    -127.35765,
+    30.87095
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    0.70711,
+    -0.70711,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    100.0,
+    100.0,
+    100.0
+   ],
+   "matrix_world": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     0.85102
+    ],
+    [
+     0.0,
+     -0.0,
+     1.0,
+     -1.27358
+    ],
+    [
+     0.0,
+     -1.0,
+     -0.0,
+     0.30871
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ]
+  },
+  {
+   "name": "FLW_Vehicle_0",
+   "type": "MESH",
+   "parent": "FLW",
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "matrix_world": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     0.85102
+    ],
+    [
+     0.0,
+     -0.0,
+     1.0,
+     -1.27358
+    ],
+    [
+     0.0,
+     -1.0,
+     -0.0,
+     0.30871
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ],
+   "world_min": [
+    0.73254,
+    -1.58229,
+    0.0
+   ],
+   "world_max": [
+    0.98151,
+    -0.96487,
+    0.61742
+   ],
+   "world_dims": [
+    0.24898,
+    0.61742,
+    0.61742
+   ],
+   "data": "FLW_Vehicle_0",
+   "materials": [
+    "Vehicle"
+   ],
+   "stats": {
+    "verts": 160,
+    "edges": 314,
+    "faces": 156,
+    "tris": 156,
+    "ngon_hist": {
+     "3": 156
+    },
+    "boundary_edges": 160,
+    "nonmanifold_edges": 0,
+    "wire_edges": 0,
+    "loose_verts": 0,
+    "zero_area_faces": 0,
+    "same_dir_edges": 0,
+    "components": 6,
+    "sharp_edges": 0,
+    "seam_edges": 0,
+    "smooth_faces": 128,
+    "has_custom_normals": true,
+    "attributes": [
+     ".corner_edge",
+     ".corner_vert",
+     ".edge_verts",
+     ".select_edge",
+     ".select_poly",
+     ".select_vert",
+     "UVMap",
+     "custom_normal",
+     "material_index",
+     "position",
+     "sharp_edge",
+     "sharp_face"
+    ],
+    "uv_layers": [
+     "UVMap"
+    ],
+    "dihedral_hist_10deg": {
+     "0": 122,
+     "10": 16,
+     "20": 16
+    },
+    "faces_per_material": {
+     "Vehicle": 156
+    }
+   }
+  },
+  {
+   "name": "FRW",
+   "type": "EMPTY",
+   "parent": "RootNode",
+   "location": [
+    -85.10191,
+    -127.35764,
+    30.87095
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    0.70711,
+    -0.70711,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    100.0,
+    100.0,
+    100.0
+   ],
+   "matrix_world": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     -0.85102
+    ],
+    [
+     0.0,
+     -0.0,
+     1.0,
+     -1.27358
+    ],
+    [
+     0.0,
+     -1.0,
+     -0.0,
+     0.30871
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ]
+  },
+  {
+   "name": "FRW_Vehicle_0",
+   "type": "MESH",
+   "parent": "FRW",
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "matrix_world": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     -0.85102
+    ],
+    [
+     0.0,
+     -0.0,
+     1.0,
+     -1.27358
+    ],
+    [
+     0.0,
+     -1.0,
+     -0.0,
+     0.30871
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ],
+   "world_min": [
+    -0.98151,
+    -1.58229,
+    0.0
+   ],
+   "world_max": [
+    -0.73254,
+    -0.96487,
+    0.61742
+   ],
+   "world_dims": [
+    0.24898,
+    0.61742,
+    0.61742
+   ],
+   "data": "FRW_Vehicle_0",
+   "materials": [
+    "Vehicle"
+   ],
+   "stats": {
+    "verts": 160,
+    "edges": 314,
+    "faces": 156,
+    "tris": 156,
+    "ngon_hist": {
+     "3": 156
+    },
+    "boundary_edges": 160,
+    "nonmanifold_edges": 0,
+    "wire_edges": 0,
+    "loose_verts": 0,
+    "zero_area_faces": 0,
+    "same_dir_edges": 0,
+    "components": 6,
+    "sharp_edges": 0,
+    "seam_edges": 0,
+    "smooth_faces": 128,
+    "has_custom_normals": true,
+    "attributes": [
+     ".corner_edge",
+     ".corner_vert",
+     ".edge_verts",
+     ".select_edge",
+     ".select_poly",
+     ".select_vert",
+     "UVMap",
+     "custom_normal",
+     "material_index",
+     "position",
+     "sharp_edge",
+     "sharp_face"
+    ],
+    "uv_layers": [
+     "UVMap"
+    ],
+    "dihedral_hist_10deg": {
+     "0": 122,
+     "10": 16,
+     "20": 16
+    },
+    "faces_per_material": {
+     "Vehicle": 156
+    }
+   }
+  },
+  {
+   "name": "RLW",
+   "type": "EMPTY",
+   "parent": "RootNode",
+   "location": [
+    85.10204,
+    136.62755,
+    30.87094
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    0.70711,
+    -0.70711,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    100.0,
+    100.0,
+    100.0
+   ],
+   "matrix_world": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     0.85102
+    ],
+    [
+     0.0,
+     -0.0,
+     1.0,
+     1.36628
+    ],
+    [
+     0.0,
+     -1.0,
+     -0.0,
+     0.30871
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ]
+  },
+  {
+   "name": "RLW_Vehicle_0",
+   "type": "MESH",
+   "parent": "RLW",
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "matrix_world": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     0.85102
+    ],
+    [
+     0.0,
+     -0.0,
+     1.0,
+     1.36628
+    ],
+    [
+     0.0,
+     -1.0,
+     -0.0,
+     0.30871
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ],
+   "world_min": [
+    0.73254,
+    1.05757,
+    -0.0
+   ],
+   "world_max": [
+    0.98151,
+    1.67499,
+    0.61742
+   ],
+   "world_dims": [
+    0.24898,
+    0.61742,
+    0.61742
+   ],
+   "data": "RLW_Vehicle_0",
+   "materials": [
+    "Vehicle"
+   ],
+   "stats": {
+    "verts": 160,
+    "edges": 314,
+    "faces": 156,
+    "tris": 156,
+    "ngon_hist": {
+     "3": 156
+    },
+    "boundary_edges": 160,
+    "nonmanifold_edges": 0,
+    "wire_edges": 0,
+    "loose_verts": 0,
+    "zero_area_faces": 0,
+    "same_dir_edges": 0,
+    "components": 6,
+    "sharp_edges": 0,
+    "seam_edges": 0,
+    "smooth_faces": 128,
+    "has_custom_normals": true,
+    "attributes": [
+     ".corner_edge",
+     ".corner_vert",
+     ".edge_verts",
+     ".select_edge",
+     ".select_poly",
+     ".select_vert",
+     "UVMap",
+     "custom_normal",
+     "material_index",
+     "position",
+     "sharp_edge",
+     "sharp_face"
+    ],
+    "uv_layers": [
+     "UVMap"
+    ],
+    "dihedral_hist_10deg": {
+     "0": 122,
+     "10": 16,
+     "20": 16
+    },
+    "faces_per_material": {
+     "Vehicle": 156
+    }
+   }
+  },
+  {
+   "name": "RootNode",
+   "type": "EMPTY",
+   "parent": "17c80c0899c1427d845fec7416f4577a.fbx",
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "matrix_world": [
+    [
+     0.01,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.01,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.01,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ]
+  },
+  {
+   "name": "RRW",
+   "type": "EMPTY",
+   "parent": "RootNode",
+   "location": [
+    -85.10207,
+    136.62755,
+    30.87094
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    0.70711,
+    -0.70711,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    100.0,
+    100.0,
+    100.0
+   ],
+   "matrix_world": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     -0.85102
+    ],
+    [
+     0.0,
+     -0.0,
+     1.0,
+     1.36628
+    ],
+    [
+     0.0,
+     -1.0,
+     -0.0,
+     0.30871
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ]
+  },
+  {
+   "name": "RRW_Vehicle_0",
+   "type": "MESH",
+   "parent": "RRW",
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_mode": "QUATERNION",
+   "rotation_euler": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "matrix_world": [
+    [
+     1.0,
+     0.0,
+     0.0,
+     -0.85102
+    ],
+    [
+     0.0,
+     -0.0,
+     1.0,
+     1.36628
+    ],
+    [
+     0.0,
+     -1.0,
+     -0.0,
+     0.30871
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "modifiers": [],
+   "collections": [
+    "Scene Collection"
+   ],
+   "world_min": [
+    -0.98151,
+    1.05757,
+    -0.0
+   ],
+   "world_max": [
+    -0.73254,
+    1.67499,
+    0.61742
+   ],
+   "world_dims": [
+    0.24898,
+    0.61742,
+    0.61742
+   ],
+   "data": "RRW_Vehicle_0",
+   "materials": [
+    "Vehicle"
+   ],
+   "stats": {
+    "verts": 160,
+    "edges": 314,
+    "faces": 156,
+    "tris": 156,
+    "ngon_hist": {
+     "3": 156
+    },
+    "boundary_edges": 160,
+    "nonmanifold_edges": 0,
+    "wire_edges": 0,
+    "loose_verts": 0,
+    "zero_area_faces": 0,
+    "same_dir_edges": 0,
+    "components": 6,
+    "sharp_edges": 0,
+    "seam_edges": 0,
+    "smooth_faces": 128,
+    "has_custom_normals": true,
+    "attributes": [
+     ".corner_edge",
+     ".corner_vert",
+     ".edge_verts",
+     ".select_edge",
+     ".select_poly",
+     ".select_vert",
+     "UVMap",
+     "custom_normal",
+     "material_index",
+     "position",
+     "sharp_edge",
+     "sharp_face"
+    ],
+    "uv_layers": [
+     "UVMap"
+    ],
+    "dihedral_hist_10deg": {
+     "0": 122,
+     "10": 16,
+     "20": 16
+    },
+    "faces_per_material": {
+     "Vehicle": 156
+    }
+   }
+  }
+ ],
+ "materials": [
+  {
+   "name": "Vehicle",
+   "users": 5,
+   "fake": false,
+   "diffuse": [
+    0.8,
+    0.8,
+    0.8,
+    1.0
+   ],
+   "use_nodes": true,
+   "nodes": [
+    {
+     "name": "Principled BSDF",
+     "type": "BSDF_PRINCIPLED",
+     "inputs": {
+      "Base Color": {
+       "value": [
+        0.8,
+        0.8,
+        0.8,
+        1.0
+       ],
+       "linked": true
+      },
+      "Metallic": {
+       "value": 0.0,
+       "linked": false
+      },
+      "Roughness": {
+       "value": 0.8239,
+       "linked": false
+      },
+      "Alpha": {
+       "value": 1.0,
+       "linked": false
+      },
+      "Emission Color": {
+       "value": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+       ],
+       "linked": false
+      },
+      "Emission Strength": {
+       "value": 0.0,
+       "linked": false
+      }
+     }
+    },
+    {
+     "name": "Material Output",
+     "type": "OUTPUT_MATERIAL"
+    },
+    {
+     "name": "Image Texture",
+     "type": "TEX_IMAGE",
+     "image": "Vehicle_baseColor.png"
+    }
+   ]
+  }
+ ],
+ "images": [
+  {
+   "name": "Render Result",
+   "filepath": "",
+   "packed": false,
+   "size": [
+    0,
+    0
+   ],
+   "source": "VIEWER",
+   "users": 1,
+   "material_users": []
+  },
+  {
+   "name": "Vehicle_baseColor.png",
+   "filepath": "//../../../../../../Downloads/items/vehicle_-_mitsubishi_lancer_evolution_x_varis/textures/Vehicle_baseColor.png",
+   "packed": true,
+   "size": [
+    512,
+    512
+   ],
+   "source": "FILE",
+   "users": 1,
+   "material_users": [
+    "Vehicle"
+   ]
+  },
+  {
+   "name": "Viewer Node",
+   "filepath": "",
+   "packed": false,
+   "size": [
+    256,
+    256
+   ],
+   "source": "VIEWER",
+   "users": 1,
+   "material_users": []
+  }
+ ],
+ "libraries": [],
+ "collections": [],
+ "counts": {
+  "objects": 12,
+  "meshes": 5,
+  "materials": 1,
+  "images": 3,
+  "textures": 0,
+  "cameras": 0,
+  "lights": 0,
+  "worlds": 1,
+  "node_groups": 0,
+  "actions": 0
+ }
+}
