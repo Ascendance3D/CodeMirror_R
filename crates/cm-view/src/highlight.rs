@@ -420,7 +420,7 @@ pub fn highlight_line(
     );
     let classes = (
         classes_vec.0.map(|v| v.join(" ")),
-        classes_vec.1.map(|v| v.join(" "))
+        classes_vec.1.map(|v| v.join(" ")),
     );
     let classes = if classes.0.is_some() || classes.1.is_some() {
         Some(classes)
