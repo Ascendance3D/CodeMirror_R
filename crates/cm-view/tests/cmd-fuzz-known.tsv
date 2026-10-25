@@ -1,0 +1,3 @@
+# seed	reason (cmd_fuzz_oracle.rs skips the rest of these sequences after their first mismatch)
+333	cut copies text holding a lone surrogate (an emoji split by an earlier edit); Editor::copy/cut return a Rust String for the system clipboard, so the lone surrogate becomes U+FFFD. The document and selections still match.
+393	same as 333, on copy.

@@ -1,0 +1,15 @@
+[package]
+name = "cm-modes"
+version = "0.1.0"
+description = "Port of the CodeMirror 5 (5.65.21) mode API, tokenization loop and selected modes"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+cm-core = { path = "../cm-core" }
+
+[dev-dependencies]
+serde_json = "1"
+flate2 = "1"
+sha2 = "0.10"
