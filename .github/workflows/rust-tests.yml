@@ -53,7 +53,9 @@ jobs:
       - name: System libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends pkg-config libwayland-dev libxkbcommon-dev xvfb
+          # libxkbcommon-x11-0 and the Mesa software Vulkan driver (lavapipe) let winit_event_loop_under_xvfb
+          # run the real cm-edit binary on a private X display; without them it crashes (first CI run).
+          sudo apt-get install -y --no-install-recommends pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 mesa-vulkan-drivers xvfb
 
       - uses: Swatinem/rust-cache@v2
         with:
