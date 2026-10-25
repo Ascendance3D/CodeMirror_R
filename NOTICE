@@ -1,0 +1,14 @@
+CodeMirror_R
+
+The Rust workspace declares the MIT License (Cargo.toml, [workspace.package]), as the
+Ascendance3D/X_ITE_R workspace it was extracted from did. A root LICENSE file with the copyright
+holder's name is not yet present; the owner adds it.
+
+This software ports the behavior of CodeMirror 5 (version 5.65.21, commit
+4ca3d0551cf9125114e0802877480599472dc186):
+
+  CodeMirror, copyright (C) 2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others.
+  MIT License. The full text is in oracle/cm5-build/LICENSE.
+
+oracle/cm5-build/ is an unchanged copy of the upstream source tree. upstream/codemirror5/ is
+fetched from the upstream repository and is not part of this repository.

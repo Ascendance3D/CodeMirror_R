@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 
 const HERE = normalize (join (fileURLToPath (import.meta.url), ".."));
 const ROOT = join (HERE, "cm5-build");
-const { chromium } = createRequire (join (HERE, "../../../x_ite-tests/")) ("playwright");
+const { chromium } = createRequire (process .env .CM5_PLAYWRIGHT_FROM || join (HERE, "../../../x_ite-tests/")) ("playwright");
 
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css" };
 

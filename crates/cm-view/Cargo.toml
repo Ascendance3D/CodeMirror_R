@@ -25,7 +25,7 @@ arboard = { version = "3", optional = true, default-features = false }
 bytemuck = { version = "1", optional = true, features = ["derive"] }
 
 [dev-dependencies]
-x3d-evidence = { path = "../x3d-evidence" }
+cm-evidence = { path = "../cm-evidence" }
 serde_json = "1"
 
 [[bin]]

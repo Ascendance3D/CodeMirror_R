@@ -1,0 +1,17 @@
+# CodeMirror 5 reference pin for CodeMirror_R. Read by tools/verify-reference.sh and tools/fetch-upstream.sh.
+# The CM5_* values are byte-identical to tools/candidate.lock of Ascendance3D/X_ITE_R at ffe080b1 (lines 38-44).
+# Change a value only with owner review.
+CM5_PIN=4ca3d0551cf9125114e0802877480599472dc186
+CM5_VERSION=5.65.21
+CM5_REF_DIR=oracle/cm5-build
+CM5_SUBS="src mode addon keymap lib test"
+CM5_VERSION_FILE=oracle/cm5-build/package.json
+CM5_REF_DIGEST=d2daa3a3a863163603b645e453e2ffc6c1a4277d228108a4d437c7627f0f911c
+CM5_REF_FILES=440
+# The pinned upstream clone that four cm-modes runmode tests read (crates/cm-modes/tests/common/mod.rs).
+# tools/fetch-upstream.sh writes it; it is gitignored. Measured 2026-10-25 from the owner's clone at CM5_PIN:
+# commit tree, and tools/reference-digest.py of the whole clone (.git excluded).
+CM5_LIVE_DIR=upstream/codemirror5
+CM5_UPSTREAM_URL=https://github.com/codemirror/codemirror5.git
+CM5_UPSTREAM_TREE=f6d6ff4bd14d85cf65e44f47659ac3eaabcaa5a0
+CM5_UPSTREAM_DIGEST="582 4918a9466bae6387cad58d90cc6c26bea2d6b6311cdd76e4ef0ef291f96e7410"

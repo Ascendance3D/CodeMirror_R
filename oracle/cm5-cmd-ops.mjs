@@ -39,7 +39,7 @@ import { fileURLToPath } from "node:url";
 const HERE = normalize (join (fileURLToPath (import.meta.url), ".."));
 const ROOT = join (HERE, "cm5-build");
 const CORPUS = join (HERE, "corpus-items");
-const { chromium } = createRequire (join (HERE, "../../../x_ite-tests/")) ("playwright");
+const { chromium } = createRequire (process .env .CM5_PLAYWRIGHT_FROM || join (HERE, "../../../x_ite-tests/")) ("playwright");
 
 const args = process .argv .slice (2);
 const opt = (name, def) => { const i = args .indexOf (name); return i >= 0 ? args [i + 1] : def; };
