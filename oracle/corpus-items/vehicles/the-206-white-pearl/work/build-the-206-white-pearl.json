@@ -1,0 +1,264 @@
+{
+ "base": "the-206",
+ "body_crease_deg": 30.0,
+ "crease_deg": {
+  "The206_BODY_mesh": 30.0,
+  "The206_EXHAUST_mesh": 30.0,
+  "The206_GLASS_mesh": 30.0,
+  "The206_HUB_mesh": 52.0,
+  "The206_INTAKE_mesh": 30.0,
+  "The206_LENS_AMBER_mesh": 30.0,
+  "The206_LENS_HEAD_mesh": 30.0,
+  "The206_LENS_TAIL_mesh": 30.0,
+  "The206_RIMDARK_mesh": 52.0,
+  "The206_RIM_mesh": 34.0,
+  "The206_ROTOR_mesh": 52.0,
+  "The206_TRIM_mesh": 30.0,
+  "The206_TYRE_mesh": 69.0,
+  "The206_UNDERBODY_mesh": 30.0
+ },
+ "limit": "1/25",
+ "paint": {
+  "ambientIntensity": 0.28,
+  "block": "diffuseColor 0.92 0.92 0.90\nemissiveColor 0 0 0\nspecularColor 0.88 0.94 1\nambientIntensity 0.28\nshininess 0.52\ntransparency 0",
+  "diffuseColor": [
+   0.92,
+   0.92,
+   0.9
+  ],
+  "emissiveColor": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "name": "White_Pearl",
+  "shininess": 0.52,
+  "specularColor": [
+   0.88,
+   0.94,
+   1.0
+  ],
+  "transparency": 0.0
+ },
+ "price": "100 CC",
+ "resting_on": [
+  "The206_wheel_FL_tyre",
+  "The206_wheel_FR_tyre",
+  "The206_wheel_RL_tyre",
+  "The206_wheel_RR_tyre"
+ ],
+ "root": {
+  "blend_bounds": {
+   "x": [
+    -1.062837,
+    1.062837
+   ],
+   "y": [
+    -2.114924,
+    2.232989
+   ],
+   "z": [
+    6e-06,
+    1.459598
+   ]
+  },
+  "centre_x": 0.0,
+  "checks": {
+   "centred_on_x": true,
+   "fits_cube": true,
+   "lowest_y": true,
+   "max_z": true
+  },
+  "def": "The206WhitePearl",
+  "dims": [
+   2.3436,
+   1.6093,
+   4.7938
+  ],
+  "placed_length_m": 4.7937,
+  "resting_on": [
+   "The206_wheel_FL_tyre",
+   "The206_wheel_FR_tyre",
+   "The206_wheel_RL_tyre",
+   "The206_wheel_RR_tyre"
+  ],
+  "rotation": [
+   0,
+   1,
+   0,
+   3.141593
+  ],
+  "scale": 1.10254,
+  "source_length_m": 4.3479,
+  "translation": [
+   0.0,
+   -1.750007,
+   -1.331789
+  ],
+  "x": [
+   -1.17182,
+   1.17182
+  ],
+  "y": [
+   -1.75,
+   -0.14074
+  ],
+  "z": [
+   -3.79375,
+   1.0
+  ]
+ },
+ "root_def": "The206WhitePearl",
+ "saved_blend": true,
+ "size": {
+  "edit_bytes": 199167,
+  "headroom_bytes": 26029,
+  "upload_bytes": 55891
+ },
+ "title": "The 206 White Pearl",
+ "variant": "the-206-white-pearl",
+ "wheel": {
+  "family": "B",
+  "opts": {
+   "bore": 0.83,
+   "hollow": true,
+   "rotor": 0.58
+  },
+  "preview": "tooling/wheel-families/wheels/b-turbofan.png",
+  "source": "tooling/wheel-families/build-wheel-family-b.py",
+  "style": "turbofan"
+ },
+ "wheels": {
+  "body_clearance": {
+   "FL": 0.0491,
+   "FR": 0.0491,
+   "RL": 0.0358,
+   "RR": 0.0358
+  },
+  "bounds": {
+   "x": [
+    -1.06284,
+    1.06284
+   ],
+   "y": [
+    -2.11492,
+    2.23299
+   ],
+   "z": [
+    1e-05,
+    1.4596
+   ]
+  },
+  "envelope": {
+   "built": {
+    "half_width": 0.142061,
+    "radius": 0.350975
+   },
+   "guide": {
+    "half_width": 0.142061,
+    "radius": 0.350975
+   },
+   "margin": {
+    "half_width": 0.0,
+    "radius": 0.0
+   }
+  },
+  "fitment": {
+   "front_axle_y": -1.165864,
+   "ground_z": 6e-06,
+   "half_width": 0.142061,
+   "hub_z": 0.350981,
+   "rear_axle_y": 1.488247,
+   "track": 1.642394,
+   "track_x": 0.821197,
+   "tyre_r": 0.350975,
+   "wheelbase": 2.654111
+  },
+  "headlamp_y": -1.7612,
+  "k": 1.014721,
+  "liner_gap": {
+   "FL": 0.0324,
+   "FR": 0.0324,
+   "RL": -0.0081,
+   "RR": -0.0081
+  },
+  "mesh_objects": 29,
+  "places": {
+   "FL": {
+    "half_turn": false,
+    "translation": [
+     0.821197,
+     -1.165864,
+     0.350981
+    ]
+   },
+   "FR": {
+    "half_turn": true,
+    "translation": [
+     -0.821197,
+     -1.165864,
+     0.350981
+    ]
+   },
+   "RL": {
+    "half_turn": false,
+    "translation": [
+     0.821197,
+     1.488247,
+     0.350981
+    ]
+   },
+   "RR": {
+    "half_turn": true,
+    "translation": [
+     -0.821197,
+     1.488247,
+     0.350981
+    ]
+   }
+  },
+  "shared": {
+   "The206_HUB_mesh": 4,
+   "The206_RIMDARK_mesh": 4,
+   "The206_RIM_mesh": 4,
+   "The206_ROTOR_mesh": 4,
+   "The206_TYRE_mesh": 4
+  },
+  "shells": {
+   "centre-cap": {
+    "faces": 48,
+    "volume": 0.0001782
+   },
+   "coplanar_overlaps": 0,
+   "face-turbofan": {
+    "faces": 108,
+    "volume": 0.0006714
+   },
+   "face_open_fraction": 0.2633,
+   "hub": {
+    "faces": 48,
+    "volume": 0.0008071
+   },
+   "rim-barrel": {
+    "faces": 120,
+    "volume": 0.0090627
+   },
+   "rim-lip": {
+    "faces": 144,
+    "volume": 0.0030919
+   },
+   "rotor": {
+    "faces": 48,
+    "volume": 0.0010664
+   },
+   "tyre": {
+    "faces": 192,
+    "volume": 0.0411125
+   }
+  },
+  "stored_meshes": 14,
+  "style": "turbofan",
+  "taillamp_y": 1.9757,
+  "wheel_tris": 1428
+ }
+}

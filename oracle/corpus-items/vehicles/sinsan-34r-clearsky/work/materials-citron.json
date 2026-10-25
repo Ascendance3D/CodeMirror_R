@@ -1,0 +1,82 @@
+{
+ "Black_Chrome": {
+  "diffuseColor": "0 0 0",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.449 0.4452 0.4327",
+  "ambientIntensity": "0",
+  "shininess": "0.0561",
+  "transparency": "0"
+ },
+ "Citron_Sheen": {
+  "diffuseColor": "0.5 0.4769 0.188",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.0358 0.5918 0",
+  "ambientIntensity": "0.2551",
+  "shininess": "0.0816",
+  "transparency": "0"
+ },
+ "Opaline_Satin_Steel": {
+  "diffuseColor": "0.5667 0.5809 0.5809",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.6739 0.4573 0.4365",
+  "ambientIntensity": "0.2344",
+  "shininess": "0.1682",
+  "transparency": "0"
+ },
+ "R34_LampAmber": {
+  "diffuseColor": "0.9412 0.6392 0.1098",
+  "emissiveColor": "0.1 0.04 0",
+  "specularColor": "0.95 0.7 0.45",
+  "ambientIntensity": "0.2",
+  "shininess": "0.8",
+  "transparency": "0"
+ },
+ "R34_LampClear": {
+  "diffuseColor": "0.2196 0.2275 0.251",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.52 0.53 0.58",
+  "ambientIntensity": "0.12",
+  "shininess": "0.75",
+  "transparency": "0"
+ },
+ "R34_LampRed": {
+  "diffuseColor": "0.2824 0.0433 0.0433",
+  "emissiveColor": "0.1 0.0072 0.0058",
+  "specularColor": "0.95 0.45 0.42",
+  "ambientIntensity": "0.12",
+  "shininess": "0.88",
+  "transparency": "0"
+ },
+ "R34_Tire": {
+  "diffuseColor": "0.048 0.048 0.052",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.1 0.1 0.11",
+  "ambientIntensity": "0.08",
+  "shininess": "0.12",
+  "transparency": "0"
+ },
+ "R34_Underbody": {
+  "diffuseColor": "0.02 0.02 0.022",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.05 0.05 0.055",
+  "ambientIntensity": "0.05",
+  "shininess": "0.08",
+  "transparency": "0"
+ },
+ "R34_WheelHub": {
+  "diffuseColor": "0.16 0.165 0.175",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.45 0.45 0.48",
+  "ambientIntensity": "0.18",
+  "shininess": "0.55",
+  "transparency": "0"
+ },
+ "Starlight_Black": {
+  "diffuseColor": "0 0 0",
+  "emissiveColor": "0 0 0",
+  "specularColor": "0.2932 0.2974 0.2904",
+  "ambientIntensity": "0",
+  "shininess": "0.0816",
+  "transparency": "0"
+ }
+}

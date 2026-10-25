@@ -1,0 +1,147 @@
+{
+ "bounds": {
+  "x": [
+   -1.275,
+   1.275
+  ],
+  "y": [
+   -1.75,
+   0.0031
+  ],
+  "z": [
+   -4.784,
+   0.999
+  ]
+ },
+ "crease_deg": {
+  "ACCENT": 40.0,
+  "EXHAUST": 40.0,
+  "GLASS": 40.0,
+  "HEADLAMP": 40.0,
+  "PAINT": 50.0,
+  "RIM": 60.160568488736445,
+  "RIMDARK": 60.160568488736445,
+  "TAILLENS": 60.0,
+  "TRIM": 40.0,
+  "TYRE": 60.160568488736445,
+  "UNDER": 40.0
+ },
+ "degenerate": 0,
+ "dims": [
+  2.55,
+  1.7531,
+  5.783
+ ],
+ "encoder": "pigz -11 -I 50 (Zopfli)",
+ "gzip_bytes": 35910,
+ "headroom_80000": 44090,
+ "raw_bytes": 171039,
+ "root_translation": [
+  0.0,
+  -1.7439,
+  -1.906
+ ],
+ "runtime_shapes": 20,
+ "runtime_tris": 8604,
+ "scale": 1.25,
+ "scene_json_sha256": "5913889f70b551485ba3658971133b46b51be89a8b06564ce8d97099e0071b1d",
+ "sha256_edit": "4e7df785a0ce081c9d5d061d620bf996eee284c05d5c6a8b75630cc0aa18d0c1",
+ "sha256_wrl": "64f148ed4ea67639a40f8c0167e2147a5535e662273fb36129515449404bb4ea",
+ "shapes": [
+  {
+   "faces": 1314,
+   "parts": [
+    "Rev_PAINT"
+   ],
+   "tris": 1314,
+   "verts": 1647,
+   "zone": "PAINT"
+  },
+  {
+   "faces": 1702,
+   "parts": [
+    "Rev_TRIM"
+   ],
+   "tris": 1702,
+   "verts": 2121,
+   "zone": "TRIM"
+  },
+  {
+   "faces": 340,
+   "parts": [
+    "Rev_UNDER"
+   ],
+   "tris": 340,
+   "verts": 468,
+   "zone": "UNDER"
+  },
+  {
+   "faces": 150,
+   "parts": [
+    "Rev_GLASS"
+   ],
+   "tris": 150,
+   "verts": 131,
+   "zone": "GLASS"
+  },
+  {
+   "faces": 24,
+   "parts": [
+    "Rev_HEADLAMP"
+   ],
+   "tris": 24,
+   "verts": 28,
+   "zone": "HEADLAMP"
+  },
+  {
+   "faces": 10,
+   "parts": [
+    "Rev_TAILLENS"
+   ],
+   "tris": 10,
+   "verts": 18,
+   "zone": "TAILLENS"
+  },
+  {
+   "faces": 56,
+   "parts": [
+    "Rev_ACCENT"
+   ],
+   "tris": 56,
+   "verts": 64,
+   "zone": "ACCENT"
+  },
+  {
+   "faces": 64,
+   "parts": [
+    "Rev_EXHAUST"
+   ],
+   "tris": 64,
+   "verts": 64,
+   "zone": "EXHAUST"
+  },
+  {
+   "faces": 192,
+   "instances": 4,
+   "tris": 384,
+   "verts": 192,
+   "zone": "TYRE"
+  },
+  {
+   "faces": 234,
+   "instances": 4,
+   "tris": 436,
+   "verts": 274,
+   "zone": "RIM"
+  },
+  {
+   "faces": 264,
+   "instances": 4,
+   "tris": 416,
+   "verts": 238,
+   "zone": "RIMDARK"
+  }
+ ],
+ "stored_tris": 4896,
+ "stored_verts": 5245
+}

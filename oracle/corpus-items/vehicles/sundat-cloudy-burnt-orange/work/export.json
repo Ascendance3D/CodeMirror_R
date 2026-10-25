@@ -1,0 +1,152 @@
+{
+  "axis_map": "VRML (x, y, z) = Blender (x, z, -y)",
+  "final_bounds": {
+    "max": [
+      1.098422,
+      0.017815,
+      0.999
+    ],
+    "min": [
+      -1.098422,
+      -1.75,
+      -4.07052
+    ]
+  },
+  "parts": {
+    "BODY": {
+      "corners": 4392,
+      "faces": 1103,
+      "normals": 953,
+      "points": 1371,
+      "texcoords": 0,
+      "tris": 2186
+    },
+    "CHROME": {
+      "corners": 672,
+      "faces": 164,
+      "normals": 168,
+      "points": 212,
+      "texcoords": 0,
+      "tris": 344
+    },
+    "GLASS": {
+      "corners": 228,
+      "faces": 54,
+      "normals": 66,
+      "points": 95,
+      "texcoords": 0,
+      "tris": 120
+    },
+    "GRILLE": {
+      "corners": 1112,
+      "faces": 277,
+      "normals": 167,
+      "points": 425,
+      "texcoords": 0,
+      "tris": 558
+    },
+    "HEADLAMP": {
+      "corners": 688,
+      "faces": 172,
+      "normals": 159,
+      "points": 230,
+      "texcoords": 0,
+      "tris": 344
+    },
+    "LAMP_AMBER": {
+      "corners": 288,
+      "faces": 68,
+      "normals": 96,
+      "points": 96,
+      "texcoords": 0,
+      "tris": 152
+    },
+    "LAMP_RED": {
+      "corners": 124,
+      "faces": 32,
+      "normals": 19,
+      "points": 44,
+      "texcoords": 0,
+      "tris": 60
+    },
+    "PLATE": {
+      "corners": 24,
+      "faces": 6,
+      "normals": 6,
+      "points": 8,
+      "texcoords": 5,
+      "tris": 12
+    },
+    "STRIPE": {
+      "corners": 224,
+      "faces": 56,
+      "normals": 66,
+      "points": 99,
+      "texcoords": 0,
+      "tris": 112
+    },
+    "TRIM": {
+      "corners": 1096,
+      "faces": 272,
+      "normals": 325,
+      "points": 426,
+      "texcoords": 0,
+      "tris": 552
+    },
+    "UNDERBODY": {
+      "corners": 942,
+      "faces": 232,
+      "normals": 261,
+      "points": 439,
+      "texcoords": 0,
+      "tris": 478
+    },
+    "WRIM": {
+      "corners": 904,
+      "faces": 214,
+      "normals": 0,
+      "points": 274,
+      "texcoords": 0,
+      "tris": 476
+    },
+    "WRIMDARK": {
+      "corners": 1184,
+      "faces": 336,
+      "normals": 0,
+      "points": 288,
+      "texcoords": 0,
+      "tris": 512
+    },
+    "WTYRE": {
+      "corners": 768,
+      "faces": 192,
+      "normals": 0,
+      "points": 192,
+      "texcoords": 0,
+      "tris": 384
+    }
+  },
+  "rotation": null,
+  "scale": 1.29,
+  "sha256": {
+    "edit": "eab80b0c23a52006e8709a5b302c58f3f4d9cb82780880faa435f1e33e999ddf",
+    "upload": "652703d434abaf6122584627786088020ce9c8fe075a5b9c732386d5f95e28d9"
+  },
+  "size": {
+    "edit_bytes": 235095,
+    "headroom_bytes": 20914,
+    "ratio": 0.2595,
+    "upload_bytes": 61006
+  },
+  "stored": {
+    "rendered_tris": 11778,
+    "runtime_shapes": 26,
+    "shapes": 14,
+    "stored_tris": 6290
+  },
+  "translation": [
+    -0.0,
+    -1.757232,
+    -1.236428
+  ]
+}

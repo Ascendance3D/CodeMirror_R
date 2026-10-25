@@ -1,0 +1,4 @@
+# GitHub Linguist (language statistics only; no effect on checkout, diff or merge).
+
+# CodeMirror 5.65.21 build (copy of upstream codemirror5): the reference for crates/cm-*.
+oracle/cm5-build/** linguist-vendored

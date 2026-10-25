@@ -1,0 +1,113 @@
+{
+ "family": "A",
+ "style": "splitdish",
+ "source": "item-categories/vehicles/cyclone/build-cyclone-family.py",
+ "materials_from": "item-categories/vehicles/cyclone/cyclone-touring-blue.edit.wrl",
+ "tessellation": "family stock (seg 24 / seg_hub 16), unmodified",
+ "family_geom": {
+  "tyre_r": 0.3505,
+  "tyre_w": 0.142,
+  "rim_r": 0.258,
+  "dish": 0.5,
+  "wheel": "splitdish"
+ },
+ "uniform_scale": 3.295578,
+ "native_radius": 0.3505,
+ "tyre_signed_volume": 0.046276,
+ "shapes": {
+  "TYRE": {
+   "verts": 192,
+   "faces": 192,
+   "tris": 384,
+   "crease": 0.62,
+   "material": {
+    "diffuseColor": "0.043 0.043 0.046",
+    "specularColor": "0.05 0.05 0.05",
+    "shininess": "0.06",
+    "ambientIntensity": "0.1"
+   },
+   "cyclone_material_name": "TYRE"
+  },
+  "RIM": {
+   "verts": 304,
+   "faces": 264,
+   "tris": 516,
+   "crease": 0.62,
+   "material": {
+    "diffuseColor": "0.56 0.58 0.6",
+    "specularColor": "0.82 0.84 0.86",
+    "shininess": "0.8",
+    "ambientIntensity": "0.26"
+   },
+   "cyclone_material_name": "RIM"
+  },
+  "RIMDARK": {
+   "verts": 238,
+   "faces": 264,
+   "tris": 416,
+   "crease": 0.62,
+   "material": {
+    "diffuseColor": "0.09 0.092 0.098",
+    "specularColor": "0.12 0.12 0.13",
+    "shininess": "0.2",
+    "ambientIntensity": "0.14"
+   },
+   "cyclone_material_name": "RIMDARK"
+  }
+ },
+ "stored_tris": 1316,
+ "mesh_datablocks": [
+  "Ragnum_RIMDARK_mesh",
+  "Ragnum_RIM_mesh",
+  "Ragnum_TYRE_mesh"
+ ],
+ "objects": [
+  "Ragnum_RIMDARK_FL",
+  "Ragnum_RIMDARK_FR",
+  "Ragnum_RIMDARK_RL",
+  "Ragnum_RIMDARK_RR",
+  "Ragnum_RIM_FL",
+  "Ragnum_RIM_FR",
+  "Ragnum_RIM_RL",
+  "Ragnum_RIM_RR",
+  "Ragnum_TYRE_FL",
+  "Ragnum_TYRE_FR",
+  "Ragnum_TYRE_RL",
+  "Ragnum_TYRE_RR"
+ ],
+ "fitment_donor_units": {
+  "radius": 1.1551,
+  "axle_z": 0.951,
+  "half_track": {
+   "front": 2.5092,
+   "rear": 2.5050499999999998
+  },
+  "axle_y": {
+   "front": -5.613899999999999,
+   "rear": 3.9743
+  },
+  "wheelbase": 9.588199999999999,
+  "donor_front_radius": 1.2271,
+  "donor_rear_width": 0.9006,
+  "ground_z": -0.20410000000000006
+ },
+ "clearance": {
+  "FL": 0.11455,
+  "FR": 0.11455,
+  "RL": 0.17984,
+  "RR": 0.17984
+ },
+ "ground_z": {
+  "FL": -0.2041,
+  "FR": -0.2041,
+  "RL": -0.2041,
+  "RR": -0.2041
+ },
+ "outer_x": {
+  "FL": 2.97717,
+  "FR": 2.97717,
+  "RL": 2.97302,
+  "RR": 2.97302
+ },
+ "body_half_width": 3.25252
+}

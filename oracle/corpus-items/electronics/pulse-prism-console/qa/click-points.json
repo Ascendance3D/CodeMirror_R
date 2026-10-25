@@ -1,0 +1,51 @@
+{
+  "note": "world-space click targets emitted by the build; floor is Y = -1.75",
+  "targets": {
+    "the START key": [
+      -0.1393,
+      -1.1698,
+      0.2349
+    ],
+    "the STOP key": [
+      0.1393,
+      -1.1698,
+      0.2349
+    ],
+    "the cabinet nameplate": [
+      0.0,
+      -1.38,
+      0.3495
+    ],
+    "the centre prism": [
+      0.0,
+      -0.65,
+      -0.0291
+    ],
+    "the control rail": [
+      0.505,
+      -0.799,
+      -0.165
+    ],
+    "the deck flank grille": [
+      0.415,
+      -1.1877,
+      0.2393
+    ],
+    "the plinth front": [
+      0.0,
+      -1.72,
+      0.414
+    ],
+    "the signal bar channel": [
+      0.0,
+      -1.51,
+      0.36
+    ],
+    "the status readout": [
+      0.0,
+      -1.0709,
+      0.083
+    ]
+  },
+  "wrl_sha_source": "pulse-prism-console.wrl"
+}

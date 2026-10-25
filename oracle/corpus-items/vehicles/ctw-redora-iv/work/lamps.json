@@ -1,0 +1,50 @@
+{
+  "sides": {
+    "right": {
+      "removed": 65,
+      "hole_edges": 31,
+      "cap_faces": 396,
+      "bridge_faces": 67,
+      "lens_faces": 108,
+      "sharp_edges": 72
+    },
+    "left": {
+      "removed": 64,
+      "hole_edges": 32,
+      "cap_faces": 396,
+      "bridge_faces": 68,
+      "lens_faces": 108,
+      "sharp_edges": 72
+    }
+  },
+  "tris_before": 2884,
+  "tris_after": 3850,
+  "added_triangles": 966,
+  "custom_normals_dropped": true,
+  "plan_section_points": 195,
+  "half_arc_mm": 84.0,
+  "dish_height_mm": 66.0,
+  "floor_depth_mm": {
+    "min": 10.19,
+    "max": 12.96,
+    "target": 11.0,
+    "n": 146
+  },
+  "lens_faces_facing_out": [
+    216,
+    216
+  ],
+  "lens_faces_total": 216,
+  "lens_faces_visible": {
+    "front": 216,
+    "front34": 132
+  },
+  "lens_faces_lr": [
+    108,
+    108
+  ],
+  "boundary_edges": [
+    106,
+    106
+  ]
+}

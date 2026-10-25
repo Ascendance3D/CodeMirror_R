@@ -1,0 +1,1218 @@
+{
+  "parts": {
+    "SC_BODY": {
+      "best": {
+        "angle": 1.2,
+        "angle_deg": 68.8,
+        "max": 26.563,
+        "mean": 0.217,
+        "over_5deg": 34,
+        "p95": 0.129
+      },
+      "loops": 4392,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 52.195,
+          "mean": 8.815,
+          "over_5deg": 1814,
+          "p95": 29.487
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 52.195,
+          "mean": 8.266,
+          "over_5deg": 1638,
+          "p95": 29.42
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 52.195,
+          "mean": 6.975,
+          "over_5deg": 1262,
+          "p95": 28.86
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 52.195,
+          "mean": 6.238,
+          "over_5deg": 1086,
+          "p95": 28.86
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 52.195,
+          "mean": 4.767,
+          "over_5deg": 818,
+          "p95": 26.565
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 52.195,
+          "mean": 2.214,
+          "over_5deg": 354,
+          "p95": 26.565
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 52.195,
+          "mean": 0.45,
+          "over_5deg": 72,
+          "p95": 0.195
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 26.563,
+          "mean": 0.217,
+          "over_5deg": 34,
+          "p95": 0.129
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 26.563,
+          "mean": 0.217,
+          "over_5deg": 34,
+          "p95": 0.129
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 26.563,
+          "mean": 0.217,
+          "over_5deg": 34,
+          "p95": 0.129
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 26.563,
+          "mean": 0.217,
+          "over_5deg": 34,
+          "p95": 0.129
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 26.563,
+          "mean": 0.217,
+          "over_5deg": 34,
+          "p95": 0.129
+        }
+      ]
+    },
+    "SC_CHROME": {
+      "best": {
+        "angle": 2.2,
+        "angle_deg": 126.1,
+        "max": 1.822,
+        "mean": 0.037,
+        "over_5deg": 0,
+        "p95": 0.03
+      },
+      "loops": 672,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 58.748,
+          "mean": 26.759,
+          "over_5deg": 580,
+          "p95": 51.422
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 58.748,
+          "mean": 26.451,
+          "over_5deg": 564,
+          "p95": 51.422
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 58.748,
+          "mean": 26.082,
+          "over_5deg": 548,
+          "p95": 51.422
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 58.748,
+          "mean": 25.34,
+          "over_5deg": 528,
+          "p95": 51.422
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 58.748,
+          "mean": 21.488,
+          "over_5deg": 412,
+          "p95": 51.422
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 58.748,
+          "mean": 17.168,
+          "over_5deg": 284,
+          "p95": 49.17
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 58.748,
+          "mean": 13.874,
+          "over_5deg": 208,
+          "p95": 49.17
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 58.748,
+          "mean": 11.868,
+          "over_5deg": 172,
+          "p95": 47.863
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 58.748,
+          "mean": 11.362,
+          "over_5deg": 164,
+          "p95": 47.863
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 58.748,
+          "mean": 3.715,
+          "over_5deg": 48,
+          "p95": 47.863
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 1.822,
+          "mean": 0.037,
+          "over_5deg": 0,
+          "p95": 0.03
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 1.822,
+          "mean": 0.037,
+          "over_5deg": 0,
+          "p95": 0.03
+        }
+      ]
+    },
+    "SC_GLASS": {
+      "best": {
+        "angle": 0.5,
+        "angle_deg": 28.6,
+        "max": 6.468,
+        "mean": 0.357,
+        "over_5deg": 13,
+        "p95": 5.576
+      },
+      "loops": 228,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 15.639,
+          "mean": 0.975,
+          "over_5deg": 25,
+          "p95": 8.697
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 15.639,
+          "mean": 0.581,
+          "over_5deg": 17,
+          "p95": 6.089
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 6.468,
+          "mean": 0.357,
+          "over_5deg": 13,
+          "p95": 5.576
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 6.468,
+          "mean": 0.357,
+          "over_5deg": 13,
+          "p95": 5.576
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 6.468,
+          "mean": 0.357,
+          "over_5deg": 13,
+          "p95": 5.576
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 6.468,
+          "mean": 0.357,
+          "over_5deg": 13,
+          "p95": 5.576
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 6.468,
+          "mean": 0.357,
+          "over_5deg": 13,
+          "p95": 5.576
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 6.468,
+          "mean": 0.357,
+          "over_5deg": 13,
+          "p95": 5.576
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 6.468,
+          "mean": 0.357,
+          "over_5deg": 13,
+          "p95": 5.576
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 6.468,
+          "mean": 0.357,
+          "over_5deg": 13,
+          "p95": 5.576
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 6.468,
+          "mean": 0.357,
+          "over_5deg": 13,
+          "p95": 5.576
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 6.468,
+          "mean": 0.357,
+          "over_5deg": 13,
+          "p95": 5.576
+        }
+      ]
+    },
+    "SC_GRILLE": {
+      "best": {
+        "angle": 1.75,
+        "angle_deg": 100.3,
+        "max": 8.929,
+        "mean": 0.52,
+        "over_5deg": 64,
+        "p95": 8.929
+      },
+      "loops": 1112,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 48.262,
+          "mean": 7.71,
+          "over_5deg": 320,
+          "p95": 48.262
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 48.262,
+          "mean": 6.993,
+          "over_5deg": 256,
+          "p95": 48.262
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 48.262,
+          "mean": 6.993,
+          "over_5deg": 256,
+          "p95": 48.262
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 48.262,
+          "mean": 6.993,
+          "over_5deg": 256,
+          "p95": 48.262
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 48.262,
+          "mean": 6.993,
+          "over_5deg": 256,
+          "p95": 48.262
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 48.262,
+          "mean": 5.699,
+          "over_5deg": 192,
+          "p95": 48.262
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 48.262,
+          "mean": 5.699,
+          "over_5deg": 192,
+          "p95": 48.262
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 48.262,
+          "mean": 5.699,
+          "over_5deg": 192,
+          "p95": 48.262
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 48.262,
+          "mean": 5.699,
+          "over_5deg": 192,
+          "p95": 48.262
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 8.929,
+          "mean": 0.52,
+          "over_5deg": 64,
+          "p95": 8.929
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 8.929,
+          "mean": 0.52,
+          "over_5deg": 64,
+          "p95": 8.929
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 8.929,
+          "mean": 0.52,
+          "over_5deg": 64,
+          "p95": 8.929
+        }
+      ]
+    },
+    "SC_HEADLAMP": {
+      "best": {
+        "angle": 0.4,
+        "angle_deg": 22.9,
+        "max": 11.433,
+        "mean": 1.072,
+        "over_5deg": 64,
+        "p95": 11.433
+      },
+      "loops": 688,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 12.749,
+          "mean": 3.681,
+          "over_5deg": 224,
+          "p95": 12.274
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 11.433,
+          "mean": 1.072,
+          "over_5deg": 64,
+          "p95": 11.433
+        }
+      ]
+    },
+    "SC_LAMP_AMBER": {
+      "best": {
+        "angle": 1.05,
+        "angle_deg": 60.2,
+        "max": 49.921,
+        "mean": 5.459,
+        "over_5deg": 32,
+        "p95": 49.921
+      },
+      "loops": 288,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 57.773,
+          "mean": 29.822,
+          "over_5deg": 288,
+          "p95": 55.377
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 57.773,
+          "mean": 29.774,
+          "over_5deg": 288,
+          "p95": 55.377
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 57.773,
+          "mean": 29.469,
+          "over_5deg": 288,
+          "p95": 55.377
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 57.773,
+          "mean": 27.51,
+          "over_5deg": 288,
+          "p95": 55.377
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 55.38,
+          "mean": 16.911,
+          "over_5deg": 160,
+          "p95": 50.155
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 49.921,
+          "mean": 9.976,
+          "over_5deg": 80,
+          "p95": 49.921
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 49.921,
+          "mean": 5.459,
+          "over_5deg": 32,
+          "p95": 49.921
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 49.921,
+          "mean": 5.459,
+          "over_5deg": 32,
+          "p95": 49.921
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 49.921,
+          "mean": 5.46,
+          "over_5deg": 32,
+          "p95": 49.921
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 49.921,
+          "mean": 5.46,
+          "over_5deg": 32,
+          "p95": 49.921
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 49.921,
+          "mean": 5.46,
+          "over_5deg": 32,
+          "p95": 49.921
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 49.921,
+          "mean": 5.46,
+          "over_5deg": 32,
+          "p95": 49.921
+        }
+      ]
+    },
+    "SC_LAMP_RED": {
+      "best": {
+        "angle": 0.9,
+        "angle_deg": 51.6,
+        "max": 1.774,
+        "mean": 0.153,
+        "over_5deg": 0,
+        "p95": 1.774
+      },
+      "loops": 124,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 33.065,
+          "mean": 20.848,
+          "over_5deg": 96,
+          "p95": 32.628
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 33.065,
+          "mean": 20.848,
+          "over_5deg": 96,
+          "p95": 32.628
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 33.065,
+          "mean": 20.848,
+          "over_5deg": 96,
+          "p95": 32.628
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 33.065,
+          "mean": 20.848,
+          "over_5deg": 96,
+          "p95": 32.628
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 32.184,
+          "mean": 16.351,
+          "over_5deg": 96,
+          "p95": 29.41
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 1.774,
+          "mean": 0.153,
+          "over_5deg": 0,
+          "p95": 1.774
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 1.774,
+          "mean": 0.153,
+          "over_5deg": 0,
+          "p95": 1.774
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 1.774,
+          "mean": 0.153,
+          "over_5deg": 0,
+          "p95": 1.774
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 1.774,
+          "mean": 0.153,
+          "over_5deg": 0,
+          "p95": 1.774
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 1.774,
+          "mean": 0.153,
+          "over_5deg": 0,
+          "p95": 1.774
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 1.774,
+          "mean": 0.153,
+          "over_5deg": 0,
+          "p95": 1.774
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 1.774,
+          "mean": 0.153,
+          "over_5deg": 0,
+          "p95": 1.774
+        }
+      ]
+    },
+    "SC_PLATE": {
+      "best": {
+        "angle": 0.3,
+        "angle_deg": 17.2,
+        "max": 0.0,
+        "mean": 0.0,
+        "over_5deg": 0,
+        "p95": 0.0
+      },
+      "loops": 24,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "over_5deg": 0,
+          "p95": 0.0
+        }
+      ]
+    },
+    "SC_STRIPE": {
+      "best": {
+        "angle": 0.75,
+        "angle_deg": 43.0,
+        "max": 26.563,
+        "mean": 3.257,
+        "over_5deg": 28,
+        "p95": 26.346
+      },
+      "loops": 224,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 29.954,
+          "mean": 6.681,
+          "over_5deg": 72,
+          "p95": 26.563
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 29.954,
+          "mean": 6.501,
+          "over_5deg": 72,
+          "p95": 26.563
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 29.954,
+          "mean": 5.663,
+          "over_5deg": 56,
+          "p95": 26.563
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 29.954,
+          "mean": 5.088,
+          "over_5deg": 48,
+          "p95": 26.563
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 26.563,
+          "mean": 3.257,
+          "over_5deg": 28,
+          "p95": 26.346
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 26.563,
+          "mean": 3.257,
+          "over_5deg": 28,
+          "p95": 26.346
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 26.563,
+          "mean": 3.257,
+          "over_5deg": 28,
+          "p95": 26.346
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 26.563,
+          "mean": 3.257,
+          "over_5deg": 28,
+          "p95": 26.346
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 26.563,
+          "mean": 3.257,
+          "over_5deg": 28,
+          "p95": 26.346
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 26.563,
+          "mean": 3.257,
+          "over_5deg": 28,
+          "p95": 26.346
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 26.563,
+          "mean": 3.257,
+          "over_5deg": 28,
+          "p95": 26.346
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 26.563,
+          "mean": 3.257,
+          "over_5deg": 28,
+          "p95": 26.346
+        }
+      ]
+    },
+    "SC_TRIM": {
+      "best": {
+        "angle": 1.75,
+        "angle_deg": 100.3,
+        "max": 35.3,
+        "mean": 1.082,
+        "over_5deg": 34,
+        "p95": 3.211
+      },
+      "loops": 1096,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 60.913,
+          "mean": 14.687,
+          "over_5deg": 526,
+          "p95": 49.835
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 60.913,
+          "mean": 14.548,
+          "over_5deg": 518,
+          "p95": 49.835
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 60.913,
+          "mean": 13.843,
+          "over_5deg": 470,
+          "p95": 49.835
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 60.913,
+          "mean": 13.061,
+          "over_5deg": 422,
+          "p95": 49.754
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 60.913,
+          "mean": 12.342,
+          "over_5deg": 390,
+          "p95": 49.754
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 53.478,
+          "mean": 8.23,
+          "over_5deg": 214,
+          "p95": 49.754
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 53.478,
+          "mean": 7.815,
+          "over_5deg": 198,
+          "p95": 49.754
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 53.478,
+          "mean": 7.815,
+          "over_5deg": 198,
+          "p95": 49.754
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 53.478,
+          "mean": 7.815,
+          "over_5deg": 198,
+          "p95": 49.754
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 35.3,
+          "mean": 1.082,
+          "over_5deg": 34,
+          "p95": 3.211
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 35.3,
+          "mean": 1.082,
+          "over_5deg": 34,
+          "p95": 3.211
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 35.3,
+          "mean": 1.082,
+          "over_5deg": 34,
+          "p95": 3.211
+        }
+      ]
+    },
+    "SC_UNDERBODY": {
+      "best": {
+        "angle": 1.2,
+        "angle_deg": 68.8,
+        "max": 27.642,
+        "mean": 0.231,
+        "over_5deg": 2,
+        "p95": 1.084
+      },
+      "loops": 942,
+      "sweep": [
+        {
+          "angle": 0.3,
+          "angle_deg": 17.2,
+          "max": 55.36,
+          "mean": 2.475,
+          "over_5deg": 150,
+          "p95": 13.487
+        },
+        {
+          "angle": 0.4,
+          "angle_deg": 22.9,
+          "max": 55.36,
+          "mean": 1.863,
+          "over_5deg": 94,
+          "p95": 13.487
+        },
+        {
+          "angle": 0.5,
+          "angle_deg": 28.6,
+          "max": 55.36,
+          "mean": 1.346,
+          "over_5deg": 54,
+          "p95": 10.367
+        },
+        {
+          "angle": 0.6,
+          "angle_deg": 34.4,
+          "max": 55.36,
+          "mean": 1.087,
+          "over_5deg": 38,
+          "p95": 3.259
+        },
+        {
+          "angle": 0.75,
+          "angle_deg": 43.0,
+          "max": 55.36,
+          "mean": 0.591,
+          "over_5deg": 14,
+          "p95": 1.268
+        },
+        {
+          "angle": 0.9,
+          "angle_deg": 51.6,
+          "max": 55.36,
+          "mean": 0.591,
+          "over_5deg": 14,
+          "p95": 1.268
+        },
+        {
+          "angle": 1.05,
+          "angle_deg": 60.2,
+          "max": 55.36,
+          "mean": 0.591,
+          "over_5deg": 14,
+          "p95": 1.268
+        },
+        {
+          "angle": 1.2,
+          "angle_deg": 68.8,
+          "max": 27.642,
+          "mean": 0.231,
+          "over_5deg": 2,
+          "p95": 1.084
+        },
+        {
+          "angle": 1.4,
+          "angle_deg": 80.2,
+          "max": 27.642,
+          "mean": 0.231,
+          "over_5deg": 2,
+          "p95": 1.084
+        },
+        {
+          "angle": 1.75,
+          "angle_deg": 100.3,
+          "max": 27.642,
+          "mean": 0.231,
+          "over_5deg": 2,
+          "p95": 1.084
+        },
+        {
+          "angle": 2.2,
+          "angle_deg": 126.1,
+          "max": 27.642,
+          "mean": 0.231,
+          "over_5deg": 2,
+          "p95": 1.084
+        },
+        {
+          "angle": 3.1416,
+          "angle_deg": 180.0,
+          "max": 27.642,
+          "mean": 0.231,
+          "over_5deg": 2,
+          "p95": 1.084
+        }
+      ]
+    }
+  },
+  "summary": {
+    "corners_over_5deg_at_best": 271,
+    "loop_weighted_best_mean_deg": 0.623,
+    "loops": 9790,
+    "parts": 11,
+    "worst_part": "SC_LAMP_AMBER",
+    "worst_part_best": {
+      "angle": 1.05,
+      "angle_deg": 60.2,
+      "max": 49.921,
+      "mean": 5.459,
+      "over_5deg": 32,
+      "p95": 49.921
+    }
+  }
+}

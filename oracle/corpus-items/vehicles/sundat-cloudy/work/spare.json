@@ -1,0 +1,71 @@
+{
+  "blank": {
+    "SC_TRIM": {
+      "faces": 33,
+      "max": [
+        0.2975,
+        1.9628,
+        0.4687
+      ],
+      "min": [
+        -0.2975,
+        1.3657,
+        0.3339
+      ]
+    },
+    "SC_UNDERBODY": {
+      "faces": 49,
+      "max": [
+        0.2975,
+        1.9606,
+        0.4876
+      ],
+      "min": [
+        -0.2975,
+        1.3657,
+        0.456
+      ]
+    }
+  },
+  "blank_bounds": {
+    "max": [
+      0.29752,
+      1.96277,
+      0.48761
+    ],
+    "min": [
+      -0.29752,
+      1.36573,
+      0.33388
+    ]
+  },
+  "blank_radius": 0.298522,
+  "deleted_faces": 82,
+  "hub": [
+    0.0,
+    1.664249,
+    0.388687
+  ],
+  "objects": [
+    "SC_W_SPARE_tyre",
+    "SC_W_SPARE_rim",
+    "SC_W_SPARE_rimdark"
+  ],
+  "radius_agreement_m": 0.000996996,
+  "road_tyre_radius": 0.297525,
+  "rotation": "+90 deg about Y (family +X outboard -> -Z, face down)",
+  "spare_bounds": {
+    "max": [
+      0.29752,
+      1.96177,
+      0.48761
+    ],
+    "min": [
+      -0.29752,
+      1.36672,
+      0.28977
+    ]
+  },
+  "stored_geometry_added": 0,
+  "tuck_below_bed_floor": 0.04169
+}

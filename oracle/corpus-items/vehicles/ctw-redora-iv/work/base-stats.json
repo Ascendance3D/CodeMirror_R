@@ -1,0 +1,210 @@
+{
+  "before": {
+    "objects": 6,
+    "mesh_objects": 6,
+    "materials": 3,
+    "images": 4,
+    "totals": {
+      "verts": 3062,
+      "edges": 9144,
+      "polys": 6010,
+      "tris": 6010
+    },
+    "per_object": {
+      "Deora_II": {
+        "verts": 2235,
+        "edges": 6659,
+        "polys": 4420,
+        "tris": 4420,
+        "mats": [
+          "Deora_II"
+        ]
+      },
+      "Deora_II_Glass": {
+        "verts": 143,
+        "edges": 337,
+        "polys": 198,
+        "tris": 198,
+        "mats": [
+          "Glass_De2"
+        ]
+      },
+      "Deora_II_Wheel.fl": {
+        "verts": 171,
+        "edges": 537,
+        "polys": 348,
+        "tris": 348,
+        "mats": [
+          "Tire"
+        ]
+      },
+      "Deora_II_Wheel.fr": {
+        "verts": 171,
+        "edges": 537,
+        "polys": 348,
+        "tris": 348,
+        "mats": [
+          "Tire"
+        ]
+      },
+      "Deora_II_Wheel.rl": {
+        "verts": 171,
+        "edges": 537,
+        "polys": 348,
+        "tris": 348,
+        "mats": [
+          "Tire"
+        ]
+      },
+      "Deora_II_Wheel.rr": {
+        "verts": 171,
+        "edges": 537,
+        "polys": 348,
+        "tris": 348,
+        "mats": [
+          "Tire"
+        ]
+      }
+    }
+  },
+  "after": {
+    "objects": 6,
+    "mesh_objects": 6,
+    "materials": 3,
+    "images": 4,
+    "totals": {
+      "verts": 2882,
+      "edges": 8662,
+      "polys": 5706,
+      "tris": 5706
+    },
+    "per_object": {
+      "RD_Body": {
+        "verts": 2055,
+        "edges": 6177,
+        "polys": 4116,
+        "tris": 4116,
+        "mats": [
+          "Deora_II"
+        ]
+      },
+      "RD_Glass": {
+        "verts": 143,
+        "edges": 337,
+        "polys": 198,
+        "tris": 198,
+        "mats": [
+          "Glass_De2"
+        ]
+      },
+      "RD_Wheel_FL": {
+        "verts": 171,
+        "edges": 537,
+        "polys": 348,
+        "tris": 348,
+        "mats": [
+          "Tire"
+        ]
+      },
+      "RD_Wheel_FR": {
+        "verts": 171,
+        "edges": 537,
+        "polys": 348,
+        "tris": 348,
+        "mats": [
+          "Tire"
+        ]
+      },
+      "RD_Wheel_RL": {
+        "verts": 171,
+        "edges": 537,
+        "polys": 348,
+        "tris": 348,
+        "mats": [
+          "Tire"
+        ]
+      },
+      "RD_Wheel_RR": {
+        "verts": 171,
+        "edges": 537,
+        "polys": 348,
+        "tris": 348,
+        "mats": [
+          "Tire"
+        ]
+      }
+    }
+  },
+  "rotation_applied_to": [
+    "Deora_II",
+    "Deora_II_Glass",
+    "Deora_II_Wheel.fl",
+    "Deora_II_Wheel.fr",
+    "Deora_II_Wheel.rl",
+    "Deora_II_Wheel.rr"
+  ],
+  "renamed": {
+    "Deora_II": "RD_Body",
+    "Deora_II_Glass": "RD_Glass",
+    "Deora_II_Wheel.fl": "RD_Wheel_FL",
+    "Deora_II_Wheel.fr": "RD_Wheel_FR",
+    "Deora_II_Wheel.rl": "RD_Wheel_RL",
+    "Deora_II_Wheel.rr": "RD_Wheel_RR"
+  },
+  "surfboards_removed": [
+    {
+      "faces": 152,
+      "size": [
+        0.2084,
+        0.9569,
+        0.0629
+      ],
+      "centre": [
+        -0.1524,
+        0.0248,
+        0.4586
+      ]
+    },
+    {
+      "faces": 152,
+      "size": [
+        0.2084,
+        0.9569,
+        0.0629
+      ],
+      "centre": [
+        0.1545,
+        0.0248,
+        0.4586
+      ]
+    }
+  ],
+  "other_loose_parts": [
+    {
+      "faces": 4052,
+      "size": [
+        0.7901,
+        1.9103,
+        0.5556
+      ],
+      "centre": [
+        -0.0011,
+        -0.0728,
+        0.3223
+      ]
+    },
+    {
+      "faces": 64,
+      "size": [
+        0.095,
+        0.0956,
+        0.1025
+      ],
+      "centre": [
+        0.134,
+        -0.8355,
+        0.3357
+      ]
+    }
+  ]
+}

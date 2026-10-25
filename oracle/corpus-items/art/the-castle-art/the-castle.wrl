@@ -1,0 +1,149 @@
+#VRML V2.0 utf8
+WorldInfo {
+ title "Skate Castle"
+ info [
+ "Picture © Ryan Bundy 2026"
+ "Castle Skateland, Ohio"
+ "Price: 50cc"
+ "Limit: 1/30"
+ "Artist: BassMekanik"
+ "Date: Aug 5th 2026"
+ ]
+}
+## Vizthumbnail  thumbnail.jpg
+DEF dad_Group1 Transform {
+ translation 0 -1.5219 0
+ scale 1.33 1 .55
+ children [
+  DEF dad_Box1 Transform {
+   translation 0 1.00193 -.00794
+   scale 2 2 .1
+   children [
+    DEF Box1 Shape {
+     appearance Appearance {
+      material DEF White Material {
+       ambientIntensity 0.200
+       shininess 0.200
+       diffuseColor 1 1 1
+       emissiveColor .25098 .25098 .25098
+      }
+     }
+     geometry DEF Box1_Geo IndexedFaceSet {
+      creaseAngle 0.524
+      coordIndex [
+        0 1 2 -1 
+        0 2 3 -1 
+        2 4 5 -1 
+        2 5 3 -1 
+        3 5 6 -1 
+        3 6 0 -1 
+        0 6 7 -1 
+        0 7 1 -1 
+        4 7 6 -1 
+        4 6 5 -1 
+      ]
+      coord DEF Box1_Coord Coordinate {
+       point [
+        -.5 .5 -.5
+        -.5 .5 .5
+        .5 .5 .5
+        .5 .5 -.5
+        .5 -.5 .5
+        .5 -.5 -.5
+        -.5 -.5 -.5
+        -.5 -.5 .5
+       ]
+      }
+     }
+    }
+   ]
+  }
+  DEF dad_IndexedFaceSet2 Transform {
+   translation 0 1.00193 -.00794
+   scale 2 2 .1
+   children [
+    DEF IndexedFaceSet2 Shape {
+     appearance Appearance {
+      texture ImageTexture {
+       repeatS FALSE
+       repeatT FALSE
+       url [
+        "texture.jpg"
+       ]
+      }
+      material USE White
+     }
+     geometry DEF GeoIndexedFaceSet2 IndexedFaceSet {
+      creaseAngle 0.524
+      coordIndex [
+        0 1 2 -1 
+        0 2 3 -1 
+      ]
+      texCoordIndex [
+        0 1 2 -1 
+        0 2 3 -1 
+      ]
+      coord DEF IndexedFaceSet2_Coord Coordinate {
+       point [
+        -.5 .5 .5
+        -.5 -.5 .5
+        .5 -.5 .5
+        .5 .5 .5
+       ]
+      }
+      texCoord TextureCoordinate {
+       point [
+        0 1
+        0 0
+        1 0
+        1 1
+       ]
+      }
+     }
+    }
+   ]
+  }
+ ]
+}
+DEF Frame_Group Transform {
+ translation 0 -0.52 -0.0044
+ children [
+  DEF Frame Shape {
+   appearance Appearance {
+    material DEF Brass Material {
+     diffuseColor 0.5 0.35 0
+     emissiveColor 0 0 0
+     specularColor 0.76 0.74 0.59
+     ambientIntensity 0.0567
+     shininess 0.07
+     transparency 0
+    }
+   }
+   geometry DEF Frame_Geo Extrusion {
+    creaseAngle 0.524
+    convex FALSE
+    solid TRUE
+    ccw TRUE
+    crossSection [
+        -0.03 0.02,
+        0.01 0.045,
+        0.045 0.045,
+        0.065 0.015,
+        0.11 0.07,
+        0.2 0.02,
+        0.23 0.02,
+        0.23 -0.07,
+        -0.03 -0.07,
+        -0.03 0.02
+    ]
+    spine [
+        1.33 -1 0,
+        1.33 1 0,
+        -1.33 1 0,
+        -1.33 -1 0,
+        1.33 -1 0
+    ]
+   }
+  }
+ ]
+}

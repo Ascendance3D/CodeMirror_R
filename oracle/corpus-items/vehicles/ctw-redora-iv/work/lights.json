@@ -1,0 +1,27 @@
+{
+  "parts": [
+    {
+      "name": "RD_LampRim",
+      "verts": 72,
+      "faces": 68,
+      "tris": 136,
+      "volume": 0.0,
+      "boundary_edges": 0,
+      "doubled_edges": 0,
+      "flipped": false
+    },
+    {
+      "name": "RD_HeadLamp",
+      "verts": 72,
+      "faces": 68,
+      "tris": 136,
+      "volume": 1e-06,
+      "boundary_edges": 0,
+      "doubled_edges": 0,
+      "flipped": false
+    }
+  ],
+  "added_tris": 272,
+  "stations_checked": 18,
+  "all_visible": true
+}

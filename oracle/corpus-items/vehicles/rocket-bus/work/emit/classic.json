@@ -1,0 +1,98 @@
+{
+ "shapes": [
+  {
+   "zone": "PAINT",
+   "verts": 576,
+   "tris": 912
+  },
+  {
+   "zone": "ROOF",
+   "verts": 16,
+   "tris": 18
+  },
+  {
+   "zone": "RAIL",
+   "verts": 80,
+   "tris": 108
+  },
+  {
+   "zone": "TRIM",
+   "verts": 552,
+   "tris": 774
+  },
+  {
+   "zone": "GLASS",
+   "verts": 116,
+   "tris": 70
+  },
+  {
+   "zone": "CHROME",
+   "verts": 240,
+   "tris": 354
+  },
+  {
+   "zone": "HEADLAMP",
+   "verts": 24,
+   "tris": 36
+  },
+  {
+   "zone": "AMBER",
+   "verts": 128,
+   "tris": 180
+  },
+  {
+   "zone": "RED",
+   "verts": 64,
+   "tris": 88
+  },
+  {
+   "zone": "TYRE",
+   "verts": 192,
+   "tris": 384,
+   "instances": 4
+  },
+  {
+   "zone": "RIM",
+   "verts": 322,
+   "tris": 528,
+   "instances": 4
+  },
+  {
+   "zone": "RIMDARK",
+   "verts": 238,
+   "tris": 416,
+   "instances": 4
+  }
+ ],
+ "stored_tris": 3868,
+ "runtime_tris": 7852,
+ "runtime_shapes": 21,
+ "bounds": {
+  "x": [
+   -1.529,
+   1.529
+  ],
+  "y": [
+   -1.75,
+   1.0836
+  ],
+  "z": [
+   -7.572,
+   0.999
+  ]
+ },
+ "wheel": {
+  "canonical": "tooling/wheel-families/wheels/b-bolted.wrl",
+  "verified": "generator == b-bolted.wrl, 984 points",
+  "placed_radius": 0.506
+ },
+ "root_translation": [
+  0.006,
+  -1.7454,
+  -3.283
+ ],
+ "encoder": "pigz -11 -I 50 (Zopfli)",
+ "raw_bytes": 89195,
+ "gzip_bytes": 21489,
+ "sha256_wrl": "e6d103e84b2fdef4b32285d4bd4f31c712b47cc306c0094983361d02f6cc51c3"
+}

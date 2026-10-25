@@ -1,0 +1,561 @@
+{
+ "bounds": {
+  "x": [
+   -1.275,
+   1.275
+  ],
+  "y": [
+   -1.75,
+   0.0031
+  ],
+  "z": [
+   -4.784,
+   0.999
+  ]
+ },
+ "dims": [
+  2.55,
+  1.7531,
+  5.783
+ ],
+ "failed": [],
+ "ground_clearance_body": 0.0491,
+ "max_z_set_by": "Mat_TRIM",
+ "node_counts": {
+  "Appearance": 11,
+  "Coordinate": 11,
+  "Group": 1,
+  "IndexedFaceSet": 11,
+  "Material": 11,
+  "NavigationInfo": 1,
+  "Shape": 11,
+  "Transform": 5,
+  "WorldInfo": 1
+ },
+ "paint_readback": {
+  "ambientIntensity": "0.16",
+  "diffuseColor": "0.3143 0.0112 0.0069",
+  "emissiveColor": "0 0 0",
+  "shininess": "0.35",
+  "specularColor": "0.382 0.4558 0.9939",
+  "transparency": "0"
+ },
+ "ratio": 4.74,
+ "raw_bytes": 176411,
+ "release_metadata": {
+  "limit": [
+   "Limited To: 1/30"
+  ],
+  "price": [
+   "Mall Price: 200 CC"
+  ],
+  "state": "COMPLETE"
+ },
+ "rendered_tris": 9488,
+ "results": [
+  {
+   "detail": "magic b'\\x1f\\x8b'",
+   "gate": "artifact is gzip",
+   "ok": true
+  },
+  {
+   "detail": "inflated starts b'#VRML V2.0 utf8\\n'",
+   "gate": "not double-gzipped",
+   "ok": true
+  },
+  {
+   "detail": "sha(inflated) acdc769663699b89",
+   "gate": "gzip round trip == .edit.wrl",
+   "ok": true
+  },
+  {
+   "detail": "37235 B (stat), headroom 42765",
+   "gate": "uploaded bytes < 80,000",
+   "ok": true
+  },
+  {
+   "detail": "#VRML V2.0 utf8",
+   "gate": "header",
+   "ok": true
+  },
+  {
+   "detail": "#VRML V2.0 utf8",
+   "gate": "WRLForge: Header is '#VRML V2.0 utf8'",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "WRLForge: WorldInfo present",
+   "ok": true
+  },
+  {
+   "detail": "clean",
+   "gate": "WRLForge: No forbidden nodes (Inline/EXTERNPROTO/Sound/DirectionalLight/H-Anim)",
+   "ok": true
+  },
+  {
+   "detail": "clean",
+   "gate": "WRLForge: No external URLs / nested paths in url fields",
+   "ok": true
+  },
+  {
+   "detail": "0 ImageTexture node(s)",
+   "gate": "WRLForge: At most one texture (ImageTexture)",
+   "ok": true
+  },
+  {
+   "detail": "13 DEF, 3 USE",
+   "gate": "WRLForge: Every USE has a matching DEF",
+   "ok": true
+  },
+  {
+   "detail": "[]",
+   "gate": "WRLForge parser diagnostics == 0",
+   "ok": true
+  },
+  {
+   "detail": "[]",
+   "gate": "no duplicate DEF",
+   "ok": true
+  },
+  {
+   "detail": "3 USE",
+   "gate": "every USE resolves",
+   "ok": true
+  },
+  {
+   "detail": "0",
+   "gate": "no ROUTE",
+   "ok": true
+  },
+  {
+   "detail": "[]",
+   "gate": "only allowed node types",
+   "ok": true
+  },
+  {
+   "detail": "[]",
+   "gate": "no forbidden node",
+   "ok": true
+  },
+  {
+   "detail": "[]",
+   "gate": "no url fields / textures",
+   "ok": true
+  },
+  {
+   "detail": "1",
+   "gate": "exactly one WorldInfo",
+   "ok": true
+  },
+  {
+   "detail": "The Revolution Garnet",
+   "gate": "WorldInfo title",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "WorldInfo creator",
+   "ok": true
+  },
+  {
+   "detail": "['Uploaded: Oct 2026']",
+   "gate": "WorldInfo upload date",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "no placeholder metadata",
+   "ok": true
+  },
+  {
+   "detail": "['Mall Price: 200 CC']",
+   "gate": "WorldInfo price == owner value",
+   "ok": true
+  },
+  {
+   "detail": "['Limited To: 1/30']",
+   "gate": "WorldInfo limit == owner value",
+   "ok": true
+  },
+  {
+   "detail": "Deep_Garnet_Sheen",
+   "gate": "body material DEF present once",
+   "ok": true
+  },
+  {
+   "detail": "{\"diffuseColor\": [\"0.3143\", \"0.0112\", \"0.0069\"], \"emissiveColor\": [\"0\", \"0\", \"0\"], \"specularColor\": [\"0.382\", \"0.4558\", \"0.9939\"], \"ambientIntensity\": [\"0.16\"], \"shininess\": [\"0.35\"], \"transparency\": [\"0\"]}",
+   "gate": "body paint read back EXACT (text)",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "body paint read back EXACT (numeric)",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "no other variant paint present",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "wheel material TYRE == canonical hero",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "wheel material RIM == canonical hero",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "wheel material RIMDARK == canonical hero",
+   "ok": true
+  },
+  {
+   "detail": "centre 0.00000",
+   "gate": "X centred",
+   "ok": true
+  },
+  {
+   "detail": "-1.75000",
+   "gate": "lowest Y == -1.75",
+   "ok": true
+  },
+  {
+   "detail": "0.99900",
+   "gate": "max Z <= +1",
+   "ok": true
+  },
+  {
+   "detail": "[2.55, 1.7531, 5.783]",
+   "gate": "fits 10 x 10 x 10",
+   "ok": true
+  },
+  {
+   "detail": "4",
+   "gate": "4 tyre instances",
+   "ok": true
+  },
+  {
+   "detail": "[-1.75, -1.75, -1.75, -1.75]",
+   "gate": "all tyres touch Y=-1.75",
+   "ok": true
+  },
+  {
+   "detail": "-1.7009",
+   "gate": "body clears ground",
+   "ok": true
+  },
+  {
+   "detail": "Mat_TRIM",
+   "gate": "max Z is not set by a wheel",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "no scale field anywhere",
+   "ok": true
+  },
+  {
+   "detail": "[[0, 1, 0, 3.141593], [0, 1, 0, 3.141593]]",
+   "gate": "opposite-side wheels use a proper half-turn",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "wheel stored once, 3 USE",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "no root-level wheel instance",
+   "ok": true
+  },
+  {
+   "detail": "0",
+   "gate": "no zero-area / duplicate-corner face",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "artifact sha == emit record",
+   "ok": true
+  },
+  {
+   "detail": "0ccceff873a7f869",
+   "gate": ".blend and .wrl come from the same scene.json",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": ".blend on disk is the one that build saved",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "donor unchanged after build",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "variant wheel style",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": ".blend objects all det > 0",
+   "ok": true
+  },
+  {
+   "detail": "{'FL': {'UNDER': 2}, 'FR': {'UNDER': 2}, 'RL': {'UNDER': 9}, 'RR': {'UNDER': 9}}",
+   "gate": "no visible body part intersects a wheel",
+   "ok": true
+  },
+  {
+   "detail": "3680 vs 3660 + 20",
+   "gate": "body faces == donor-minus-wing + spoiler",
+   "ok": true
+  },
+  {
+   "detail": "artifact 404, donor 404",
+   "gate": "boundary edges no worse than source",
+   "ok": true
+  },
+  {
+   "detail": "artifact 6, donor 6",
+   "gate": "nonmanifold edges no worse than source",
+   "ok": true
+  },
+  {
+   "detail": "artifact 0, donor 0",
+   "gate": "same_direction edges no worse than source",
+   "ok": true
+  },
+  {
+   "detail": "{'closed_positive': 9, 'closed_negative': 0} vs {'closed_positive': 6, 'closed_negative': 0}",
+   "gate": "inverted closed shells no worse than source",
+   "ok": true
+  },
+  {
+   "detail": "",
+   "gate": "tyre winding outward (signed volume > 0)",
+   "ok": true
+  }
+ ],
+ "runtime_shapes_predicted": 20,
+ "sha256_edit": "acdc769663699b89f564b56c3979e34c9f8e51347d4811b1bb9eb9c9b5860073",
+ "sha256_wrl": "485631669f4fc6054998f4e685ad41bac72a7d2f77d3c9c26dc776d6a1f6e9d7",
+ "spoiler": {
+  "body_contact": {
+   "Rev_SPOILER_BLADE": {},
+   "Rev_SPOILER_POST_L": {
+    "PAINT": {
+     "min_crossing_deg": 79.47,
+     "pairs": 6
+    }
+   },
+   "Rev_SPOILER_POST_R": {
+    "PAINT": {
+     "min_crossing_deg": 79.47,
+     "pairs": 6
+    }
+   }
+  },
+  "half_span": 0.7,
+  "max_z": 1.12874,
+  "mirror_missing_verts": 0,
+  "pieces": {
+   "BLADE": {
+    "census": {
+     "boundary": 0,
+     "edges": 18,
+     "nonmanifold": 0,
+     "same_direction": 0
+    },
+    "faces": 8,
+    "max": [
+     0.7,
+     2.21158,
+     1.12874
+    ],
+    "min": [
+     -0.7,
+     2.0123,
+     1.10068
+    ],
+    "signed_volume": 0.0047376,
+    "tris": 20,
+    "verts": 24,
+    "verts_above_deck": 12,
+    "verts_below_deck": 0,
+    "zone": "PAINT"
+   },
+   "POST_L": {
+    "census": {
+     "boundary": 0,
+     "edges": 12,
+     "nonmanifold": 0,
+     "same_direction": 0
+    },
+    "faces": 6,
+    "max": [
+     0.469,
+     2.14568,
+     1.11447
+    ],
+    "min": [
+     0.451,
+     2.06068,
+     0.97376
+    ],
+    "signed_volume": 0.00018364,
+    "tris": 12,
+    "verts": 16,
+    "verts_above_deck": 8,
+    "verts_below_deck": 8,
+    "zone": "TRIM"
+   },
+   "POST_R": {
+    "census": {
+     "boundary": 0,
+     "edges": 12,
+     "nonmanifold": 0,
+     "same_direction": 0
+    },
+    "faces": 6,
+    "max": [
+     -0.451,
+     2.14568,
+     1.11447
+    ],
+    "min": [
+     -0.469,
+     2.06068,
+     0.97376
+    ],
+    "signed_volume": 0.00018364,
+    "tris": 12,
+    "verts": 16,
+    "verts_above_deck": 8,
+    "verts_below_deck": 8,
+    "zone": "TRIM"
+   }
+  },
+  "style": "medium"
+ },
+ "stored_shapes": 11,
+ "stored_tris": 5150,
+ "topology": {
+  "artifact_body": {
+   "census": {
+    "boundary": 404,
+    "edges": 5731,
+    "nonmanifold": 6,
+    "same_direction": 0
+   },
+   "closed": {
+    "closed_negative": 0,
+    "closed_positive": 9
+   },
+   "faces": 3680
+  },
+  "donor_minus_wing": {
+   "census": {
+    "boundary": 404,
+    "edges": 5689,
+    "nonmanifold": 6,
+    "same_direction": 0
+   },
+   "census_with_wing": {
+    "boundary": 428,
+    "edges": 6079,
+    "nonmanifold": 6,
+    "same_direction": 0
+   },
+   "closed": {
+    "closed_negative": 0,
+    "closed_positive": 6
+   },
+   "faces": 3660,
+   "zero_area": 0
+  },
+  "spoiler_faces": 20
+ },
+ "tyre": {
+  "census": {
+   "boundary": 0,
+   "edges": 384,
+   "nonmanifold": 0,
+   "same_direction": 0
+  },
+  "signed_volume": 0.060689
+ },
+ "uploaded_bytes": 37235,
+ "wheel_gates": {
+  "FL": {
+   "clearance": 0.00107,
+   "det": 1.0,
+   "donor_clearance": 0.00247,
+   "donor_intersections": 0,
+   "ground_z": -0.00463,
+   "inner_x": 0.72204,
+   "intersected_roles": {
+    "UNDER": 2
+   },
+   "outer_x": 0.992,
+   "tyre_intersections": 8,
+   "wheel_intersections": 8
+  },
+  "FR": {
+   "clearance": 0.00107,
+   "det": 1.0,
+   "donor_clearance": 0.00247,
+   "donor_intersections": 0,
+   "ground_z": -0.00463,
+   "inner_x": 0.72204,
+   "intersected_roles": {
+    "UNDER": 2
+   },
+   "outer_x": 0.992,
+   "tyre_intersections": 8,
+   "wheel_intersections": 8
+  },
+  "RL": {
+   "clearance": 0.00066,
+   "det": 1.0,
+   "donor_clearance": 0.00175,
+   "donor_intersections": 33,
+   "ground_z": -0.00463,
+   "inner_x": 0.72204,
+   "intersected_roles": {
+    "UNDER": 9
+   },
+   "outer_x": 0.992,
+   "tyre_intersections": 38,
+   "wheel_intersections": 38
+  },
+  "RR": {
+   "clearance": 0.00066,
+   "det": 1.0,
+   "donor_clearance": 0.00175,
+   "donor_intersections": 34,
+   "ground_z": -0.00463,
+   "inner_x": 0.72204,
+   "intersected_roles": {
+    "UNDER": 9
+   },
+   "outer_x": 0.992,
+   "tyre_intersections": 38,
+   "wheel_intersections": 38
+  }
+ },
+ "wrlforge_gzip_rule": {
+  "detail": "46115 bytes gzipped (176411 bytes raw)",
+  "name": "Gzip size under 80KB",
+  "pass": true,
+  "severity": "hard"
+ },
+ "wrlforge_reencoded_gzip": 46115
+}

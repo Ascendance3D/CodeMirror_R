@@ -1,0 +1,238 @@
+{
+ "artifact": "item-categories/vehicles/ragnum-red/ragnum-red.wrl",
+ "sha256": "bf5f7704d154f15f69bf223521c0582ddc9d3c18b095a2ca15c52dcbaefa45a2",
+ "size": {
+  "uploaded_bytes": 72820,
+  "raw_bytes": 335924,
+  "ratio": 4.613,
+  "modelled_by_recompression": 87366,
+  "note": "uploaded_bytes is the artifact; modelled_by_recompression is what zlib -9 over the text would have produced, which is what WRLForge gates"
+ },
+ "census": {
+  "defs": 14,
+  "uses": 3,
+  "def_names": [
+   "Mat_AMBER",
+   "Mat_CHROME",
+   "Mat_EXHAUST",
+   "Mat_GLASS",
+   "Mat_HEADLAMP",
+   "Mat_LENSCLEAR",
+   "Mat_PAINT",
+   "Mat_RIM",
+   "Mat_RIMDARK",
+   "Mat_TAILLENS",
+   "Mat_TRIM",
+   "Mat_TYRE",
+   "RagnumRed",
+   "RagnumWheel"
+  ],
+  "use_names": [
+   "RagnumWheel"
+  ],
+  "duplicate_defs": [],
+  "unresolved_uses": [],
+  "forward_uses": [],
+  "nodes": {
+   "Shape": 12,
+   "IndexedFaceSet": 12,
+   "Coordinate": 12,
+   "Normal": 0,
+   "Transform": 5,
+   "Group": 1,
+   "Material": 12,
+   "Appearance": 12,
+   "TimeSensor": 0,
+   "TouchSensor": 0,
+   "PositionInterpolator": 0,
+   "OrientationInterpolator": 0,
+   "ROUTE": 0
+  }
+ },
+ "geometry": {
+  "wheel_placements": 4,
+  "bounds": {
+   "x": [
+    -1.027,
+    1.027
+   ],
+   "y": [
+    -1.7504,
+    -0.2396
+   ],
+   "z": [
+    -3.9514,
+    0.9986
+   ]
+  },
+  "dims": [
+   2.054,
+   1.5108,
+   4.95
+  ],
+  "points": 11436
+ },
+ "wrlforge": {
+  "ok": false,
+  "gzipBytes": 87187,
+  "rawBytes": 335924,
+  "results": [
+   {
+    "pass": true,
+    "severity": "hard",
+    "name": "Header is '#VRML V2.0 utf8'",
+    "detail": "#VRML V2.0 utf8"
+   },
+   {
+    "pass": true,
+    "severity": "hard",
+    "name": "WorldInfo present",
+    "detail": ""
+   },
+   {
+    "pass": false,
+    "severity": "hard",
+    "name": "Gzip size under 80KB",
+    "detail": "87187 bytes gzipped (335924 bytes raw)"
+   },
+   {
+    "pass": true,
+    "severity": "hard",
+    "name": "No forbidden nodes (Inline/EXTERNPROTO/Sound/DirectionalLight/H-Anim)",
+    "detail": "clean"
+   },
+   {
+    "pass": true,
+    "severity": "soft",
+    "name": "No whole-object Billboard",
+    "detail": "clean"
+   },
+   {
+    "pass": true,
+    "severity": "hard",
+    "name": "No external URLs / nested paths in url fields",
+    "detail": "clean"
+   },
+   {
+    "pass": true,
+    "severity": "hard",
+    "name": "At most one texture (ImageTexture)",
+    "detail": "0 ImageTexture node(s)"
+   },
+   {
+    "pass": true,
+    "severity": "soft",
+    "name": "Texture format is jpg/jpeg/gif/png",
+    "detail": "n/a (no texture)"
+   },
+   {
+    "pass": true,
+    "severity": "hard",
+    "name": "Every USE has a matching DEF",
+    "detail": "14 DEF, 3 USE"
+   },
+   {
+    "pass": true,
+    "severity": "soft",
+    "name": "Placement/bbox (advisory, untransformed local coords only)",
+    "detail": "local bbox X:[-1.03,1.03] Y:[-0.36,1.45] Z:[-2.30,2.65] dims 2.05 x 1.81 x 4.95 \u2014 NOTE: does not apply Transform translations/scales, verify visually"
+   }
+  ],
+  "diagnostics": []
+ },
+ "checks": [
+  {
+   "name": "header",
+   "ok": true,
+   "detail": "#VRML V2.0 utf8"
+  },
+  {
+   "name": "uploaded gzip < 80,000",
+   "ok": true,
+   "detail": "72820 B, headroom 7180"
+  },
+  {
+   "name": "uploaded gzip < 81,920",
+   "ok": true,
+   "detail": "72820 B, headroom 9100"
+  },
+  {
+   "name": "gzip round trip exact",
+   "ok": true,
+   "detail": "decompresses to the .edit.wrl byte for byte"
+  },
+  {
+   "name": "WorldInfo present",
+   "ok": true,
+   "detail": "title \"Ragnum Red\""
+  },
+  {
+   "name": "no forbidden nodes",
+   "ok": true,
+   "detail": "clean"
+  },
+  {
+   "name": "textures",
+   "ok": true,
+   "detail": "0 ImageTexture"
+  },
+  {
+   "name": "no external URLs",
+   "ok": true,
+   "detail": "no url field in the file"
+  },
+  {
+   "name": "no duplicate DEF",
+   "ok": true,
+   "detail": "none"
+  },
+  {
+   "name": "no unresolved USE",
+   "ok": true,
+   "detail": "none"
+  },
+  {
+   "name": "no forward USE",
+   "ok": true,
+   "detail": "none"
+  },
+  {
+   "name": "fits 10 x 10 x 10",
+   "ok": true,
+   "detail": [
+    2.054,
+    1.5108,
+    4.95
+   ]
+  },
+  {
+   "name": "lowest Y = -1.75",
+   "ok": true,
+   "detail": -1.7504
+  },
+  {
+   "name": "centred on X",
+   "ok": true,
+   "detail": [
+    -1.027,
+    1.027
+   ]
+  },
+  {
+   "name": "max Z <= +1",
+   "ok": true,
+   "detail": 0.9986
+  },
+  {
+   "name": "no avatar output / sensors",
+   "ok": true,
+   "detail": "static object"
+  },
+  {
+   "name": "wheel stored once, placed four times",
+   "ok": true,
+   "detail": "1 Group, 3 USE, 4 placements"
+  }
+ ],
+ "all_pass": true
+}

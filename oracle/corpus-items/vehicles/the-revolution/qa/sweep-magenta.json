@@ -1,0 +1,67 @@
+{
+ "clover": {
+  "magenta_sha256": "4292c21125798d8e3983ef8317f6ba860132145364c03f3b2b67fad13fcc022a",
+  "magenta_shots": [
+   "qa/clover/magenta/01-front34.png",
+   "qa/clover/magenta/02-rear34.png",
+   "qa/clover/magenta/03-left.png",
+   "qa/clover/magenta/04-right.png",
+   "qa/clover/magenta/05-front.png",
+   "qa/clover/magenta/06-rear.png",
+   "qa/clover/magenta/07-high-front.png",
+   "qa/clover/magenta/08-high-rear-deck.png",
+   "qa/clover/magenta/09-low-front.png",
+   "qa/clover/magenta/10-low-rear.png",
+   "qa/clover/magenta/11-underside.png",
+   "qa/clover/magenta/12-wheel-front.png",
+   "qa/clover/magenta/13-wheel-rear.png",
+   "qa/clover/magenta/14-deck-close.png",
+   "qa/clover/magenta/15-deck-profile.png",
+   "qa/clover/magenta/16-roof-top.png"
+  ]
+ },
+ "garnet": {
+  "magenta_sha256": "a9e08c85185a3d9afeea04b6bf7e0a2d6ad7b88a350f0f6cd4ab8208e48c1cf8",
+  "magenta_shots": [
+   "qa/garnet/magenta/01-front34.png",
+   "qa/garnet/magenta/02-rear34.png",
+   "qa/garnet/magenta/03-left.png",
+   "qa/garnet/magenta/04-right.png",
+   "qa/garnet/magenta/05-front.png",
+   "qa/garnet/magenta/06-rear.png",
+   "qa/garnet/magenta/07-high-front.png",
+   "qa/garnet/magenta/08-high-rear-deck.png",
+   "qa/garnet/magenta/09-low-front.png",
+   "qa/garnet/magenta/10-low-rear.png",
+   "qa/garnet/magenta/11-underside.png",
+   "qa/garnet/magenta/12-wheel-front.png",
+   "qa/garnet/magenta/13-wheel-rear.png",
+   "qa/garnet/magenta/14-deck-close.png",
+   "qa/garnet/magenta/15-deck-profile.png",
+   "qa/garnet/magenta/16-roof-top.png"
+  ]
+ },
+ "gpu": "\"ANGLE (NVIDIA, Vulkan 1.4.329 (NVIDIA NVIDIA GeForce RTX 3060 Ti (0x00002414)), NVIDIA)\"",
+ "vivid": {
+  "magenta_sha256": "cfc8b61404dd16dd60618958896c0baaccfdabd4a03baa2be8b226e8701b3ffe",
+  "magenta_shots": [
+   "qa/vivid/magenta/01-front34.png",
+   "qa/vivid/magenta/02-rear34.png",
+   "qa/vivid/magenta/03-left.png",
+   "qa/vivid/magenta/04-right.png",
+   "qa/vivid/magenta/05-front.png",
+   "qa/vivid/magenta/06-rear.png",
+   "qa/vivid/magenta/07-high-front.png",
+   "qa/vivid/magenta/08-high-rear-deck.png",
+   "qa/vivid/magenta/09-low-front.png",
+   "qa/vivid/magenta/10-low-rear.png",
+   "qa/vivid/magenta/11-underside.png",
+   "qa/vivid/magenta/12-wheel-front.png",
+   "qa/vivid/magenta/13-wheel-rear.png",
+   "qa/vivid/magenta/14-deck-close.png",
+   "qa/vivid/magenta/15-deck-profile.png",
+   "qa/vivid/magenta/16-roof-top.png"
+  ]
+ },
+ "xver": "\"{\\\"name\\\":\\\"X_ITE\\\",\\\"version\\\":\\\"15.1.10\\\"}\""
+}

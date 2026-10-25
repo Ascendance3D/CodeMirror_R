@@ -1,0 +1,198 @@
+{
+  "xite_version_470": "4.7.0",
+  "fetched_sha": "7b63b97adcddaf59c3b8badc835ba2a78eb246c7685f798a3ee938c7340d8178",
+  "default_view_pass": true,
+  "discoverability": {
+    "Ion dome": "OPERATES (PASS)",
+    "Upper hinge/head area": "OPERATES (PASS)",
+    "Main left speaker leaf": "OPERATES (PASS)",
+    "Main right speaker leaf": "OPERATES (PASS)",
+    "Front-facing speaker area": "OPERATES (PASS)",
+    "Central amplifier body": "OPERATES (PASS)",
+    "Plinth (base)": "INACTIVE (PASS)"
+  },
+  "approaches": {
+    "Front Centre": "PASS",
+    "Front Left": "PASS",
+    "Front Right": "PASS"
+  },
+  "cycles_data": [
+    {
+      "cycle": 1,
+      "on_hinges": [
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585
+      ],
+      "on_mglow": [
+        0.032,
+        0.046,
+        0.055
+      ],
+      "off_hinges": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "off_mglow": [
+        0.03,
+        0.044,
+        0.052
+      ]
+    },
+    {
+      "cycle": 2,
+      "on_hinges": [
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585
+      ],
+      "on_mglow": [
+        0.206,
+        0.302,
+        0.357
+      ],
+      "off_hinges": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "off_mglow": [
+        0.03,
+        0.044,
+        0.052
+      ]
+    },
+    {
+      "cycle": 3,
+      "on_hinges": [
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585
+      ],
+      "on_mglow": [
+        0.221,
+        0.324,
+        0.383
+      ],
+      "off_hinges": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "off_mglow": [
+        0.03,
+        0.044,
+        0.052
+      ]
+    },
+    {
+      "cycle": 4,
+      "on_hinges": [
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585
+      ],
+      "on_mglow": [
+        0.214,
+        0.313,
+        0.37
+      ],
+      "off_hinges": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "off_mglow": [
+        0.03,
+        0.044,
+        0.052
+      ]
+    },
+    {
+      "cycle": 5,
+      "on_hinges": [
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585,
+        0.5585
+      ],
+      "on_mglow": [
+        0.229,
+        0.335,
+        0.396
+      ],
+      "off_hinges": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "off_mglow": [
+        0.03,
+        0.044,
+        0.052
+      ]
+    }
+  ],
+  "open_clicks": {
+    "Open Leaf Left": "PASS",
+    "Open Leaf Right": "PASS",
+    "Open Front-Right Leaf": "PASS",
+    "Open Front-Left Leaf": "PASS"
+  },
+  "motion_interruption_pass": true,
+  "reloads": [
+    "Reload 1: PASS",
+    "Reload 2: PASS",
+    "Reload 3: PASS",
+    "Reload 4: PASS"
+  ],
+  "inline_test_pass": true,
+  "xite_15_cycles": [
+    "Cycle 1: PASS",
+    "Cycle 2: PASS",
+    "Cycle 3: PASS"
+  ],
+  "live_animated_bbox": {
+    "min": [
+      -0.5267,
+      -1.75,
+      -0.5001
+    ],
+    "max": [
+      0.5267,
+      -0.796,
+      0.5001
+    ],
+    "samples": 151
+  }
+}

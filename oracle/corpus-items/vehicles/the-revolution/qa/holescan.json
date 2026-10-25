@@ -1,0 +1,308 @@
+{
+ "vivid": {
+  "01-front34.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "02-rear34.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "03-left.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "04-right.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "05-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "06-rear.png": {
+   "enclosed_px": 2,
+   "blobs": 2,
+   "blobs_ge_min": []
+  },
+  "07-high-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "08-high-rear-deck.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "09-low-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "10-low-rear.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "11-underside.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "12-wheel-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "13-wheel-rear.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "14-deck-close.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "15-deck-profile.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "16-roof-top.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  }
+ },
+ "garnet": {
+  "01-front34.png": {
+   "enclosed_px": 109,
+   "blobs": 1,
+   "blobs_ge_min": [
+    {
+     "n": 109,
+     "bbox": [
+      728,
+      327,
+      743,
+      339
+     ]
+    }
+   ]
+  },
+  "02-rear34.png": {
+   "enclosed_px": 280,
+   "blobs": 1,
+   "blobs_ge_min": [
+    {
+     "n": 280,
+     "bbox": [
+      102,
+      375,
+      137,
+      389
+     ]
+    }
+   ]
+  },
+  "03-left.png": {
+   "enclosed_px": 406,
+   "blobs": 1,
+   "blobs_ge_min": [
+    {
+     "n": 406,
+     "bbox": [
+      804,
+      349,
+      841,
+      365
+     ]
+    }
+   ]
+  },
+  "04-right.png": {
+   "enclosed_px": 407,
+   "blobs": 2,
+   "blobs_ge_min": [
+    {
+     "n": 406,
+     "bbox": [
+      158,
+      349,
+      195,
+      364
+     ]
+    }
+   ]
+  },
+  "05-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "06-rear.png": {
+   "enclosed_px": 2,
+   "blobs": 2,
+   "blobs_ge_min": []
+  },
+  "07-high-front.png": {
+   "enclosed_px": 9,
+   "blobs": 2,
+   "blobs_ge_min": [
+    {
+     "n": 8,
+     "bbox": [
+      566,
+      218,
+      572,
+      219
+     ]
+    }
+   ]
+  },
+  "08-high-rear-deck.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "09-low-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "10-low-rear.png": {
+   "enclosed_px": 2266,
+   "blobs": 1,
+   "blobs_ge_min": [
+    {
+     "n": 2266,
+     "bbox": [
+      161,
+      241,
+      348,
+      279
+     ]
+    }
+   ]
+  },
+  "11-underside.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "12-wheel-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "13-wheel-rear.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "14-deck-close.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "15-deck-profile.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "16-roof-top.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  }
+ },
+ "clover": {
+  "01-front34.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "02-rear34.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "03-left.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "04-right.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "05-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "06-rear.png": {
+   "enclosed_px": 2,
+   "blobs": 2,
+   "blobs_ge_min": []
+  },
+  "07-high-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "08-high-rear-deck.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "09-low-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "10-low-rear.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "11-underside.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "12-wheel-front.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "13-wheel-rear.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "14-deck-close.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "15-deck-profile.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  },
+  "16-roof-top.png": {
+   "enclosed_px": 0,
+   "blobs": 0,
+   "blobs_ge_min": []
+  }
+ }
+}

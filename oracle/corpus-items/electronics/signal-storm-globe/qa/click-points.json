@@ -1,0 +1,41 @@
+{
+  "note": "world-space click targets emitted by the build; floor is Y = -1.75",
+  "targets": {
+    "the START key": [
+      -0.0901,
+      -1.1962,
+      0.4242
+    ],
+    "the STOP key": [
+      0.1109,
+      -1.1962,
+      0.4242
+    ],
+    "the column nameplate": [
+      0.0,
+      -1.537,
+      0.2219
+    ],
+    "the console front face": [
+      0.0,
+      -1.267,
+      0.482
+    ],
+    "the plinth front": [
+      0.0,
+      -1.724,
+      0.36
+    ],
+    "the ring cage": [
+      0.0,
+      -0.51,
+      0.56
+    ],
+    "the status readout": [
+      0.0,
+      -1.1241,
+      0.2714
+    ]
+  },
+  "wrl_sha_source": "signal-storm-globe.wrl"
+}

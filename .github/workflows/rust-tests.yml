@@ -1,0 +1,95 @@
+# Rust tests for pull requests, on a standard GitHub-hosted Linux runner (no GPU).
+#
+# Missing evidence never passes in silence (crates/cm-evidence). CM_EVIDENCE=ci lets a test skip only
+# for a reason in CM_EVIDENCE_ALLOW; each permitted skip is one line in CM_EVIDENCE_LOG, and the
+# "Evidence skips" step lists them in the job summary and fails on a line outside the allow list.
+#
+# The full local run (owner machine, GPU and xvfb-run present) is strict, with CM_EVIDENCE unset:
+#
+#   tools/fetch-upstream.sh && cargo test --workspace --no-fail-fast
+#
+# The C0 reference suite (node oracle/cm5-run.mjs, 1483 upstream browser tests) needs a rollup
+# build of oracle/cm5-build and Playwright; it runs locally only (README.md, "C0 suite").
+
+name: Rust tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: never
+  CM_EVIDENCE: ci
+  CM_EVIDENCE_ALLOW: no-gpu-adapter,tool-absent
+  CM_EVIDENCE_LOG: ${{ github.workspace }}/evidence-skips.tsv
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      # The pinned upstream source (4ca3d05) that four cm-modes runmode tests read, then the
+      # CodeMirror 5.65.21 reference: vendored tree, upstream commit, tree and content digest.
+      - name: CodeMirror 5.65.21 reference
+        run: tools/fetch-upstream.sh
+
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          components: rustfmt, clippy
+
+      - name: Formatting (cargo fmt)
+        run: cargo fmt --all -- --check
+
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          # libxkbcommon-x11-0 and the Mesa software Vulkan driver (lavapipe) let winit_event_loop_under_xvfb
+          # run the real cm-edit binary on a private X display; without them it crashes (first CI run).
+          sudo apt-get install -y --no-install-recommends pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 mesa-vulkan-drivers xvfb
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Rust suite
+        run: |
+          rm -f "$CM_EVIDENCE_LOG"
+          cargo test --workspace --no-fail-fast 2>&1 | tee suite.log
+          test "${PIPESTATUS[0]}" -eq 0
+
+      - name: Test counts
+        if: always()
+        run: |
+          grep '^test result' suite.log | awk '{p+=$4; f+=$6; i+=$8; s+=$12} END {printf "passed %d, failed %d, ignored %d, filtered out %d\n", p, f, i, s}' | tee -a "$GITHUB_STEP_SUMMARY"
+          grep -E '^test .* FAILED$' suite.log | tee -a "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Evidence skips
+        if: success() || failure()
+        run: |
+          python3 -I -B tools/evidence_summary.py "$CM_EVIDENCE_LOG" | tee -a "$GITHUB_STEP_SUMMARY"
+          test "${PIPESTATUS[0]}" -eq 0
+
+      # Deny-by-default lints only, as in X_ITE_R. The copied crates carry 51 warn-level findings.
+      - name: Clippy (deny-by-default lints)
+        if: success() || failure()
+        run: cargo clippy --workspace --all-targets
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        continue-on-error: true
+        with:
+          name: test-logs
+          path: |
+            suite.log
+            evidence-skips.tsv
+          if-no-files-found: ignore

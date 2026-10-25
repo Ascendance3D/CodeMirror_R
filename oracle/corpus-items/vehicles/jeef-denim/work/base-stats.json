@@ -1,0 +1,177 @@
+{
+  "base_body_by_material": {
+    "JD_BODY_PREVIEW": 1694,
+    "JD_BUMPER": 454,
+    "JD_HARDTOP": 430,
+    "JD_FLARE": 350,
+    "JD_UNDERBODY": 294,
+    "JD_HANDLE": 268,
+    "JD_TRIM": 232,
+    "JD_MIRROR": 224,
+    "JD_ROCKER": 156,
+    "JD_LIGHT_AMBER": 152,
+    "JD_TYRE": 144,
+    "JD_GLASS": 132,
+    "JD_LIGHT_CLEAR": 112,
+    "JD_LIGHT_RED": 72,
+    "JD_GRILLE": 58,
+    "JD_RIM": 4
+  },
+  "beach_body_by_material": {
+    "JD_BODY_PREVIEW": 1280,
+    "JD_BUMPER": 454,
+    "JD_HARDTOP": 382,
+    "JD_FLARE": 350,
+    "JD_UNDERBODY": 236,
+    "JD_TRIM": 232,
+    "JD_ROCKER": 156,
+    "JD_LIGHT_AMBER": 152,
+    "JD_TYRE": 144,
+    "JD_LIGHT_CLEAR": 112,
+    "JD_LIGHT_RED": 72,
+    "JD_GRILLE": 58,
+    "JD_GLASS": 36,
+    "JD_RIM": 4
+  },
+  "wheel_by_material": {
+    "JD_RIM_DARK": 416,
+    "JD_RIM": 386,
+    "JD_TYRE": 384
+  },
+  "interior_tris": 172,
+  "rack_tris": 132,
+  "materials": [
+    "JD_BODY_PREVIEW",
+    "JD_BUMPER",
+    "JD_FLARE",
+    "JD_GLASS",
+    "JD_GRILLE",
+    "JD_HANDLE",
+    "JD_HARDTOP",
+    "JD_INTERIOR",
+    "JD_LIGHT_AMBER",
+    "JD_LIGHT_CLEAR",
+    "JD_LIGHT_RED",
+    "JD_MIRROR",
+    "JD_RACK",
+    "JD_RIM",
+    "JD_RIM_DARK",
+    "JD_ROCKER",
+    "JD_TRIM",
+    "JD_TYRE",
+    "JD_UNDERBODY"
+  ],
+  "images_file": [],
+  "uv_layers": {
+    "Beach_Interior": [],
+    "Body": [],
+    "Body_Beach": [],
+    "Rack": [],
+    "Wheel_FL": [],
+    "Wheel_FR": [],
+    "Wheel_RL": [],
+    "Wheel_RR": [],
+    "Wheel_Spare": []
+  },
+  "collections": {
+    "V_BEACH": [
+      "Beach_Interior",
+      "Body_Beach",
+      "Wheel_FL",
+      "Wheel_FR",
+      "Wheel_RL",
+      "Wheel_RR",
+      "Wheel_Spare"
+    ],
+    "V_ROOFRACK": [
+      "Body",
+      "Rack",
+      "Wheel_FL",
+      "Wheel_FR",
+      "Wheel_RL",
+      "Wheel_RR",
+      "Wheel_Spare"
+    ],
+    "V_STANDARD": [
+      "Body",
+      "Wheel_FL",
+      "Wheel_FR",
+      "Wheel_RL",
+      "Wheel_RR",
+      "Wheel_Spare"
+    ]
+  },
+  "mesh_datablocks": [
+    "Beach_Interior",
+    "Body_Beach",
+    "Body_Beach.001",
+    "Body_Vehicle_0",
+    "JeefWheel",
+    "Rack"
+  ],
+  "shell_totals": {
+    "Beach_Interior": {
+      "boundary": 104,
+      "non_manifold": 0,
+      "reversed": 0,
+      "closed_groups": 0,
+      "groups": 1
+    },
+    "Body": {
+      "boundary": 5280,
+      "non_manifold": 0,
+      "reversed": 0,
+      "closed_groups": 0,
+      "groups": 16
+    },
+    "Body_Beach": {
+      "boundary": 4096,
+      "non_manifold": 0,
+      "reversed": 0,
+      "closed_groups": 0,
+      "groups": 14
+    },
+    "Rack": {
+      "boundary": 0,
+      "non_manifold": 0,
+      "reversed": 0,
+      "closed_groups": 1,
+      "groups": 1
+    },
+    "Wheel_FL": {
+      "boundary": 96,
+      "non_manifold": 0,
+      "reversed": 0,
+      "closed_groups": 1,
+      "groups": 3
+    },
+    "Wheel_FR": {
+      "boundary": 96,
+      "non_manifold": 0,
+      "reversed": 0,
+      "closed_groups": 1,
+      "groups": 3
+    },
+    "Wheel_RL": {
+      "boundary": 96,
+      "non_manifold": 0,
+      "reversed": 0,
+      "closed_groups": 1,
+      "groups": 3
+    },
+    "Wheel_RR": {
+      "boundary": 96,
+      "non_manifold": 0,
+      "reversed": 0,
+      "closed_groups": 1,
+      "groups": 3
+    },
+    "Wheel_Spare": {
+      "boundary": 96,
+      "non_manifold": 0,
+      "reversed": 0,
+      "closed_groups": 1,
+      "groups": 3
+    }
+  }
+}

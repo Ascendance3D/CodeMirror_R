@@ -1,0 +1,44 @@
+{
+  "body_after_cut": {
+    "faces": 1159,
+    "tris": 2298,
+    "verts": 1838
+  },
+  "body_before": {
+    "faces": 1125,
+    "tris": 2230,
+    "verts": 1792
+  },
+  "gate": {
+    "new_verts_off_original_edge": 0,
+    "new_verts_off_plane": 0,
+    "shared_corners_checked": 3841,
+    "worst_corner_normal_shift_deg": 0.6139,
+    "worst_new_vertex_to_edge_m": 1.5e-08
+  },
+  "half_width": 0.175,
+  "new_vertices": 46,
+  "parts": {
+    "SC_BODY": {
+      "faces": 1103,
+      "tris": 2186,
+      "verts": 1797
+    },
+    "SC_STRIPE": {
+      "faces": 56,
+      "tris": 112,
+      "verts": 105
+    }
+  },
+  "region_faces": {
+    "bonnet": 90,
+    "roof": 78,
+    "tailgate": 44
+  },
+  "stripe_faces": {
+    "bonnet": 14,
+    "roof": 32,
+    "tailgate": 10
+  },
+  "stripe_width": 0.35
+}

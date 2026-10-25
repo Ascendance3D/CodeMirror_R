@@ -1,0 +1,1915 @@
+{
+ "pixel": {
+  "x": 496.5,
+  "y": 436.6,
+  "depth": 3.02
+ },
+ "cases": [
+  {
+   "name": "A burst forward",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [
+    0.115,
+    0.215,
+    0.298,
+    0.397,
+    0.498,
+    0.597,
+    0.681,
+    0.781,
+    0.881,
+    0.964,
+    1.064,
+    1.164,
+    1.248
+   ],
+   "sentAt_ms": [
+    100,
+    195,
+    290,
+    385,
+    480,
+    576,
+    671,
+    766,
+    861,
+    956,
+    1050,
+    1145,
+    1241
+   ],
+   "land_s": [
+    1.162,
+    1.279,
+    1.395
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950678285337728
+   ],
+   "zmax": 0.2950678285337728,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "13/13",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "B burst reverse",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [
+    0.116,
+    0.216,
+    0.299,
+    0.4,
+    0.5,
+    0.583,
+    0.683,
+    0.783,
+    0.866,
+    0.967,
+    1.067,
+    1.167,
+    1.25
+   ],
+   "sentAt_ms": [
+    100,
+    195,
+    290,
+    386,
+    481,
+    575,
+    670,
+    765,
+    861,
+    956,
+    1050,
+    1146,
+    1240
+   ],
+   "land_s": [
+    1.397,
+    1.281,
+    1.165
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680843161889
+   ],
+   "zmax": 0.2950680843161889,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "13/13",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "C early ~100 ms forward",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [
+    0.117
+   ],
+   "sentAt_ms": [
+    100
+   ],
+   "land_s": [
+    1.164,
+    1.28,
+    1.397
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680841185926
+   ],
+   "zmax": 0.2950680841185926,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "1/1",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "C early ~100 ms reverse",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [
+    0.116
+   ],
+   "sentAt_ms": [
+    101
+   ],
+   "land_s": [
+    1.397,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506808374268195
+   ],
+   "zmax": 0.29506808374268195,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "1/1",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "D middle ~750 ms forward",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [
+    0.765
+   ],
+   "sentAt_ms": [
+    751
+   ],
+   "land_s": [
+    1.162,
+    1.278,
+    1.395
+   ],
+   "frames": 147,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680841185926
+   ],
+   "zmax": 0.2950680841185926,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "1/1",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "D middle ~750 ms reverse",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [
+    0.766
+   ],
+   "sentAt_ms": [
+    751
+   ],
+   "land_s": [
+    1.397,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506808374268195
+   ],
+   "zmax": 0.29506808374268195,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "1/1",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "E late ~1250 ms forward",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [
+    1.266
+   ],
+   "sentAt_ms": [
+    1252
+   ],
+   "land_s": [
+    1.164,
+    1.281,
+    1.398
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950683097535385
+   ],
+   "zmax": 0.2950683097535385,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "1/1",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "E late ~1250 ms reverse",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [
+    1.266
+   ],
+   "sentAt_ms": [
+    1251
+   ],
+   "land_s": [
+    1.397,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506782875505866
+   ],
+   "zmax": 0.29506782875505866,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "1/1",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  }
+ ],
+ "endurance": [
+  {
+   "name": "toggle 1",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.164,
+    1.281,
+    1.398
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506831025699143
+   ],
+   "zmax": 0.29506831025699143,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 2",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.396,
+    1.28,
+    1.163
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680843161889
+   ],
+   "zmax": 0.2950680843161889,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 3",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.164,
+    1.28,
+    1.397
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680835450291
+   ],
+   "zmax": 0.2950680835450291,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 4",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.397,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506830942383666
+   ],
+   "zmax": 0.29506830942383666,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 5",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.163,
+    1.28,
+    1.396
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950678291772798
+   ],
+   "zmax": 0.2950678291772798,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 6",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.398,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506830942383666
+   ],
+   "zmax": 0.29506830942383666,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 7",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.165,
+    1.281,
+    1.397
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680835450291
+   ],
+   "zmax": 0.2950680835450291,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 8",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.397,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506808488952896
+   ],
+   "zmax": 0.29506808488952896,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 9",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.163,
+    1.28,
+    1.397
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950678291772798
+   ],
+   "zmax": 0.2950678291772798,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 10",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.398,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506830992739985
+   ],
+   "zmax": 0.29506830992739985,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 11",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.164,
+    1.281,
+    1.398
+   ],
+   "frames": 147,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680841185926
+   ],
+   "zmax": 0.2950680841185926,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 12",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.397,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506830992739985
+   ],
+   "zmax": 0.29506830992739985,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 13",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.164,
+    1.28,
+    1.397
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950683097535385
+   ],
+   "zmax": 0.2950683097535385,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 14",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.397,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506830992739985
+   ],
+   "zmax": 0.29506830992739985,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 15",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.164,
+    1.281,
+    1.397
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680841185926
+   ],
+   "zmax": 0.2950680841185926,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 16",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.397,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680843161889
+   ],
+   "zmax": 0.2950680843161889,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 17",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.163,
+    1.28,
+    1.397
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950683097535385
+   ],
+   "zmax": 0.2950683097535385,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 18",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.398,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506831043079595
+   ],
+   "zmax": 0.29506831043079595,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 19",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.164,
+    1.281,
+    1.398
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680841185926
+   ],
+   "zmax": 0.2950680841185926,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 20",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.398,
+    1.281,
+    1.164
+   ],
+   "frames": 147,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506808374268195
+   ],
+   "zmax": 0.29506808374268195,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 21",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.164,
+    1.281,
+    1.398
+   ],
+   "frames": 147,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950683097535385
+   ],
+   "zmax": 0.2950683097535385,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 22",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.398,
+    1.281,
+    1.165
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950678293985094
+   ],
+   "zmax": 0.2950678293985094,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 23",
+   "dir": "A->B",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.164,
+    1.281,
+    1.398
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ],
+    [
+     1,
+     0,
+     0,
+     3.141593
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.2950680835450291
+   ],
+   "zmax": 0.2950680835450291,
+   "checks": {
+    "pre/post states": "A->B",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  },
+  {
+   "name": "toggle 24",
+   "dir": "B->A",
+   "ok": true,
+   "extraClickRel_s": [],
+   "sentAt_ms": [],
+   "land_s": [
+    1.397,
+    1.281,
+    1.164
+   ],
+   "frames": 146,
+   "finalRaw": [
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     1,
+     0
+    ]
+   ],
+   "bboxMin": [
+    -0.75,
+    -1.75,
+    -0.28999999165534973
+   ],
+   "bboxMax": [
+    0.75,
+    0.07999999821186066,
+    0.29506830992739985
+   ],
+   "zmax": 0.29506830992739985,
+   "checks": {
+    "pre/post states": "B->A",
+    "extra clicks sent / delivered to canvas": "0/0",
+    "every extra click landed while a clock was active": true,
+    "touches accepted == 1": true,
+    "clock activations == 1": true,
+    "clock startTime writes == 1": true,
+    "exactly one flip, to the opposite state": true,
+    "monotonic every tile (no stall reversal / restart)": true,
+    "raw angle within [0, pi] every frame (no 2pi accumulation)": true,
+    "tiles landed in staggered order ~0.117 s apart": true,
+    "tiles still moving after last extra click (click was truly mid-flip)": true
+   }
+  }
+ ]
+}

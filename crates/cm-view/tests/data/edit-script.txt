@@ -1,0 +1,22 @@
+# Scripted edit of a small VRML file (tests/app_script.rs and, under xvfb-run,
+# the cm-edit window). Expected result: tests/data/edit-expected.wrl.
+key Down
+key End
+type \nappearance Appearance {
+key Enter
+type material Material { diffuseColor 1 0 0 }
+key Enter
+# `}` is an electric character: the VRML mode dedents the line.
+type }
+pause 1500
+key Down
+key Home
+key Shift-Ctrl-Right
+type geom
+# Undo the replacement; the selection returns to "geometry".
+key Ctrl-Z
+key Ctrl-C
+key Ctrl-End
+key Ctrl-V
+key Ctrl-S
+quit

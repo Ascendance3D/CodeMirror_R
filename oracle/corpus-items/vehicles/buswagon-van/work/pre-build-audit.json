@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Cube.000_Cube.022",
+    "verts": 3002,
+    "faces": 2384
+  },
+  {
+    "name": "Cube.001_Cube.032",
+    "verts": 1190,
+    "faces": 982
+  },
+  {
+    "name": "Cube.002_Cube.023",
+    "verts": 374,
+    "faces": 229
+  },
+  {
+    "name": "Cube.003_Plane.003",
+    "verts": 1769,
+    "faces": 1860
+  },
+  {
+    "name": "Cube.004_Cube.033",
+    "verts": 3082,
+    "faces": 2844
+  },
+  {
+    "name": "Cube.005_Cube.034",
+    "verts": 20,
+    "faces": 18
+  },
+  {
+    "name": "Cube.006_Obj_000001.002",
+    "verts": 426,
+    "faces": 285
+  }
+]

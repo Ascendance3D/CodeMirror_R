@@ -1,0 +1,422 @@
+{
+ "The206_BODY_mesh": {
+  "object": "The206_BODY",
+  "before": {
+   "verts": 1658,
+   "faces": 1432,
+   "edges": 3105,
+   "dup": 0,
+   "boundary": 545
+  },
+  "after": {
+   "verts": 1658,
+   "faces": 1432,
+   "edges": 3105,
+   "dup": 0,
+   "boundary": 545
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 869,
+  "authored_smooth": 1691,
+  "crease_deg": 40.0,
+  "crease_rad": 0.6981,
+  "crease_source": "fold threshold",
+  "widest_dihedral_deg": 152.903,
+  "material": "Muted_Petrol",
+  "mark_disagreement": 344,
+  "cleared_custom_normals": false,
+  "keeps_custom_normals": true,
+  "sharp_after": 338
+ },
+ "The206_EXHAUST_mesh": {
+  "object": "The206_EXHAUST",
+  "before": {
+   "verts": 88,
+   "faces": 62,
+   "edges": 148,
+   "dup": 0,
+   "boundary": 32
+  },
+  "after": {
+   "verts": 88,
+   "faces": 62,
+   "edges": 148,
+   "dup": 0,
+   "boundary": 32
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 56,
+  "authored_smooth": 60,
+  "crease_deg": 40.0,
+  "crease_rad": 0.6981,
+  "crease_source": "fold threshold",
+  "widest_dihedral_deg": 90.0,
+  "material": "Exhaust_Steel",
+  "mark_disagreement": 32,
+  "cleared_custom_normals": true,
+  "keeps_custom_normals": false,
+  "sharp_after": 88
+ },
+ "The206_GLASS_mesh": {
+  "object": "The206_GLASS",
+  "before": {
+   "verts": 174,
+   "faces": 98,
+   "edges": 264,
+   "dup": 0,
+   "boundary": 126
+  },
+  "after": {
+   "verts": 174,
+   "faces": 98,
+   "edges": 264,
+   "dup": 0,
+   "boundary": 126
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 0,
+  "authored_smooth": 138,
+  "crease_deg": 40.0,
+  "crease_rad": 0.6981,
+  "crease_source": "fold threshold",
+  "widest_dihedral_deg": 18.745,
+  "material": "Black_Pink_Silk",
+  "mark_disagreement": 0,
+  "cleared_custom_normals": true,
+  "keeps_custom_normals": false,
+  "sharp_after": 0
+ },
+ "The206_INTAKE_mesh": {
+  "object": "The206_INTAKE",
+  "before": {
+   "verts": 118,
+   "faces": 43,
+   "edges": 151,
+   "dup": 0,
+   "boundary": 118
+  },
+  "after": {
+   "verts": 118,
+   "faces": 43,
+   "edges": 151,
+   "dup": 0,
+   "boundary": 118
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 0,
+  "authored_smooth": 33,
+  "crease_deg": 40.0,
+  "crease_rad": 0.6981,
+  "crease_source": "fold threshold",
+  "widest_dihedral_deg": 5.535,
+  "material": "Intake_Black",
+  "mark_disagreement": 0,
+  "cleared_custom_normals": true,
+  "keeps_custom_normals": false,
+  "sharp_after": 0
+ },
+ "The206_LENS_AMBER_mesh": {
+  "object": "The206_LENS_AMBER",
+  "before": {
+   "verts": 98,
+   "faces": 70,
+   "edges": 164,
+   "dup": 0,
+   "boundary": 50
+  },
+  "after": {
+   "verts": 98,
+   "faces": 70,
+   "edges": 164,
+   "dup": 0,
+   "boundary": 50
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 0,
+  "authored_smooth": 114,
+  "crease_deg": 40.0,
+  "crease_rad": 0.6981,
+  "crease_source": "fold threshold",
+  "widest_dihedral_deg": 50.242,
+  "material": "Lamp_Amber",
+  "mark_disagreement": 48,
+  "cleared_custom_normals": true,
+  "keeps_custom_normals": false,
+  "sharp_after": 48
+ },
+ "The206_LENS_HEAD_mesh": {
+  "object": "The206_LENS_HEAD",
+  "before": {
+   "verts": 30,
+   "faces": 16,
+   "edges": 44,
+   "dup": 0,
+   "boundary": 30
+  },
+  "after": {
+   "verts": 30,
+   "faces": 16,
+   "edges": 44,
+   "dup": 0,
+   "boundary": 30
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 0,
+  "authored_smooth": 14,
+  "crease_deg": 40.0,
+  "crease_rad": 0.6981,
+  "crease_source": "fold threshold",
+  "widest_dihedral_deg": 14.076,
+  "material": "Lamp_Clear",
+  "mark_disagreement": 0,
+  "cleared_custom_normals": true,
+  "keeps_custom_normals": false,
+  "sharp_after": 0
+ },
+ "The206_LENS_TAIL_mesh": {
+  "object": "The206_LENS_TAIL",
+  "before": {
+   "verts": 74,
+   "faces": 58,
+   "edges": 130,
+   "dup": 0,
+   "boundary": 28
+  },
+  "after": {
+   "verts": 74,
+   "faces": 58,
+   "edges": 130,
+   "dup": 0,
+   "boundary": 28
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 40,
+  "authored_smooth": 62,
+  "crease_deg": 40.0,
+  "crease_rad": 0.6981,
+  "crease_source": "fold threshold",
+  "widest_dihedral_deg": 90.0,
+  "material": "Lamp_Red",
+  "mark_disagreement": 0,
+  "cleared_custom_normals": true,
+  "keeps_custom_normals": false,
+  "sharp_after": 40
+ },
+ "The206_TRIM_mesh": {
+  "object": "The206_TRIM",
+  "before": {
+   "verts": 801,
+   "faces": 464,
+   "edges": 1248,
+   "dup": 14,
+   "boundary": 608
+  },
+  "after": {
+   "verts": 787,
+   "faces": 464,
+   "edges": 1236,
+   "dup": 0,
+   "boundary": 596
+  },
+  "verts_saved": 14,
+  "boundary_saved": 12,
+  "authored_sharp": 212,
+  "authored_smooth": 416,
+  "crease_deg": 40.0,
+  "crease_rad": 0.6981,
+  "crease_source": "fold threshold",
+  "widest_dihedral_deg": 118.08,
+  "material": "Trim_Graphite",
+  "mark_disagreement": 54,
+  "cleared_custom_normals": true,
+  "keeps_custom_normals": false,
+  "sharp_after": 222
+ },
+ "The206_UNDERBODY_mesh": {
+  "object": "The206_UNDERBODY",
+  "before": {
+   "verts": 213,
+   "faces": 140,
+   "edges": 352,
+   "dup": 0,
+   "boundary": 113
+  },
+  "after": {
+   "verts": 213,
+   "faces": 140,
+   "edges": 352,
+   "dup": 0,
+   "boundary": 113
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 67,
+  "authored_smooth": 172,
+  "crease_deg": 40.0,
+  "crease_rad": 0.6981,
+  "crease_source": "fold threshold",
+  "widest_dihedral_deg": 95.57,
+  "material": "Underbody_Dark",
+  "mark_disagreement": 16,
+  "cleared_custom_normals": true,
+  "keeps_custom_normals": false,
+  "sharp_after": 75
+ },
+ "The206_HUB_mesh": {
+  "object": "The206_wheel_FL_hub",
+  "before": {
+   "verts": 128,
+   "faces": 96,
+   "edges": 224,
+   "dup": 60,
+   "boundary": 128
+  },
+  "after": {
+   "verts": 68,
+   "faces": 96,
+   "edges": 160,
+   "dup": 0,
+   "boundary": 0
+  },
+  "verts_saved": 60,
+  "boundary_saved": 128,
+  "authored_sharp": 0,
+  "authored_smooth": 160,
+  "crease_deg": 52.0,
+  "crease_rad": 0.9076,
+  "crease_source": "wheel-family override",
+  "widest_dihedral_deg": 124.156,
+  "material": "Muted_Petrol",
+  "mark_disagreement": 64,
+  "cleared_custom_normals": false,
+  "keeps_custom_normals": false,
+  "sharp_after": 64
+ },
+ "The206_RIM_mesh": {
+  "object": "The206_wheel_FL_rim",
+  "before": {
+   "verts": 416,
+   "faces": 348,
+   "edges": 744,
+   "dup": 0,
+   "boundary": 96
+  },
+  "after": {
+   "verts": 416,
+   "faces": 348,
+   "edges": 744,
+   "dup": 0,
+   "boundary": 96
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 0,
+  "authored_smooth": 648,
+  "crease_deg": 34.0,
+  "crease_rad": 0.5934,
+  "crease_source": "wheel-family override",
+  "widest_dihedral_deg": 100.744,
+  "material": "Rim_Steel",
+  "mark_disagreement": 336,
+  "cleared_custom_normals": false,
+  "keeps_custom_normals": false,
+  "sharp_after": 336
+ },
+ "The206_RIMDARK_mesh": {
+  "object": "The206_wheel_FL_rimdark",
+  "before": {
+   "verts": 144,
+   "faces": 96,
+   "edges": 240,
+   "dup": 0,
+   "boundary": 96
+  },
+  "after": {
+   "verts": 144,
+   "faces": 96,
+   "edges": 240,
+   "dup": 0,
+   "boundary": 96
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 0,
+  "authored_smooth": 144,
+  "crease_deg": 52.0,
+  "crease_rad": 0.9076,
+  "crease_source": "wheel-family override",
+  "widest_dihedral_deg": 90.0,
+  "material": "Rim_Recess",
+  "mark_disagreement": 24,
+  "cleared_custom_normals": false,
+  "keeps_custom_normals": false,
+  "sharp_after": 24
+ },
+ "The206_ROTOR_mesh": {
+  "object": "The206_wheel_FL_rotor",
+  "before": {
+   "verts": 64,
+   "faces": 48,
+   "edges": 112,
+   "dup": 30,
+   "boundary": 64
+  },
+  "after": {
+   "verts": 34,
+   "faces": 48,
+   "edges": 80,
+   "dup": 0,
+   "boundary": 0
+  },
+  "verts_saved": 30,
+  "boundary_saved": 64,
+  "authored_sharp": 0,
+  "authored_smooth": 80,
+  "crease_deg": 52.0,
+  "crease_rad": 0.9076,
+  "crease_source": "wheel-family override",
+  "widest_dihedral_deg": 90.0,
+  "material": "Rotor_Silver",
+  "mark_disagreement": 32,
+  "cleared_custom_normals": false,
+  "keeps_custom_normals": false,
+  "sharp_after": 32
+ },
+ "The206_TYRE_mesh": {
+  "object": "The206_wheel_FL_tyre",
+  "before": {
+   "verts": 192,
+   "faces": 192,
+   "edges": 384,
+   "dup": 0,
+   "boundary": 0
+  },
+  "after": {
+   "verts": 192,
+   "faces": 192,
+   "edges": 384,
+   "dup": 0,
+   "boundary": 0
+  },
+  "verts_saved": 0,
+  "boundary_saved": 0,
+  "authored_sharp": 0,
+  "authored_smooth": 384,
+  "crease_deg": 69.0,
+  "crease_rad": 1.2043,
+  "crease_source": "wheel-family override",
+  "widest_dihedral_deg": 99.205,
+  "material": "Tyre_Rubber",
+  "mark_disagreement": 48,
+  "cleared_custom_normals": false,
+  "keeps_custom_normals": false,
+  "sharp_after": 48
+ }
+}

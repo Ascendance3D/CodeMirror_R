@@ -1,0 +1,37 @@
+[package]
+name = "cm-view"
+version = "0.1.0"
+description = "Port of the CodeMirror 5 (5.65.21) view + input layer: commands, keymaps, measurement, highlighting, and a native wgpu editor"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+default = ["gpu"]
+# The native renderer and the `cm-edit` binary. The editor model (commands, keymap,
+# measurement, highlighting, input) builds and tests without it.
+gpu = ["dep:wgpu", "dep:glyphon", "dep:winit", "dep:pollster", "dep:png", "dep:arboard", "dep:bytemuck"]
+
+[dependencies]
+cm-core = { path = "../cm-core" }
+cm-modes = { path = "../cm-modes" }
+flate2 = "1"
+wgpu = { version = "30", optional = true }
+glyphon = { version = "0.12", optional = true }
+winit = { version = "0.30", optional = true }
+pollster = { version = "0.4", optional = true }
+png = { version = "0.18", optional = true }
+arboard = { version = "3", optional = true, default-features = false }
+bytemuck = { version = "1", optional = true, features = ["derive"] }
+
+[dev-dependencies]
+cm-evidence = { path = "../cm-evidence" }
+serde_json = "1"
+
+[[bin]]
+name = "cm-edit"
+required-features = ["gpu"]
+
+[[bin]]
+name = "cm-render"
+required-features = ["gpu"]

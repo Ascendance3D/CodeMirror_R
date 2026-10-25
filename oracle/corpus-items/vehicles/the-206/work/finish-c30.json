@@ -1,0 +1,95 @@
+{
+  "counts": {
+    "def_app": 13,
+    "use_app": 16,
+    "exact": 2
+  },
+  "zones": [
+    "Black_Pink_Silk",
+    "Exhaust_Steel",
+    "Intake_Black",
+    "Lamp_Amber",
+    "Lamp_Clear",
+    "Lamp_Red",
+    "Muted_Petrol",
+    "Rim_Recess",
+    "Rim_Steel",
+    "Rotor_Silver",
+    "Trim_Graphite",
+    "Tyre_Rubber",
+    "Underbody_Dark"
+  ],
+  "crease_substituted": {
+    "Intake_Black": {
+      "was": "3.141593",
+      "now": "1.204277",
+      "widest_dihedral_deg": 5.535
+    },
+    "Lamp_Clear": {
+      "was": "3.141593",
+      "now": "1.204277",
+      "widest_dihedral_deg": 14.076
+    },
+    "Black_Pink_Silk": {
+      "was": "3.141593",
+      "now": "1.204277",
+      "widest_dihedral_deg": 18.745
+    }
+  },
+  "crease": {
+    "Black_Pink_Silk": [
+      1.2042771838760873
+    ],
+    "Exhaust_Steel": [
+      0.515143
+    ],
+    "Intake_Black": [
+      1.2042771838760873
+    ],
+    "Lamp_Amber": [
+      0.526471
+    ],
+    "Lamp_Clear": [
+      1.2042771838760873
+    ],
+    "Lamp_Red": [
+      0.520744
+    ],
+    "Muted_Petrol": [
+      0.682144,
+      1.26276
+    ],
+    "Rim_Recess": [
+      0.916298
+    ],
+    "Rim_Steel": [
+      0.443156
+    ],
+    "Rotor_Silver": [
+      0.981748
+    ],
+    "Trim_Graphite": [
+      0.57448
+    ],
+    "Tyre_Rubber": [
+      1.278016
+    ],
+    "Underbody_Dark": [
+      0.642232
+    ]
+  },
+  "root": {
+    "translation": [
+      "0.0000",
+      "-1.7500",
+      "-1.3318"
+    ],
+    "rotation": "0 1 0 3.141593",
+    "scale": "1.102540"
+  },
+  "raw": 199856,
+  "gzip": 56084,
+  "gzip_headroom": 25836,
+  "out": "item-categories/vehicles/the-206/the-206-c30.edit.wrl",
+  "gz": "item-categories/vehicles/the-206/the-206-c30.wrl"
+}

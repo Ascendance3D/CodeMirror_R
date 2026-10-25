@@ -1,0 +1,136 @@
+#VRML V2.0 utf8
+WorldInfo {
+ title "advenbed"
+ info [
+  "This VRML World was created with Spazz3D, a VRML 97 authoring tool"
+  "www.spazz3d.com"
+ ]
+}
+DEF dad_GROUND Transform {
+ children [
+  DEF GROUND Group {
+   children [
+    DEF dad_Group2 Transform {
+     translation 0.0 -1.6 -0.2
+     scale 0.6 0.6 0.6
+     children [
+      DEF Group2 Group {
+       children [
+        DEF dad_Box1 Transform {
+         translation -0.0 0.25508 1.01275
+         children [
+          DEF Box1 Shape {
+           appearance Appearance {
+            texture ImageTexture {
+             url "gleaves.jpg"
+            }
+            material DEF Red_mat Material {
+             ambientIntensity 0.200
+             shininess 0.200
+             diffuseColor 1.0 0.0 0.0
+             emissiveColor 0.0 0.0 0.0
+             specularColor 0.0 0.0 0.0
+            }
+           }
+           geometry Box {
+            size 2.0 0.3 3.0
+           }
+          }
+         ]
+        }
+        DEF dad_leg1 Transform {
+         translation -1.0036 0.75 -0.51534
+         children [
+          DEF leg1 Shape {
+           appearance Appearance {
+            texture ImageTexture {
+             url "gleaves.jpg"
+            }
+            material USE Red_mat
+           }
+           geometry Cylinder {
+            height 2.000
+            radius 0.100
+           }
+          }
+         ]
+        }
+        DEF dad_leg2 Transform {
+         translation 0.97809 0.75 2.51534
+         children [
+          DEF leg2 Shape {
+           appearance Appearance {
+            texture ImageTexture {
+             url "gleaves.jpg"
+            }
+            material USE Red_mat
+           }
+           geometry Cylinder {
+            height 2.000
+            radius 0.100
+           }
+          }
+         ]
+        }
+        DEF dad_leg3 Transform {
+         translation 0.99085 0.75 -0.50258
+         children [
+          DEF leg3 Shape {
+           appearance Appearance {
+            texture ImageTexture {
+             url "gleaves.jpg"
+            }
+            material USE Red_mat
+           }
+           geometry Cylinder {
+            height 2.000
+            radius 0.100
+           }
+          }
+         ]
+        }
+        DEF dad_leg4 Transform {
+         translation -1.0036 0.75 2.50258
+         children [
+          DEF leg4 Shape {
+           appearance Appearance {
+            texture ImageTexture {
+             url "gleaves.jpg"
+            }
+            material USE Red_mat
+           }
+           geometry Cylinder {
+            height 2.000
+            radius 0.100
+           }
+          }
+         ]
+        }
+        DEF dad_Sphere1 Transform {
+         translation -0.003 0.5 1.719
+         scale 1.809 0.349 1.5
+         children [
+          DEF Sphere1 Shape {
+           appearance Appearance {
+            texture ImageTexture {
+             url "gleaves.jpg"
+            }
+            textureTransform TextureTransform {
+             scale 1.064 1.012
+            }
+            material USE Red_mat
+           }
+           geometry Sphere {
+            radius 0.300
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

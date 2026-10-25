@@ -1,0 +1,389 @@
+{
+ "blend": "/home/ryan/Projects/cybertown/.backups/the-206/20260908-193905-presource/the-206.blend",
+ "blender": "5.2.0 LTS",
+ "objects": [
+  {
+   "object": "FLW",
+   "data": "Circle.007",
+   "location": [
+    0.817227,
+    -1.165864,
+    0.350981
+   ],
+   "rotation_euler": [
+    -0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "verts": 160,
+   "edges": 224,
+   "faces": 66,
+   "tris": 156,
+   "ngons": 2,
+   "quads": 64,
+   "uv_layers": [
+    "UVMap"
+   ],
+   "has_custom_normals": true,
+   "sharp_edges": 0,
+   "smooth_faces": 66,
+   "materials": [
+    "Peugeot 206"
+   ],
+   "world_bounds": {
+    "x": [
+     0.679136,
+     0.963258
+    ],
+    "y": [
+     -1.51684,
+     -0.814889
+    ],
+    "z": [
+     6e-06,
+     0.701956
+    ]
+   },
+   "fingerprint": "46202253524c47b2ee6a9cd74b2be0ff7a125738c7bb491afeaeceea09ff4fe5",
+   "boundary": 160,
+   "non_manifold": 0,
+   "wire": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0
+  },
+  {
+   "object": "FRW",
+   "data": "Circle.000",
+   "location": [
+    -0.817227,
+    -1.165864,
+    0.350981
+   ],
+   "rotation_euler": [
+    -0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "verts": 160,
+   "edges": 224,
+   "faces": 66,
+   "tris": 156,
+   "ngons": 2,
+   "quads": 64,
+   "uv_layers": [
+    "UVMap"
+   ],
+   "has_custom_normals": true,
+   "sharp_edges": 0,
+   "smooth_faces": 66,
+   "materials": [
+    "Peugeot 206"
+   ],
+   "world_bounds": {
+    "x": [
+     -0.963258,
+     -0.679136
+    ],
+    "y": [
+     -1.51684,
+     -0.814889
+    ],
+    "z": [
+     6e-06,
+     0.701956
+    ]
+   },
+   "fingerprint": "383f51abab8ba2d7bb84be805f72fb2156094ae20023635cb25755a974dce59c",
+   "boundary": 160,
+   "non_manifold": 0,
+   "wire": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0
+  },
+  {
+   "object": "Peugeot206",
+   "data": "Circle.006",
+   "location": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation_euler": [
+    -0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "verts": 2613,
+   "edges": 4969,
+   "faces": 2383,
+   "tris": 4796,
+   "ngons": 36,
+   "quads": 2237,
+   "uv_layers": [
+    "UVMap"
+   ],
+   "has_custom_normals": true,
+   "sharp_edges": 1862,
+   "smooth_faces": 2383,
+   "materials": [
+    "Peugeot 206_Single"
+   ],
+   "world_bounds": {
+    "x": [
+     -1.062837,
+     1.062837
+    ],
+    "y": [
+     -2.114924,
+     2.232989
+    ],
+    "z": [
+     0.098651,
+     1.459598
+    ]
+   },
+   "fingerprint": "cc3563108fec6e1b5087729016435e87e06f030ae71c2fbd84b97da0f6cf2fc4",
+   "boundary": 376,
+   "non_manifold": 0,
+   "wire": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0
+  },
+  {
+   "object": "RLW",
+   "data": "Circle.002",
+   "location": [
+    0.817227,
+    1.488247,
+    0.350981
+   ],
+   "rotation_euler": [
+    -0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "verts": 160,
+   "edges": 224,
+   "faces": 66,
+   "tris": 156,
+   "ngons": 2,
+   "quads": 64,
+   "uv_layers": [
+    "UVMap"
+   ],
+   "has_custom_normals": true,
+   "sharp_edges": 0,
+   "smooth_faces": 66,
+   "materials": [
+    "Peugeot 206"
+   ],
+   "world_bounds": {
+    "x": [
+     0.679136,
+     0.963258
+    ],
+    "y": [
+     1.137272,
+     1.839222
+    ],
+    "z": [
+     6e-06,
+     0.701956
+    ]
+   },
+   "fingerprint": "258e5d68895425cd4b01119243f181aefeeb5b73085217e371c9e8fcf8f1b1bf",
+   "boundary": 160,
+   "non_manifold": 0,
+   "wire": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0
+  },
+  {
+   "object": "RRW",
+   "data": "Circle.001",
+   "location": [
+    -0.817227,
+    1.488247,
+    0.350981
+   ],
+   "rotation_euler": [
+    -0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "verts": 160,
+   "edges": 224,
+   "faces": 66,
+   "tris": 156,
+   "ngons": 2,
+   "quads": 64,
+   "uv_layers": [
+    "UVMap"
+   ],
+   "has_custom_normals": true,
+   "sharp_edges": 0,
+   "smooth_faces": 66,
+   "materials": [
+    "Peugeot 206"
+   ],
+   "world_bounds": {
+    "x": [
+     -0.963258,
+     -0.679136
+    ],
+    "y": [
+     1.137272,
+     1.839222
+    ],
+    "z": [
+     6e-06,
+     0.701956
+    ]
+   },
+   "fingerprint": "35867c3aa1fa797c9ce3175fd32c1d4f563f661802b40413b4cee635ed9e94a7",
+   "boundary": 160,
+   "non_manifold": 0,
+   "wire": 0,
+   "loose_verts": 0,
+   "zero_area_faces": 0
+  }
+ ],
+ "totals": {
+  "verts": 3253,
+  "edges": 5865,
+  "faces": 2647,
+  "tris": 5420,
+  "boundary": 1016,
+  "non_manifold": 0,
+  "zero_area_faces": 0
+ },
+ "scene_bounds": {
+  "x": [
+   -1.062837,
+   1.062837
+  ],
+  "y": [
+   -2.114924,
+   2.232989
+  ],
+  "z": [
+   6e-06,
+   1.459598
+  ]
+ },
+ "images": [
+  {
+   "name": "GreenTexture.png",
+   "filepath": "//../../../tooling/fbx-to-wrl/sample-fbx/syclone/GMC Syclone.fbm/GreenTexture.png",
+   "size": [
+    512,
+    512
+   ],
+   "users": 0,
+   "packed": true
+  },
+  {
+   "name": "VEHICLE - PEUGEOT 206.fbm",
+   "filepath": "//../../../tooling/fbx-to-wrl/sample-fbx/bulk_samples/vehicle-peugeot-206/source/VEHICLE - PEUGEOT 206.fbm",
+   "size": [
+    512,
+    512
+   ],
+   "users": 2,
+   "packed": true
+  }
+ ],
+ "materials": [
+  "Peugeot 206",
+  "Peugeot 206_Single"
+ ],
+ "fitment": {
+  "FLW": {
+   "centre": [
+    0.821197,
+    -1.165865,
+    0.350981
+   ],
+   "width": 0.284122,
+   "diameter_y": 0.701951,
+   "diameter_z": 0.70195,
+   "lowest_z": 6e-06,
+   "outer_x": 0.963258,
+   "inner_x": 0.679136
+  },
+  "FRW": {
+   "centre": [
+    -0.821197,
+    -1.165865,
+    0.350981
+   ],
+   "width": 0.284122,
+   "diameter_y": 0.701951,
+   "diameter_z": 0.70195,
+   "lowest_z": 6e-06,
+   "outer_x": 0.963258,
+   "inner_x": 0.679136
+  },
+  "RLW": {
+   "centre": [
+    0.821197,
+    1.488247,
+    0.350981
+   ],
+   "width": 0.284122,
+   "diameter_y": 0.70195,
+   "diameter_z": 0.70195,
+   "lowest_z": 6e-06,
+   "outer_x": 0.963258,
+   "inner_x": 0.679136
+  },
+  "RRW": {
+   "centre": [
+    -0.821197,
+    1.488247,
+    0.350981
+   ],
+   "width": 0.284122,
+   "diameter_y": 0.70195,
+   "diameter_z": 0.70195,
+   "lowest_z": 6e-06,
+   "outer_x": 0.963258,
+   "inner_x": 0.679136
+  },
+  "summary": {
+   "front_axle_y": -1.165865,
+   "rear_axle_y": 1.488247,
+   "wheelbase": 2.654112,
+   "front_track": 1.642394,
+   "rear_track": 1.642394,
+   "radius": 0.350975,
+   "width": 0.284122,
+   "ground_z": 6e-06
+  }
+ }
+}
