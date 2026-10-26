@@ -13,8 +13,3 @@ cm-core = { path = "../cm-core" }
 serde_json = "1"
 flate2 = "1"
 sha2 = "0.10"
-criterion = "0.8.2"
-
-[[bench]]
-name = "xml_bench"
-harness = false
