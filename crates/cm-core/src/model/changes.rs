@@ -436,20 +436,26 @@ fn shift_doc(doc: &Doc, distance: i64) {
     if distance == 0 {
         return;
     }
-    let mut inner = doc.inner_mut();
-    inner.first += distance;
-    let sel = inner.sel.clone();
-    let ranges = sel
-        .ranges
-        .iter()
-        .map(|r| {
-            Range::new(
-                PosRef::lc(r.anchor.line() + distance, r.anchor.ch()),
-                PosRef::lc(r.head.line() + distance, r.head.ch()),
-            )
-        })
-        .collect();
-    inner.sel = new_sel(ranges, sel.prim_index);
+    {
+        let mut inner = doc.inner_mut();
+        inner.first += distance;
+        let sel = inner.sel.clone();
+        let ranges = sel
+            .ranges
+            .iter()
+            .map(|r| {
+                Range::new(
+                    PosRef::lc(r.anchor.line() + distance, r.anchor.ch()),
+                    PosRef::lc(r.head.line() + distance, r.head.ch()),
+                )
+            })
+            .collect();
+        inner.sel = new_sel(ranges, sel.prim_index);
+    }
+    // `if (doc.cm) { regChange(…); regLineChange(…, "gutter") … }`
+    if let Some(s) = doc.sink() {
+        s.doc_shifted(doc, distance);
+    }
 }
 
 /// `makeChangeSingleDoc(doc, change, selAfter, spans)`: apply to one document,

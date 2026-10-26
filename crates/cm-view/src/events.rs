@@ -172,6 +172,10 @@ pub(crate) enum ViewChange {
     /// `regLineChange(cm, line, type)`: line `line` must be redrawn. It marks that
     /// line of the rendered range dirty and never moves the range.
     Line(i64),
+    /// `for (l = display.viewFrom; l < display.viewTo; l++) regLineChange(cm, l,
+    /// "gutter")` (shiftDoc): every line of the rendered range, as it is at this
+    /// point of the replay, must be redrawn.
+    ViewLines,
 }
 
 /// `cm.curOp`: what one operation collected for its end.
@@ -487,6 +491,20 @@ impl EditorSink for EditorShared {
             let (f, c) = (e.f.clone(), c.clone());
             self.later(move |cx| f(cx, &c));
         }
+    }
+    fn doc_shifted(&self, doc: &Doc, distance: i64) {
+        // changes.js:168-170: `regChange(doc.cm, doc.first, doc.first - distance,
+        // distance)` with the new `first`, then a gutter `regLineChange` for each
+        // line of the range that regChange left.
+        let first = doc.first_line();
+        self.with_op(|op| {
+            op.regs.push(ViewChange::Range {
+                from: first,
+                to: first - distance,
+                lendiff: distance,
+            });
+            op.regs.push(ViewChange::ViewLines);
+        });
     }
     fn signal_cursor_activity(&self) {
         // event.js:58-64: add each handler not yet collected (function identity).

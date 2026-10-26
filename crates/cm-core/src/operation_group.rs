@@ -183,6 +183,9 @@ pub trait EditorSink {
     /// `makeChangeSingleDocInEditor`, after the change is applied to the lines;
     /// `full` is `change.full` (`setValue`), which redraws the whole document.
     fn change_applied(&self, _doc: &Doc, _change: &Rc<ChangeObj>, _full: bool) {}
+    /// `shiftDoc(doc, distance)` on a document with this editor, after `doc.first`
+    /// and the selection moved: the `if (doc.cm)` part (changes.js:167-171).
+    fn doc_shifted(&self, _doc: &Doc, _distance: i64) {}
     /// `signalCursorActivity(cm)`.
     fn signal_cursor_activity(&self) {}
     /// `setSelectionInner` on a document with this editor: the selection changed.

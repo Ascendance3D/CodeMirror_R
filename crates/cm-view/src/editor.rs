@@ -21,7 +21,7 @@
 //! * bidi in measurement, cursors, selection drawing and clicks (left to right only;
 //!   `moveVisually` and `endOfLine` do use the ported bidi ordering).
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::rc::Rc;
@@ -146,6 +146,24 @@ pub struct Display {
     /// `display.lineNumChars`: the characters of the last line number when the
     /// gutter width was last computed.
     pub line_num_chars: Option<usize>,
+    /// How many times a rendered range outside the document's lines was found and
+    /// reset instead of drawn (no CM5 equivalent: CM5 would read missing lines).
+    /// Every invalidation is ported, so this stays 0 unless one is missed.
+    pub invalid_views: Cell<u64>,
+    /// The last such range, for diagnosis.
+    pub last_invalid_view: Cell<Option<InvalidView>>,
+}
+
+/// A rendered range found outside `[doc.first, doc.first + doc.size)`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InvalidView {
+    /// `viewFrom`/`viewTo` as found.
+    pub view: (i64, i64),
+    /// `doc.first` and `doc.first + doc.size` at that point.
+    pub doc: (i64, i64),
+    /// Where it was found: `"display"` (after the operation's invalidations were
+    /// replayed) or `"render"` (`render_view_styles` outside an operation's end).
+    pub at: &'static str,
 }
 
 /// `lastCopied` (module state in src/input/input.js).
@@ -385,6 +403,8 @@ impl Editor {
                 reported_view: (first, first),
                 update_line_numbers: None,
                 line_num_chars: None,
+                invalid_views: Cell::new(0),
+                last_invalid_view: Cell::new(None),
             },
             overwrite: false,
             paste_incoming: -1.0,
@@ -795,6 +815,14 @@ impl Editor {
                     }
                     continue;
                 }
+                ViewChange::ViewLines => {
+                    for n in vf..vt {
+                        if !lines.contains(&n) {
+                            lines.push(n);
+                        }
+                    }
+                    continue;
+                }
                 ViewChange::Range { from, to, lendiff } => (from, to, lendiff),
             };
             if lendiff != 0 && to < vt && self.display.update_line_numbers.is_none_or(|n| n > from)
@@ -865,6 +893,17 @@ impl Editor {
                 || lines.iter().any(|&n| n >= view.0 && n < view.1)
                 || !numbers_ok(self.display.update_line_numbers, view.1);
         }
+        // Not in CM5. The replay may leave a range outside the document (a shift
+        // past a short range is a change after it), but then a line is dirty and
+        // `adjustView` moves it inside. A range still outside here means an
+        // invalidation was missed: it is recorded, then reset and computed again
+        // (resetView) instead of drawn, which would read lines that do not exist.
+        if !self.view_in_doc(self.display.view_from, self.display.view_to) {
+            self.note_invalid_view((self.display.view_from, self.display.view_to), "display");
+            self.set_view(first, first);
+            self.update_view_for((vis_from, vis_to));
+            redrawn = true;
+        }
         self.render_view_styles();
         if redrawn {
             self.display.update_line_numbers = None;
@@ -889,15 +928,34 @@ impl Editor {
     /// `maxHighlightLength`, the state from *before* the line) and advancing the
     /// highlight frontier. Done at the end of every operation, like `endOperation`.
     pub fn render_view_styles(&self) {
-        let (from, to) = (
-            self.display.view_from,
-            self.display
-                .view_to
-                .min(self.first_line() + self.doc.line_count() as i64),
-        );
+        let (from, to) = (self.display.view_from, self.display.view_to);
+        if !self.view_in_doc(from, to) {
+            // Only reachable between a document change and the end of this editor's
+            // operation (its display phase still parked): draw nothing.
+            self.note_invalid_view((from, to), "render");
+            return;
+        }
         for n in from..to {
             self.line_styles(n);
         }
+    }
+
+    /// Whether `[from, to)` is a range of the document's lines
+    /// (`doc.first <= from <= to <= doc.first + doc.size`).
+    fn view_in_doc(&self, from: i64, to: i64) -> bool {
+        let first = self.first_line();
+        first <= from && from <= to && to <= first + self.doc.line_count() as i64
+    }
+
+    fn note_invalid_view(&self, view: (i64, i64), at: &'static str) {
+        let first = self.first_line();
+        let d = &self.display;
+        d.invalid_views.set(d.invalid_views.get() + 1);
+        d.last_invalid_view.set(Some(InvalidView {
+            view,
+            doc: (first, first + self.doc.line_count() as i64),
+            at,
+        }));
     }
 
     /// `ensureCursorVisible(cm)`.
