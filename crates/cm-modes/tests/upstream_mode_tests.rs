@@ -10,6 +10,7 @@
 //! upstream/codemirror5/mode/css/gss_test.js
 //! upstream/codemirror5/mode/css/scss_test.js
 //! upstream/codemirror5/mode/css/less_test.js
+//! upstream/codemirror5/mode/rust/test.js
 
 #![cfg_attr(rustfmt, rustfmt::skip)]
 
@@ -1793,5 +1794,49 @@ fn less_nest() {
 fn less_interpolation() {
     mt("mode/css/less_test.js", "less_interpolation", Spec::from("text/x-less"), 2, &[
         ".@{[variable foo]} { [property font-weight]: [atom bold]; }",
+    ]);
+}
+
+/// mode/rust/test.js: `rust_integer_test`
+#[test]
+fn rust_integer_test() {
+    mt("mode/rust/test.js", "rust_integer_test", Spec::from("rust"), 4, &[
+        "[number 123i32]",
+        "[number 123u32]",
+        "[number 123_u32]",
+        "[number 0xff_u8]",
+        "[number 0o70_i16]",
+        "[number 0b1111_1111_1001_0000_i32]",
+        "[number 0usize]",
+    ]);
+}
+
+/// mode/rust/test.js: `rust_float_test`
+#[test]
+fn rust_float_test() {
+    mt("mode/rust/test.js", "rust_float_test", Spec::from("rust"), 4, &[
+        "[number 123.0f64]",
+        "[number 0.1f64]",
+        "[number 0.1f32]",
+        "[number 12E+99_f64]",
+    ]);
+}
+
+/// mode/rust/test.js: `rust_string-literals-test`
+#[test]
+fn rust_string_literals_test() {
+    mt("mode/rust/test.js", "rust_string-literals-test", Spec::from("rust"), 4, &[
+        "[string \"foo\"]",
+        "[string r\"foo\"]",
+        "[string \"\\\"foo\\\"\"]",
+        "[string r#\"\"foo\"\"#]",
+        "[string \"foo #\\\"# bar\"]",
+        "[string b\"foo\"]",
+        "[string br\"foo\"]",
+        "[string b\"\\\"foo\\\"\"]",
+        "[string br#\"\"foo\"\"#]",
+        "[string br##\"foo #\" bar\"##]",
+        "[string-2 'h']",
+        "[string-2 b'h']",
     ]);
 }

@@ -18,7 +18,7 @@
 //! Modes ported so far: [`toml`] (`mode/toml/toml.js`), [`xml`] (`mode/xml/xml.js`),
 //! [`javascript`] (`mode/javascript/javascript.js`, json/json-ld/typescript included),
 //! [`css`] (`mode/css/css.js`, scss/less/gss included), [`htmlmixed`]
-//! (`mode/htmlmixed/htmlmixed.js`). [`vrml`] is new (CM5 has no VRML mode); its JS
+//! (`mode/htmlmixed/htmlmixed.js`), [`rust`] (`mode/rust/rust.js`, a [`simple`] mode). [`vrml`] is new (CM5 has no VRML mode); its JS
 //! twin is `oracle/cm5-vrml-mode.js`.
 //!
 //! ## Copying states
@@ -48,6 +48,7 @@ pub mod js;
 pub mod meta;
 pub mod multiplex;
 pub mod overlay;
+pub mod rust;
 pub mod simple;
 pub mod toml;
 pub mod vrml;
@@ -587,6 +588,7 @@ impl Registry {
         javascript::register(&mut r);
         css::register(&mut r);
         htmlmixed::register(&mut r);
+        rust::register(&mut r);
         vrml::register(&mut r);
         r
     }
