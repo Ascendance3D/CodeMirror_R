@@ -122,7 +122,25 @@ fn out_dir() -> PathBuf {
         .filter(|v| !v.is_empty())
         .map(PathBuf::from)
         .unwrap_or_else(|| cm_evidence::workspace_root().join("target/cm-visual"));
+    // Frames are written here on every run; they must never land on the goldens.
+    // Checked before creating the directory, and again with symlinks resolved.
+    let inside = |d: &Path, g: &Path| {
+        assert!(
+            !d.starts_with(g),
+            "CM_VISUAL_OUT {} is inside the golden sets {}",
+            d.display(),
+            g.display()
+        )
+    };
+    inside(
+        &std::path::absolute(&dir).unwrap(),
+        &std::path::absolute(golden_dir()).unwrap(),
+    );
     std::fs::create_dir_all(&dir).unwrap_or_else(|e| panic!("{}: {e}", dir.display()));
+    inside(
+        &dir.canonicalize().unwrap(),
+        &golden_dir().canonicalize().unwrap(),
+    );
     dir
 }
 
@@ -146,7 +164,12 @@ fn identity(text: &str) -> Vec<&str> {
 /// The reviewed golden set whose `ADAPTER.txt` matches `desc` exactly, if any. A set
 /// without `REVIEWED.txt` is not a golden set. More than one match is an error.
 fn golden_set(desc: &str) -> Result<Option<PathBuf>, String> {
-    let root = golden_dir();
+    golden_set_in(&golden_dir(), desc)
+}
+
+/// [`golden_set`] under `root`.
+fn golden_set_in(root: &Path, desc: &str) -> Result<Option<PathBuf>, String> {
+    let root = root.to_path_buf();
     let mut dirs = vec![root.clone()];
     if let Ok(rd) = std::fs::read_dir(&root) {
         let mut sub: Vec<PathBuf> = rd
@@ -1049,17 +1072,32 @@ fn wrapped_selection_2x() {
 // pixel unchanged, and the part to the right of the gutter edge stays visible and
 // above the text. These cases need no golden: the expectations are geometric.
 
-/// Line numbers, 200-column lines with glyph ink everywhere, the cursor at `1:ch`,
-/// scrolled horizontally so the cursor's left edge is at window x `gutter + offset`.
-fn hscroll_scene(gpu: &Gpu, scale: f32, ch: i64, offset: f64) -> Scene {
+/// Gutter and cursor variants of the horizontal-scroll cases.
+#[derive(Clone, Copy, Debug)]
+struct HMode {
+    line_numbers: bool,
+    /// `cm.state.overwrite`: the renderer's wider overwrite cursor (`cw / 4`, at least
+    /// 2 px, not rounded).
+    overwrite: bool,
+}
+
+const NUMBERS: HMode = HMode {
+    line_numbers: true,
+    overwrite: false,
+};
+
+/// 200-column lines with glyph ink everywhere, the cursor at `1:ch`, scrolled
+/// horizontally so the cursor's left edge is at window x `gutter + offset`.
+fn hscroll_scene(gpu: &Gpu, scale: f32, ch: i64, offset: f64, mode: HMode) -> Scene {
     let text: String = (0..30)
         .map(|i| format!("{i:02} {}\n", "abcdefghij".repeat(20)))
         .collect();
     let c = Case {
-        line_numbers: true,
+        line_numbers: mode.line_numbers,
         ..Case::new("hscroll", &text, p(1, ch)).scale(scale)
     };
     let mut s = Scene::new(gpu, &c);
+    s.editor.overwrite = mode.overwrite;
     let left = s.editor.cursor_coords(p(1, ch), CoordSys::Div).left;
     s.editor.scroll_to(Some(left - offset), None);
     assert_eq!(
@@ -1072,19 +1110,32 @@ fn hscroll_scene(gpu: &Gpu, scale: f32, ch: i64, offset: f64) -> Scene {
 
 /// Renders the scene with and without the cursor and checks the gutter and the
 /// visible part of the cursor. Returns the visible cursor columns and the cursor width.
-fn check_hscroll(gpu: &Gpu, scale: f32, ch: i64, offset: f64, r: &mut Report) -> (i64, i64) {
-    let mut s = hscroll_scene(gpu, scale, ch, offset);
+fn check_hscroll(
+    gpu: &Gpu,
+    scale: f32,
+    ch: i64,
+    offset: f64,
+    mode: HMode,
+    r: &mut Report,
+) -> (i64, i64) {
+    let mut s = hscroll_scene(gpu, scale, ch, offset, mode);
     let shown = s.frame(gpu, true);
     let hidden = s.frame(gpu, false);
     let g = s.editor.gutter_width;
     let c = s.editor.cursor_coords(p(1, ch), CoordSys::Div);
-    let cw = (s.editor.metrics.char_width / 8.0).max(1.0).round();
+    let cw = if mode.overwrite {
+        (s.editor.metrics.char_width as f32 / 4.0).max(2.0) as f64
+    } else {
+        (s.editor.metrics.char_width / 8.0).max(1.0).round()
+    };
     let x = s.wx(c.left);
     r.note(format!(
-        "scale {scale} ch {ch} offset {offset}: gutter_width {g}, cursor window x {x:.3}, width {cw}, scroll_left {:.3}",
+        "{mode:?} scale {scale} ch {ch} offset {offset}: gutter_width {g}, cursor window x {x:.3}, width {cw}, scroll_left {:.3}",
         s.editor.display.scroll_left
     ));
-    check_gutter(&s, &shown, r);
+    if mode.line_numbers {
+        check_gutter(&s, &shown, r);
+    }
     let in_gutter = (0..s.h)
         .flat_map(|y| (0..g as u32).map(move |x| (x, y)))
         .filter(|&(x, y)| shown.at(x, y) != hidden.at(x, y))
@@ -1105,7 +1156,7 @@ fn check_hscroll(gpu: &Gpu, scale: f32, ch: i64, offset: f64, r: &mut Report) ->
         .copied()
         .reduce(|a, b| (a.0.min(b.0), a.1.max(b.1), a.2.min(b.2), a.3.max(b.3)));
     let cols = (want.1 - want.0 + 1).max(0);
-    let out = (cols, cw as i64);
+    let out = (cols, cw.round() as i64);
     match bbox {
         None if cols == 0 => r.note("ok cursor fully behind the gutter: no pixel changes"),
         None => r.fail(format!(
@@ -1115,7 +1166,7 @@ fn check_hscroll(gpu: &Gpu, scale: f32, ch: i64, offset: f64, r: &mut Report) ->
             "scale {scale} offset {offset}: cursor should be hidden, changed {b:?}"
         )),
         Some(b) => {
-            // Exact: the clip edge is on a pixel boundary, not a pixel center.
+            // Exact: no case puts an edge on a pixel center.
             if b != want {
                 r.fail(format!(
                     "scale {scale} offset {offset}: cursor measured {b:?}, clipped model {want:?}"
@@ -1146,14 +1197,14 @@ fn run_hscroll(scale: f32) {
     };
     let mut r = Report::default();
     // Behind the gutter (left edge 12 and 2 logical px inside it).
-    let deep = check_hscroll(gpu, scale, 40, -12.0 * scale as f64, &mut r).0;
-    let near = check_hscroll(gpu, scale, 40, -2.0 * scale as f64, &mut r).0;
+    let deep = check_hscroll(gpu, scale, 40, -12.0 * scale as f64, NUMBERS, &mut r).0;
+    let near = check_hscroll(gpu, scale, 40, -2.0 * scale as f64, NUMBERS, &mut r).0;
     // Straddling the edge: one physical pixel left of it. At scale 1 the 1 px
     // cursor is hidden; at scale 2 the right one of its 2 px stays visible.
-    let straddle = check_hscroll(gpu, scale, 40, -1.0, &mut r).0;
+    let straddle = check_hscroll(gpu, scale, 40, -1.0, NUMBERS, &mut r).0;
     // Exactly at the edge, and well inside the text area: fully visible.
-    let at_edge = check_hscroll(gpu, scale, 40, 0.0, &mut r).0;
-    let (inside, cw) = check_hscroll(gpu, scale, 40, 40.0 * scale as f64, &mut r);
+    let at_edge = check_hscroll(gpu, scale, 40, 0.0, NUMBERS, &mut r).0;
+    let (inside, cw) = check_hscroll(gpu, scale, 40, 40.0 * scale as f64, NUMBERS, &mut r);
     r.note(format!(
         "visible columns: behind {deep}/{near}, straddle {straddle}, at edge {at_edge}, inside {inside} (cursor width {cw})"
     ));
@@ -1182,8 +1233,9 @@ fn hscroll_gutter_clips_cursor_2x() {
     run_hscroll(2.0);
 }
 
-/// The golden-set rule needs no GPU: a set matches only the exact seven-field
-/// identity of its `ADAPTER.txt`, and a set without `REVIEWED.txt` is not a set.
+/// The golden-set rule (no adapter is used): a set matches only the exact
+/// seven-field identity of its `ADAPTER.txt`, and a set without `REVIEWED.txt` is
+/// not a set.
 #[test]
 fn golden_set_requires_exact_adapter_identity() {
     let recorded = std::fs::read_to_string(golden_dir().join("ADAPTER.txt")).unwrap();
@@ -1265,4 +1317,100 @@ fn scrollbar_thumb_covers_cursor() {
             hex(got)
         );
     }
+}
+
+/// The other variants: no gutter (the clip edge is the window edge), the overwrite
+/// cursor (fractional width), and edges 0.3 px off a pixel boundary on both sides of
+/// the clip edge. `check_hscroll` compares each with the clipped model rectangle.
+/// Wrapped lines are not a variant: with `lineWrapping` the view never scrolls
+/// horizontally, so no cursor reaches the gutter.
+fn run_hscroll_variants(scale: f32) {
+    let gpu = match gpu() {
+        Ok((g, _)) => g,
+        Err(e) => return cm_evidence::no_gpu(e),
+    };
+    let mut r = Report::default();
+    let modes = [
+        NUMBERS,
+        HMode {
+            line_numbers: true,
+            overwrite: true,
+        },
+        HMode {
+            line_numbers: false,
+            overwrite: false,
+        },
+        HMode {
+            line_numbers: false,
+            overwrite: true,
+        },
+    ];
+    for mode in modes {
+        let behind = check_hscroll(gpu, scale, 40, -12.0 * scale as f64, mode, &mut r).0;
+        let mut seen = Vec::new();
+        for offset in [-1.0, -0.3, 0.3, 40.0 * scale as f64] {
+            seen.push(check_hscroll(gpu, scale, 40, offset, mode, &mut r).0);
+        }
+        let inside = *seen.last().unwrap();
+        r.note(format!(
+            "{mode:?}: visible columns behind {behind}, at -1/-0.3/+0.3/inside {seen:?}"
+        ));
+        if behind != 0 || inside == 0 {
+            r.fail(format!(
+                "{mode:?}: behind {behind} (want 0), inside {inside} (want > 0)"
+            ));
+        }
+    }
+    let name = format!("hscroll_variants_{scale}x");
+    std::fs::write(out_dir().join(format!("{name}.txt")), &r.log).expect("write record");
+    println!("{}", r.log);
+    assert!(
+        r.failures.is_empty(),
+        "{name} failed:\n{}",
+        r.failures.join("\n")
+    );
+}
+
+#[test]
+fn hscroll_variants_clip_cursor() {
+    run_hscroll_variants(1.0);
+}
+#[test]
+fn hscroll_variants_clip_cursor_2x() {
+    run_hscroll_variants(2.0);
+}
+
+/// The golden-set rule on scratch directories: a candidate without `REVIEWED.txt` (or
+/// with an empty one) is never used, a reviewed subdirectory set is found, and two
+/// reviewed sets for the same adapter are an error.
+#[test]
+fn golden_set_rule_on_scratch_sets() {
+    let root = out_dir().join("golden-set-rule");
+    let _ = std::fs::remove_dir_all(&root);
+    let desc = "adapter: Test GPU\nbackend: Metal\ndevice_type: IntegratedGpu\nvendor: 0x0\ndevice: 0x0\ndriver: test\ndriver_info: 1\n";
+    let set = |name: &str, reviewed: Option<&str>| {
+        let d = root.join(name);
+        std::fs::create_dir_all(&d).unwrap();
+        std::fs::write(d.join("ADAPTER.txt"), desc).unwrap();
+        if let Some(r) = reviewed {
+            std::fs::write(d.join("REVIEWED.txt"), r).unwrap();
+        }
+        d
+    };
+    std::fs::create_dir_all(&root).unwrap();
+    assert_eq!(golden_set_in(&root, desc), Ok(None), "empty root");
+    let a = set("metal-a", None);
+    assert_eq!(golden_set_in(&root, desc), Ok(None), "no REVIEWED.txt");
+    std::fs::write(a.join("REVIEWED.txt"), " \n").unwrap();
+    assert_eq!(golden_set_in(&root, desc), Ok(None), "empty REVIEWED.txt");
+    std::fs::write(a.join("REVIEWED.txt"), "reviewed by a person").unwrap();
+    assert_eq!(golden_set_in(&root, desc), Ok(Some(a.clone())));
+    let other = desc.replace("driver_info: 1", "driver_info: 2");
+    assert_eq!(golden_set_in(&root, &other), Ok(None), "other driver");
+    set("metal-b", Some("reviewed too"));
+    assert!(
+        golden_set_in(&root, desc).is_err(),
+        "two sets must be an error"
+    );
+    std::fs::remove_dir_all(&root).unwrap();
 }
