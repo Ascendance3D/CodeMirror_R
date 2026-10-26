@@ -1,0 +1,3261 @@
+{
+ "version": "5.65.21",
+ "cases": {
+  "p01_multi_insert_above": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       68,
+       99
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 203,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 75",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "change(10:0,10:0,[\"Y\",\"\"])",
+      "change(20:0,20:0,[\"Z\",\"\"])",
+      "changes(3)",
+      "update",
+      "viewportChange(68,99)"
+     ]
+    }
+   ]
+  },
+  "p02_multi_delete_above": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       64,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 196,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,1:0,[\"\"])",
+      "change(10:0,11:0,[\"\"])",
+      "change(20:0,22:0,[\"\"])",
+      "changes(3)",
+      "update",
+      "viewportChange(64,96)"
+     ]
+    }
+   ]
+  },
+  "p03a_replace_same_count_cross_top": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 0
+     },
+     "log": [
+      "change(67:0,68:7,[\"a\",\"b\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "p03b_replace_first_rendered_line": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 0
+     },
+     "log": [
+      "change(68:0,68:7,[\"ZZZZZZZ\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "p04a_insert_30_above": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 230,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 48",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,0:0,[\"n0\",\"n1\",\"n2\",\"n3\",\"n4\",\"n5\",\"n6\",\"n7\",\"n8\",\"n9\",\"n10\",\"n11\",\"n12\",\"n13\",\"n14\",\"n15\",\"n16\",\"n17\",\"n18\",\"n19\",\"n20\",\"n21\",\"n22\",\"n23\",\"n24\",\"n25\",\"n26\",\"n27\",\"n28\",\"n29\",\"\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "p04b_delete_30_above": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 170,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 108",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,30:0,[\"\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "p05a_gutter_grows_above": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 99,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 49
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 100,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 77",
+      "gutter": 68
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "p05b_gutter_grows_below": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 99,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 49
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 100,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 49
+     },
+     "log": [
+      "change(98:7,98:7,[\"\",\"X\"])",
+      "changes(1)"
+     ]
+    }
+   ]
+  },
+  "p05c_gutter_shrinks_above": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 100,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 68
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 99,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 79",
+      "gutter": 49
+     },
+     "log": [
+      "change(0:0,1:0,[\"\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "p05d_gutter_same_inside": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 68
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       97
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 68
+     },
+     "log": [
+      "change(80:0,80:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(68,97)"
+     ]
+    }
+   ]
+  },
+  "p06a_scroll_then_edit_op": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       95,
+       123
+      ],
+      "top": 4000,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       105,
+       113
+      ],
+      "firstText": "line 104",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(95,123)",
+      "scroll"
+     ]
+    }
+   ]
+  },
+  "p06b_edit_inside_then_scroll_op": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       16,
+       44
+      ],
+      "top": 1000,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       26,
+       34
+      ],
+      "firstText": "line 26",
+      "gutter": 0
+     },
+     "log": [
+      "change(80:0,80:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(16,44)",
+      "scroll"
+     ]
+    }
+   ]
+  },
+  "p07a_scroll_op_1px": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3001,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    }
+   ]
+  },
+  "p07b_scroll_op_half_line": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3019,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       79,
+       87
+      ],
+      "firstText": "line 79",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    }
+   ]
+  },
+  "p07c_native_scroll_1px": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "native",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3001,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    }
+   ]
+  },
+  "p09_direct_doc_two_changes": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "doc1",
+     "state": {
+      "vp": [
+       68,
+       97
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 77",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(68,97)"
+     ]
+    },
+    {
+     "label": "doc2",
+     "state": {
+      "vp": [
+       68,
+       97
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 77",
+      "gutter": 0
+     },
+     "log": [
+      "change(100:0,100:0,[\"Y\"])",
+      "changes(1)"
+     ]
+    }
+   ]
+  },
+  "p10a_wrap_inside_shrinks": {
+   "before": {
+    "vp": [
+     68,
+     94
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     84
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 0
+     },
+     "log": [
+      "change(82:0,82:70,[\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(68,96)"
+     ]
+    }
+   ]
+  },
+  "p10b_wrap_multi_above_grows": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       72,
+       80
+      ],
+      "firstText": "line 72",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,0:0,[\"wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\"])",
+      "change(1:0,1:0,[\"wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\"])",
+      "change(2:0,2:0,[\"wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\"])",
+      "changes(3)"
+     ]
+    }
+   ]
+  },
+  "p11_rapid_alternating": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll3500",
+     "state": {
+      "vp": [
+       68,
+       109
+      ],
+      "top": 3500,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       92,
+       99
+      ],
+      "firstText": "line 92",
+      "gutter": 0
+     },
+     "log": [
+      "update",
+      "viewportChange(68,109)",
+      "scroll"
+     ]
+    },
+    {
+     "label": "insertAbove",
+     "state": {
+      "vp": [
+       69,
+       110
+      ],
+      "top": 3500,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       92,
+       99
+      ],
+      "firstText": "line 91",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(69,110)"
+     ]
+    },
+    {
+     "label": "scroll2500",
+     "state": {
+      "vp": [
+       55,
+       83
+      ],
+      "top": 2500,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       65,
+       73
+      ],
+      "firstText": "line 64",
+      "gutter": 0
+     },
+     "log": [
+      "update",
+      "viewportChange(55,83)",
+      "scroll"
+     ]
+    },
+    {
+     "label": "deleteAbove",
+     "state": {
+      "vp": [
+       54,
+       83
+      ],
+      "top": 2500,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       65,
+       73
+      ],
+      "firstText": "line 65",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,1:0,[\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(54,83)"
+     ]
+    },
+    {
+     "label": "scroll3000",
+     "state": {
+      "vp": [
+       54,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 0
+     },
+     "log": [
+      "update",
+      "viewportChange(54,96)",
+      "scroll"
+     ]
+    },
+    {
+     "label": "charInside",
+     "state": {
+      "vp": [
+       54,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 0
+     },
+     "log": [
+      "change(80:0,80:0,[\"X\"])",
+      "changes(1)",
+      "update"
+     ]
+    },
+    {
+     "label": "native3300",
+     "state": {
+      "vp": [
+       54,
+       96
+      ],
+      "top": 3300,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       86,
+       94
+      ],
+      "firstText": "line 86",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "insertInside",
+     "state": {
+      "vp": [
+       76,
+       104
+      ],
+      "top": 3300,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       86,
+       94
+      ],
+      "firstText": "line 86",
+      "gutter": 0
+     },
+     "log": [
+      "change(90:0,90:0,[\"Q\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(76,104)"
+     ]
+    }
+   ]
+  },
+  "p12a_retained_top_char_edit": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "char",
+     "state": {
+      "vp": [
+       68,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "change(68:0,68:0,[\"X\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(68,100)"
+     ]
+    }
+   ]
+  },
+  "p12b_retained_bottom_char_edit": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 2848,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       74,
+       82
+      ],
+      "firstText": "line 74",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "char",
+     "state": {
+      "vp": [
+       64,
+       96
+      ],
+      "top": 2848,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       74,
+       82
+      ],
+      "firstText": "line 74",
+      "gutter": 0
+     },
+     "log": [
+      "change(95:0,95:0,[\"X\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(64,96)"
+     ]
+    }
+   ]
+  },
+  "p12c_retained_top_mark_class": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "mark",
+     "state": {
+      "vp": [
+       68,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "update",
+      "viewportChange(68,100)"
+     ]
+    }
+   ]
+  },
+  "p12d_retained_top_insert_line": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "line",
+     "state": {
+      "vp": [
+       70,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 81",
+      "gutter": 0
+     },
+     "log": [
+      "change(68:0,68:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(70,100)"
+     ]
+    }
+   ]
+  },
+  "p08_linked_different_viewports": {
+   "before": {
+    "a": {
+     "vp": [
+      68,
+      96
+     ],
+     "top": 3000,
+     "left": 0,
+     "lines": 200,
+     "visible": [
+      78,
+      86
+     ],
+     "firstText": "line 78",
+     "gutter": 0
+    },
+    "b": {
+     "vp": [
+      0,
+      44
+     ],
+     "top": 1000,
+     "left": 0,
+     "lines": 200,
+     "visible": [
+      26,
+      34
+     ],
+     "firstText": "line 26",
+     "gutter": 0
+    }
+   },
+   "steps": [
+    {
+     "label": "A_insert_50",
+     "a": {
+      "vp": [
+       68,
+       97
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 77",
+      "gutter": 0
+     },
+     "b": {
+      "vp": [
+       0,
+       44
+      ],
+      "top": 1000,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       26,
+       34
+      ],
+      "firstText": "line 26",
+      "gutter": 0
+     },
+     "log": [
+      "A:change(50:0,50:0,[\"X\",\"\"])",
+      "B:change(50:0,50:0,[\"X\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,97)",
+      "B:changes(1)"
+     ]
+    },
+    {
+     "label": "B_insert_30",
+     "a": {
+      "vp": [
+       68,
+       98
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 202,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 76",
+      "gutter": 0
+     },
+     "b": {
+      "vp": [
+       0,
+       45
+      ],
+      "top": 1000,
+      "left": 0,
+      "lines": 202,
+      "visible": [
+       26,
+       34
+      ],
+      "firstText": "line 26",
+      "gutter": 0
+     },
+     "log": [
+      "B:change(30:0,30:0,[\"Y\",\"\"])",
+      "A:change(30:0,30:0,[\"Y\",\"\"])",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(0,45)",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,98)"
+     ]
+    },
+    {
+     "label": "A_delete_10",
+     "a": {
+      "vp": [
+       67,
+       97
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 77",
+      "gutter": 0
+     },
+     "b": {
+      "vp": [
+       0,
+       44
+      ],
+      "top": 1000,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       26,
+       34
+      ],
+      "firstText": "line 27",
+      "gutter": 0
+     },
+     "log": [
+      "A:change(10:0,11:0,[\"\"])",
+      "B:change(10:0,11:0,[\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(67,97)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(0,44)"
+     ]
+    }
+   ]
+  },
+  "f1_first_line_no_retention": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "char",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 0
+     },
+     "log": [
+      "change(68:0,68:0,[\"X\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "f1_last_line_no_retention": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "char",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 0
+     },
+     "log": [
+      "change(95:0,95:0,[\"X\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "f1_scroll_up1_first_line": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3038,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       79,
+       87
+      ],
+      "firstText": "line 79",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "char",
+     "state": {
+      "vp": [
+       68,
+       97
+      ],
+      "top": 3038,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       79,
+       87
+      ],
+      "firstText": "line 79",
+      "gutter": 0
+     },
+     "log": [
+      "change(68:0,68:0,[\"X\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(68,97)"
+     ]
+    }
+   ]
+  },
+  "f1_scroll_down1_last_line": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 2962,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       77,
+       85
+      ],
+      "firstText": "line 77",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "char",
+     "state": {
+      "vp": [
+       67,
+       96
+      ],
+      "top": 2962,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       77,
+       85
+      ],
+      "firstText": "line 77",
+      "gutter": 0
+     },
+     "log": [
+      "change(95:0,95:0,[\"X\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(67,96)"
+     ]
+    }
+   ]
+  },
+  "f1_scroll_up4_last_line": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "char",
+     "state": {
+      "vp": [
+       68,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "change(95:0,95:0,[\"X\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(68,100)"
+     ]
+    }
+   ]
+  },
+  "f1_scroll_down4_first_line": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 2848,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       74,
+       82
+      ],
+      "firstText": "line 74",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "char",
+     "state": {
+      "vp": [
+       64,
+       96
+      ],
+      "top": 2848,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       74,
+       82
+      ],
+      "firstText": "line 74",
+      "gutter": 0
+     },
+     "log": [
+      "change(68:0,68:0,[\"X\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(64,96)"
+     ]
+    }
+   ]
+  },
+  "f1_multi_line_edits_one_op": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       68,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "change(68:0,68:0,[\"X\"])",
+      "change(95:0,95:0,[\"Y\"])",
+      "change(78:0,78:0,[\"Z\"])",
+      "changes(3)",
+      "update",
+      "viewportChange(68,100)"
+     ]
+    }
+   ]
+  },
+  "f1_marker_multi_lines": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "mark",
+     "state": {
+      "vp": [
+       68,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "update",
+      "viewportChange(68,100)"
+     ]
+    }
+   ]
+  },
+  "f1_marker_across_top": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "mark",
+     "state": {
+      "vp": [
+       68,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "update",
+      "viewportChange(68,100)"
+     ]
+    }
+   ]
+  },
+  "f1_marker_add_remove_one_op": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       68,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "update",
+      "viewportChange(68,100)"
+     ]
+    }
+   ]
+  },
+  "f1_marker_clear_first_line": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "mark",
+     "state": {
+      "vp": [
+       68,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "update",
+      "viewportChange(68,100)"
+     ]
+    },
+    {
+     "label": "scroll2",
+     "state": {
+      "vp": [
+       68,
+       100
+      ],
+      "top": 3228,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       84,
+       92
+      ],
+      "firstText": "line 84",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "clear",
+     "state": {
+      "vp": [
+       68,
+       102
+      ],
+      "top": 3228,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       84,
+       92
+      ],
+      "firstText": "line 84",
+      "gutter": 0
+     },
+     "log": [
+      "update",
+      "viewportChange(68,102)"
+     ]
+    }
+   ]
+  },
+  "f1_line_edit_then_insert_one_op": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       69,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 81",
+      "gutter": 0
+     },
+     "log": [
+      "change(68:0,68:0,[\"X\"])",
+      "change(0:0,0:0,[\"N\",\"\"])",
+      "changes(2)",
+      "update",
+      "viewportChange(69,100)"
+     ]
+    }
+   ]
+  },
+  "f1_insert_then_line_style_one_op": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       69,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 81",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,0:0,[\"N\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(69,100)"
+     ]
+    }
+   ]
+  },
+  "f1_insert_inside_then_line_edit_one_op": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       68,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 201,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 81",
+      "gutter": 0
+     },
+     "log": [
+      "change(73:0,73:0,[\"N\",\"\"])",
+      "change(68:0,68:0,[\"X\"])",
+      "changes(2)",
+      "update",
+      "viewportChange(68,100)"
+     ]
+    }
+   ]
+  },
+  "f1_whole_line_update_first_line": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "empty",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": []
+    }
+   ]
+  },
+  "f1_set_value_at_top": {
+   "before": {
+    "vp": [
+     0,
+     17
+    ],
+    "top": 0,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     0,
+     7
+    ],
+    "firstText": "line 0",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "set",
+     "state": {
+      "vp": [
+       0,
+       17
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       0,
+       7
+      ],
+      "firstText": "line 0",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,199:8,[\"line 0\",\"line 1\",\"line 2\",\"line 3\",\"line 4\",\"line 5\",\"line 6\",\"line 7\",\"line 8\",\"line 9\",\"line 10\",\"line 11\",\"line 12\",\"line 13\",\"line 14\",\"line 15\",\"line 16\",\"line 17\",\"line 18\",\"line 19\",\"line 20\",\"line 21\",\"line 22\",\"line 23\",\"line 24\",\"line 25\",\"line 26\",\"line 27\",\"line 28\",\"line 29\",\"line 30\",\"line 31\",\"line 32\",\"line 33\",\"line 34\",\"line 35\",\"line 36\",\"line 37\",\"line 38\",\"line 39\",\"line 40\",\"line 41\",\"line 42\",\"line 43\",\"line 44\",\"line 45\",\"line 46\",\"line 47\",\"line 48\",\"line 49\",\"line 50\",\"line 51\",\"line 52\",\"line 53\",\"line 54\",\"line 55\",\"line 56\",\"line 57\",\"line 58\",\"line 59\",\"line 60\",\"line 61\",\"line 62\",\"line 63\",\"line 64\",\"line 65\",\"line 66\",\"line 67\",\"line 68\",\"line 69\",\"line 70\",\"line 71\",\"line 72\",\"line 73\",\"line 74\",\"line 75\",\"line 76\",\"line 77\",\"line 78\",\"line 79\",\"line 80\",\"line 81\",\"line 82\",\"line 83\",\"line 84\",\"line 85\",\"line 86\",\"line 87\",\"line 88\",\"line 89\",\"line 90\",\"line 91\",\"line 92\",\"line 93\",\"line 94\",\"line 95\",\"line 96\",\"line 97\",\"line 98\",\"line 99\",\"line 100\",\"line 101\",\"line 102\",\"line 103\",\"line 104\",\"line 105\",\"line 106\",\"line 107\",\"line 108\",\"line 109\",\"line 110\",\"line 111\",\"line 112\",\"line 113\",\"line 114\",\"line 115\",\"line 116\",\"line 117\",\"line 118\",\"line 119\",\"line 120\",\"line 121\",\"line 122\",\"line 123\",\"line 124\",\"line 125\",\"line 126\",\"line 127\",\"line 128\",\"line 129\",\"line 130\",\"line 131\",\"line 132\",\"line 133\",\"line 134\",\"line 135\",\"line 136\",\"line 137\",\"line 138\",\"line 139\",\"line 140\",\"line 141\",\"line 142\",\"line 143\",\"line 144\",\"line 145\",\"line 146\",\"line 147\",\"line 148\",\"line 149\",\"line 150\",\"line 151\",\"line 152\",\"line 153\",\"line 154\",\"line 155\",\"line 156\",\"line 157\",\"line 158\",\"line 159\",\"line 160\",\"line 161\",\"line 162\",\"line 163\",\"line 164\",\"line 165\",\"line 166\",\"line 167\",\"line 168\",\"line 169\",\"line 170\",\"line 171\",\"line 172\",\"line 173\",\"line 174\",\"line 175\",\"line 176\",\"line 177\",\"line 178\",\"line 179\",\"line 180\",\"line 181\",\"line 182\",\"line 183\",\"line 184\",\"line 185\",\"line 186\",\"line 187\",\"line 188\",\"line 189\",\"line 190\",\"line 191\",\"line 192\",\"line 193\",\"line 194\",\"line 195\",\"line 196\",\"line 197\",\"line 198\",\"line 199\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "n1_set_value_scrolled": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 200,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "log": [
+      "scroll"
+     ]
+    },
+    {
+     "label": "set",
+     "state": {
+      "vp": [
+       0,
+       17
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       0,
+       7
+      ],
+      "firstText": "line 0",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,199:8,[\"line 0\",\"line 1\",\"line 2\",\"line 3\",\"line 4\",\"line 5\",\"line 6\",\"line 7\",\"line 8\",\"line 9\",\"line 10\",\"line 11\",\"line 12\",\"line 13\",\"line 14\",\"line 15\",\"line 16\",\"line 17\",\"line 18\",\"line 19\",\"line 20\",\"line 21\",\"line 22\",\"line 23\",\"line 24\",\"line 25\",\"line 26\",\"line 27\",\"line 28\",\"line 29\",\"line 30\",\"line 31\",\"line 32\",\"line 33\",\"line 34\",\"line 35\",\"line 36\",\"line 37\",\"line 38\",\"line 39\",\"line 40\",\"line 41\",\"line 42\",\"line 43\",\"line 44\",\"line 45\",\"line 46\",\"line 47\",\"line 48\",\"line 49\",\"line 50\",\"line 51\",\"line 52\",\"line 53\",\"line 54\",\"line 55\",\"line 56\",\"line 57\",\"line 58\",\"line 59\",\"line 60\",\"line 61\",\"line 62\",\"line 63\",\"line 64\",\"line 65\",\"line 66\",\"line 67\",\"line 68\",\"line 69\",\"line 70\",\"line 71\",\"line 72\",\"line 73\",\"line 74\",\"line 75\",\"line 76\",\"line 77\",\"line 78\",\"line 79\",\"line 80\",\"line 81\",\"line 82\",\"line 83\",\"line 84\",\"line 85\",\"line 86\",\"line 87\",\"line 88\",\"line 89\",\"line 90\",\"line 91\",\"line 92\",\"line 93\",\"line 94\",\"line 95\",\"line 96\",\"line 97\",\"line 98\",\"line 99\",\"line 100\",\"line 101\",\"line 102\",\"line 103\",\"line 104\",\"line 105\",\"line 106\",\"line 107\",\"line 108\",\"line 109\",\"line 110\",\"line 111\",\"line 112\",\"line 113\",\"line 114\",\"line 115\",\"line 116\",\"line 117\",\"line 118\",\"line 119\",\"line 120\",\"line 121\",\"line 122\",\"line 123\",\"line 124\",\"line 125\",\"line 126\",\"line 127\",\"line 128\",\"line 129\",\"line 130\",\"line 131\",\"line 132\",\"line 133\",\"line 134\",\"line 135\",\"line 136\",\"line 137\",\"line 138\",\"line 139\",\"line 140\",\"line 141\",\"line 142\",\"line 143\",\"line 144\",\"line 145\",\"line 146\",\"line 147\",\"line 148\",\"line 149\",\"line 150\",\"line 151\",\"line 152\",\"line 153\",\"line 154\",\"line 155\",\"line 156\",\"line 157\",\"line 158\",\"line 159\",\"line 160\",\"line 161\",\"line 162\",\"line 163\",\"line 164\",\"line 165\",\"line 166\",\"line 167\",\"line 168\",\"line 169\",\"line 170\",\"line 171\",\"line 172\",\"line 173\",\"line 174\",\"line 175\",\"line 176\",\"line 177\",\"line 178\",\"line 179\",\"line 180\",\"line 181\",\"line 182\",\"line 183\",\"line 184\",\"line 185\",\"line 186\",\"line 187\",\"line 188\",\"line 189\",\"line 190\",\"line 191\",\"line 192\",\"line 193\",\"line 194\",\"line 195\",\"line 196\",\"line 197\",\"line 198\",\"line 199\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(0,17)",
+      "scroll"
+     ]
+    }
+   ]
+  },
+  "f1_linked_retained": {
+   "before": {
+    "a": {
+     "vp": [
+      72,
+      100
+     ],
+     "top": 3152,
+     "left": 0,
+     "lines": 200,
+     "visible": [
+      82,
+      90
+     ],
+     "firstText": "line 82",
+     "gutter": 0
+    },
+    "b": {
+     "vp": [
+      0,
+      44
+     ],
+     "top": 1152,
+     "left": 0,
+     "lines": 200,
+     "visible": [
+      30,
+      38
+     ],
+     "firstText": "line 30",
+     "gutter": 0
+    }
+   },
+   "steps": [
+    {
+     "label": "A_char_A_first",
+     "a": {
+      "vp": [
+       72,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "b": {
+      "vp": [
+       0,
+       44
+      ],
+      "top": 1152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       30,
+       38
+      ],
+      "firstText": "line 30",
+      "gutter": 0
+     },
+     "log": [
+      "A:change(72:0,72:0,[\"X\"])",
+      "B:change(72:0,72:0,[\"X\"])",
+      "A:changes(1)",
+      "A:update",
+      "B:changes(1)"
+     ]
+    },
+    {
+     "label": "B_char_B_first",
+     "a": {
+      "vp": [
+       72,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "b": {
+      "vp": [
+       20,
+       48
+      ],
+      "top": 1152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       30,
+       38
+      ],
+      "firstText": "line 30",
+      "gutter": 0
+     },
+     "log": [
+      "B:change(0:0,0:0,[\"Y\"])",
+      "A:change(0:0,0:0,[\"Y\"])",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(20,48)",
+      "A:changes(1)"
+     ]
+    },
+    {
+     "label": "A_char_B_last",
+     "a": {
+      "vp": [
+       72,
+       100
+      ],
+      "top": 3152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       82,
+       90
+      ],
+      "firstText": "line 82",
+      "gutter": 0
+     },
+     "b": {
+      "vp": [
+       20,
+       48
+      ],
+      "top": 1152,
+      "left": 0,
+      "lines": 200,
+      "visible": [
+       30,
+       38
+      ],
+      "firstText": "line 30",
+      "gutter": 0
+     },
+     "log": [
+      "A:change(47:0,47:0,[\"Z\"])",
+      "B:change(47:0,47:0,[\"Z\"])",
+      "A:changes(1)",
+      "B:changes(1)",
+      "B:update"
+     ]
+    }
+   ]
+  },
+  "f3_9_to_10_above": {
+   "before": {
+    "vp": [
+     0,
+     9
+    ],
+    "top": 0,
+    "left": 0,
+    "lines": 9,
+    "visible": [
+     0,
+     7
+    ],
+    "firstText": "line 0",
+    "gutter": 30
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       0,
+       10
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 10,
+      "visible": [
+       0,
+       7
+      ],
+      "firstText": "X",
+      "gutter": 49
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(0,10)"
+     ]
+    }
+   ]
+  },
+  "f3_10_to_9_above": {
+   "before": {
+    "vp": [
+     0,
+     10
+    ],
+    "top": 0,
+    "left": 0,
+    "lines": 10,
+    "visible": [
+     0,
+     7
+    ],
+    "firstText": "line 0",
+    "gutter": 49
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       0,
+       9
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 9,
+      "visible": [
+       0,
+       7
+      ],
+      "firstText": "line 1",
+      "gutter": 30
+     },
+     "log": [
+      "change(0:0,1:0,[\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(0,9)"
+     ]
+    }
+   ]
+  },
+  "f3_9_to_10_below": {
+   "before": {
+    "vp": [
+     0,
+     9
+    ],
+    "top": 0,
+    "left": 0,
+    "lines": 9,
+    "visible": [
+     0,
+     7
+    ],
+    "firstText": "line 0",
+    "gutter": 30
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       0,
+       10
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 10,
+      "visible": [
+       0,
+       7
+      ],
+      "firstText": "line 0",
+      "gutter": 49
+     },
+     "log": [
+      "change(8:6,8:6,[\"\",\"X\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(0,10)"
+     ]
+    }
+   ]
+  },
+  "f3_999_to_1000_above": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 999,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 68
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 1000,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 77",
+      "gutter": 87
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "f3_1000_to_999_above": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 1000,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 87
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 999,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 79",
+      "gutter": 68
+     },
+     "log": [
+      "change(0:0,1:0,[\"\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "f3_999_to_1000_below": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 999,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 68
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 1000,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 68
+     },
+     "log": [
+      "change(998:8,998:8,[\"\",\"X\"])",
+      "changes(1)"
+     ]
+    }
+   ]
+  },
+  "f3_99_to_100_unscrolled": {
+   "before": {
+    "vp": [
+     0,
+     17
+    ],
+    "top": 0,
+    "left": 0,
+    "lines": 99,
+    "visible": [
+     0,
+     7
+    ],
+    "firstText": "line 0",
+    "gutter": 49
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       0,
+       17
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 100,
+      "visible": [
+       0,
+       7
+      ],
+      "firstText": "X",
+      "gutter": 68
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "f3_99_to_100_inside_unscrolled": {
+   "before": {
+    "vp": [
+     0,
+     17
+    ],
+    "top": 0,
+    "left": 0,
+    "lines": 99,
+    "visible": [
+     0,
+     7
+    ],
+    "firstText": "line 0",
+    "gutter": 49
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       0,
+       17
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 100,
+      "visible": [
+       0,
+       7
+      ],
+      "firstText": "line 0",
+      "gutter": 68
+     },
+     "log": [
+      "change(3:0,3:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "f3_line_numbers_off": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 99,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 0
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       97
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 100,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 77",
+      "gutter": 0
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(68,97)"
+     ]
+    }
+   ]
+  },
+  "f3_first_line_number_large": {
+   "before": {
+    "vp": [
+     0,
+     10
+    ],
+    "top": 0,
+    "left": 0,
+    "lines": 10,
+    "visible": [
+     0,
+     7
+    ],
+    "firstText": "line 0",
+    "gutter": 106
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       0,
+       11
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 11,
+      "visible": [
+       0,
+       7
+      ],
+      "firstText": "X",
+      "gutter": 126
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update",
+      "viewportChange(0,11)"
+     ]
+    }
+   ]
+  },
+  "f3_first_line_number_large_scrolled": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 98,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 87
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 99,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 77",
+      "gutter": 106
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "f3_nested_op": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 99,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 49
+   },
+   "steps": [
+    {
+     "label": "op",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 100,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 77",
+      "gutter": 68
+     },
+     "log": [
+      "change(0:0,0:0,[\"X\",\"\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "f3_below_then_char": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 99,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 49
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 100,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 49
+     },
+     "log": [
+      "change(98:7,98:7,[\"\",\"X\"])",
+      "changes(1)"
+     ]
+    },
+    {
+     "label": "char",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 100,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 68
+     },
+     "log": [
+      "change(80:0,80:0,[\"X\"])",
+      "changes(1)",
+      "update"
+     ]
+    }
+   ]
+  },
+  "f3_below_then_scroll": {
+   "before": {
+    "vp": [
+     68,
+     96
+    ],
+    "top": 3000,
+    "left": 0,
+    "lines": 99,
+    "visible": [
+     78,
+     86
+    ],
+    "firstText": "line 78",
+    "gutter": 49
+   },
+   "steps": [
+    {
+     "label": "rr",
+     "state": {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 100,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "gutter": 49
+     },
+     "log": [
+      "change(98:7,98:7,[\"\",\"X\"])",
+      "changes(1)"
+     ]
+    },
+    {
+     "label": "scroll",
+     "state": {
+      "vp": [
+       80,
+       100
+      ],
+      "top": 3456,
+      "left": 0,
+      "lines": 100,
+      "visible": [
+       90,
+       98
+      ],
+      "firstText": "line 90",
+      "gutter": 68
+     },
+     "log": [
+      "update",
+      "viewportChange(80,100)",
+      "scroll"
+     ]
+    }
+   ]
+  }
+ }
+}

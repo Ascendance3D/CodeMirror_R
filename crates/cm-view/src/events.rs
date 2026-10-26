@@ -184,6 +184,18 @@ pub(crate) enum DisplayEvent {
     ViewportChange(i64, i64),
 }
 
+/// One call that invalidates part of the display (src/display/view_tracking.js).
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ViewChange {
+    /// `regChange(cm, from, to, lendiff)`: lines `from..to` (before the change)
+    /// were replaced by `to - from + lendiff` lines. It may cut, shift or reset the
+    /// rendered range.
+    Range { from: i64, to: i64, lendiff: i64 },
+    /// `regLineChange(cm, line, type)`: line `line` must be redrawn. It marks that
+    /// line of the rendered range dirty and never moves the range.
+    Line(i64),
+}
+
 /// `cm.curOp`: what one operation collected for its end.
 pub(crate) struct OpRecord {
     pub id: u64,
@@ -192,9 +204,9 @@ pub(crate) struct OpRecord {
     /// `op.cursorActivityHandlers` and `op.cursorActivityCalled`.
     pub cursor_activity: Vec<Entry<EditorHandler>>,
     pub ca_called: usize,
-    /// `regChange(from, to, lendiff)` / `regLineChange` calls (line ranges
-    /// `from..to`); the display phase checks them against the rendered range.
-    pub regs: Vec<(i64, i64, i64)>,
+    /// The `regChange`/`regLineChange` calls, in order; the display phase replays
+    /// them against the rendered range.
+    pub regs: Vec<ViewChange>,
     pub selection_changed: bool,
     pub maybe_hidden: Vec<TextMarker>,
     pub maybe_unhidden: Vec<TextMarker>,
@@ -282,6 +294,15 @@ impl EditorShared {
                 })
             }),
         });
+    }
+
+    /// `isWholeLineUpdate(doc, change)` (src/model/document_data.js:16), with this
+    /// editor's `wholeLineUpdateBefore`.
+    fn whole_line_update(&self, c: &ChangeObj) -> bool {
+        c.from.ch == 0
+            && c.to.ch == 0
+            && c.text.last().is_some_and(|t| t.is_empty())
+            && self.sem.get().whole_line_update_before
     }
 
     fn with_op(&self, f: impl FnOnce(&mut OpRecord)) {
@@ -430,7 +451,7 @@ impl EditorSink for EditorShared {
             })
             .collect()
     }
-    fn change_applied(&self, doc: &Doc, c: &Rc<ChangeObj>) {
+    fn change_applied(&self, doc: &Doc, c: &Rc<ChangeObj>, full: bool) {
         // makeChangeSingleDocInEditor: `retreatFrontier(doc, from.line)`.
         highlight::retreat_frontier(doc, &mut self.hs.borrow_mut(), c.from.line);
         {
@@ -454,11 +475,27 @@ impl EditorSink for EditorShared {
             let ls = self.ls.borrow();
             (ls.change.snapshot(), !ls.changes.is_empty())
         };
-        // `regChange(cm, from.line, to.line + 1, lendiff)` (`regLineChange` for a
-        // one-line edit is the same range with no length change).
+        // changes.js:249-254: `regChange(cm)` for a full change, `regLineChange` for
+        // one that stays on one line and is not a whole-line update, otherwise
+        // `regChange(cm, from.line, to.line + 1, lendiff)`.
         let lendiff = c.text.len() as i64 - (c.to.line - c.from.line + 1);
+        let reg = if full {
+            ViewChange::Range {
+                from: doc.first_line(),
+                to: doc.first_line() + doc.line_count() as i64,
+                lendiff: 0,
+            }
+        } else if c.from.line == c.to.line && c.text.len() == 1 && !self.whole_line_update(c) {
+            ViewChange::Line(c.from.line)
+        } else {
+            ViewChange::Range {
+                from: c.from.line,
+                to: c.to.line + 1,
+                lendiff,
+            }
+        };
         self.with_op(|op| {
-            op.regs.push((c.from.line, c.to.line + 1, lendiff));
+            op.regs.push(reg);
             if has_changes {
                 op.change_objs.push(c.clone());
             }
@@ -500,7 +537,17 @@ impl EditorSink for EditorShared {
                 None => None,
             };
             if let Some((a, b)) = lines {
-                self.with_op(|op| op.regs.push((a, b + 1, 0)));
+                self.with_op(|op| {
+                    if marker.is_collapsed() {
+                        op.regs.push(ViewChange::Range {
+                            from: a,
+                            to: b + 1,
+                            lendiff: 0,
+                        });
+                    } else {
+                        op.regs.extend((a..=b).map(ViewChange::Line));
+                    }
+                });
             }
         }
         let snap = self.ls.borrow().marker_added.snapshot();
@@ -527,7 +574,22 @@ impl EditorSink for EditorShared {
         max: Option<i64>,
         redraw: &[(i64, i64)],
     ) {
-        self.with_op(|op| op.regs.extend(redraw.iter().map(|&(a, b)| (a, b, 0))));
+        // mark_text.js:56 and :74: `regLineChange` for each line of a marker that is
+        // not collapsed, `regChange(cm, min, max + 1)` for a collapsed one.
+        let collapsed = marker.is_collapsed();
+        self.with_op(|op| {
+            op.regs.extend(redraw.iter().map(|&(a, b)| {
+                if collapsed {
+                    ViewChange::Range {
+                        from: a,
+                        to: b,
+                        lendiff: 0,
+                    }
+                } else {
+                    ViewChange::Line(a)
+                }
+            }))
+        });
         let snap = self.ls.borrow().marker_cleared.snapshot();
         for e in snap.iter() {
             let (f, m) = (e.f.clone(), marker.clone());

@@ -534,7 +534,7 @@ fn make_change_single_doc_in_op(
     }
     update_doc(doc, &change, spans, Some(&obj));
     if let Some(s) = &sink {
-        s.change_applied(doc, &obj);
+        s.change_applied(doc, &obj, change.full);
     }
     set_selection_no_undo(
         doc,

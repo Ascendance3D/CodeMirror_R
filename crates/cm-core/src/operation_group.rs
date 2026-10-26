@@ -157,8 +157,9 @@ pub trait EditorSink {
     fn has_before_selection_change(&self) -> bool {
         !self.before_selection_change_handlers().is_empty()
     }
-    /// `makeChangeSingleDocInEditor`, after the change is applied to the lines.
-    fn change_applied(&self, _doc: &Doc, _change: &Rc<ChangeObj>) {}
+    /// `makeChangeSingleDocInEditor`, after the change is applied to the lines;
+    /// `full` is `change.full` (`setValue`), which redraws the whole document.
+    fn change_applied(&self, _doc: &Doc, _change: &Rc<ChangeObj>, _full: bool) {}
     /// `signalCursorActivity(cm)`.
     fn signal_cursor_activity(&self) {}
     /// `setSelectionInner` on a document with this editor: the selection changed.

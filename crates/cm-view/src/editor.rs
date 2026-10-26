@@ -40,7 +40,7 @@ use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_m
 use crate::events::{
     ChangeHandler, ChangesHandler, Cx, DisplayEvent, EditorEvents, EditorHandler, EditorShared,
     InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler, NameHandler,
-    OpRecord, Parked, ViewportHandler, WithSelf, finish,
+    OpRecord, Parked, ViewChange, ViewportHandler, WithSelf, finish,
 };
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
@@ -143,6 +143,9 @@ pub struct Display {
     /// `display.updateLineNumbers`: the first line whose number a change shifted
     /// since the display was last drawn (set by `regChange`).
     pub update_line_numbers: Option<i64>,
+    /// `display.lineNumChars`: the characters of the last line number when the
+    /// gutter width was last computed.
+    pub line_num_chars: Option<usize>,
 }
 
 /// `lastCopied` (module state in src/input/input.js).
@@ -381,6 +384,7 @@ impl Editor {
                 view_to: first,
                 reported_view: (first, first),
                 update_line_numbers: None,
+                line_num_chars: None,
             },
             overwrite: false,
             paste_incoming: -1.0,
@@ -471,16 +475,37 @@ impl Editor {
     }
 
     /// Gutter width: `lineNumberWidth` + gutter padding (`.CodeMirror-linenumber {
-    /// padding: 0 3px 0 5px; min-width: 20px }`).
+    /// padding: 0 3px 0 5px; min-width: 20px }`), for the number of the last line
+    /// (`lineNumberFor(options, doc.first + doc.size - 1)`).
     pub fn update_gutter(&mut self) {
         if !self.options.line_numbers {
             self.gutter_width = 0.0;
+            self.display.line_num_chars = None;
             return;
         }
-        let last = self.options.first_line_number + self.doc.line_count() as i64 - 1;
-        let digits = last.max(1).to_string().len() as f64;
-        let inner = (digits * self.metrics.char_width).max(20.0);
+        let chars = self.last_line_number_chars();
+        let inner = (chars as f64 * self.metrics.char_width).max(20.0);
         self.gutter_width = (inner + 8.0 + 1.0).ceil();
+        self.display.line_num_chars = Some(chars);
+    }
+
+    fn last_line_number_chars(&self) -> usize {
+        let last =
+            self.options.first_line_number + self.first_line() + self.doc.line_count() as i64 - 1;
+        last.to_string().len()
+    }
+
+    /// `maybeUpdateLineNumberWidth(cm)` (src/display/line_numbers.js:32): when the
+    /// last line number has another number of characters, update the gutter and
+    /// return `true` (the caller resets the view).
+    fn maybe_update_line_number_width(&mut self) -> bool {
+        if !self.options.line_numbers
+            || self.display.line_num_chars == Some(self.last_line_number_chars())
+        {
+            return false;
+        }
+        self.update_gutter();
+        true
     }
 
     // ------------------------------------------------------------------------------
@@ -717,18 +742,20 @@ impl Editor {
 
     /// `endOperation_R1` … `W2`: apply scroll requests and update the viewport.
     ///
-    /// The operation's `regChange` calls are replayed against the rendered range it
-    /// started with (the range does not move during an operation: a scroll is
-    /// applied here, like `op.scrollTop`). Then `updateDisplayIfNeeded` decides:
-    /// it bails out, keeping the range, when nothing forces a redraw (a change
-    /// inside the range, an option, a resize, the gutter width), the visible lines
-    /// are rendered, and no line number before the range's end shifted; otherwise
-    /// the range is recomputed, and `update` is reported unless the second bail-out
-    /// applies (same range, nothing dirty, no shifted line numbers). `viewportChange`
-    /// follows when the range differs from the one last reported.
+    /// The operation's `regChange` and `regLineChange` calls are replayed, in order,
+    /// against the rendered range it started with (the range does not move during
+    /// an operation: a scroll is applied here, like `op.scrollTop`). A `regChange`
+    /// may cut, shift or reset the range; a `regLineChange` only marks a rendered
+    /// line dirty. Then `updateDisplayIfNeeded` decides: it bails out, keeping the
+    /// range, when nothing forces a redraw (an option, a resize), the visible lines
+    /// are rendered, the view was not cut, no rendered line is dirty, and no line
+    /// number before the range's end shifted. Otherwise a new number of digits in
+    /// the last line number resets the view (`maybeUpdateLineNumberWidth`), the
+    /// range is recomputed, and `update` is reported unless the second bail-out
+    /// applies (same range, nothing dirty in it, no shifted line numbers).
+    /// `viewportChange` follows when the range differs from the one last reported.
     pub(crate) fn end_operation_display(&mut self, rec: &mut OpRecord) {
         let (old_from, old_to) = (self.display.view_from, self.display.view_to);
-        let old_gutter = self.gutter_width;
         self.take_sel_scroll();
         if let Some(st) = self.op.scroll_top.take() {
             self.put_scroll_top(st);
@@ -746,16 +773,25 @@ impl Editor {
             ensure = Some((from.line, to.line));
             self.scroll_pos_into_view(from, to, margin);
         }
-        if self.options.line_numbers {
-            self.update_gutter();
-        }
-        // regChange (view_tracking.js:13), without collapsed spans: the view arrays
-        // are not kept, so a cut or a reset view counts as dirty, as it makes
-        // `renderedView != view` there.
+        // regChange (view_tracking.js:13) and regLineChange (:78), in order, without
+        // collapsed spans. The view array is not kept: `replaced` stands for
+        // `renderedView != view` (a cut or a reset view), and `lines` for the
+        // rendered lines whose `lineView.changes` are set (`countDirtyView`).
         let first = self.first_line();
         let (mut vf, mut vt) = (old_from, old_to);
-        let mut dirty = false;
-        for &(from, to, lendiff) in &rec.regs {
+        let mut replaced = false;
+        let mut lines: Vec<i64> = Vec::new();
+        for reg in &rec.regs {
+            let (from, to, lendiff) = match *reg {
+                ViewChange::Line(n) => {
+                    // Only a line of the rendered range is marked; the range stays.
+                    if n >= vf && n < vt && !lines.contains(&n) {
+                        lines.push(n);
+                    }
+                    continue;
+                }
+                ViewChange::Range { from, to, lendiff } => (from, to, lendiff),
+            };
             if lendiff != 0 && to < vt && self.display.update_line_numbers.is_none_or(|n| n > from)
             {
                 self.display.update_line_numbers = Some(from);
@@ -763,30 +799,40 @@ impl Editor {
             if from >= vt {
                 // Change after.
             } else if to <= vf {
-                // Change before.
+                // Change before: the line views move with their lines.
                 vf += lendiff;
                 vt += lendiff;
+                lines.iter_mut().for_each(|n| *n += lendiff);
             } else if from <= vf && to >= vt {
                 // Full overlap: resetView.
                 (vf, vt) = (first, first);
-                dirty = true;
+                lines.clear();
+                replaced = true;
             } else if from <= vf {
                 // Top overlap: viewCuttingPoint gives the line after the change.
                 vf = to + lendiff;
                 vt += lendiff;
-                dirty = true;
+                lines.retain(|&n| n >= to);
+                lines.iter_mut().for_each(|n| *n += lendiff);
+                replaced = true;
             } else if to >= vt {
                 // Bottom overlap.
                 vt = from;
-                dirty = true;
+                lines.retain(|&n| n < from);
+                replaced = true;
             } else {
-                // Gap in the middle.
+                // Gap in the middle: lines `from..to` get new (dirty) views.
                 vt += lendiff;
-                dirty = true;
+                lines.retain(|&n| n < from || n >= to);
+                lines
+                    .iter_mut()
+                    .filter(|n| **n >= to)
+                    .for_each(|n| *n += lendiff);
+                replaced = true;
             }
         }
         self.set_view(vf, vt);
-        let force = std::mem::take(&mut self.force_update) || self.gutter_width != old_gutter;
+        let force = std::mem::take(&mut self.force_update);
         let numbers_ok = |n: Option<i64>, to: i64| n.is_none_or(|n| n >= to);
         let (vis_from, vis_to) = self.visible_lines_in(view_top, ensure);
         // updateDisplayIfNeeded (update_display.js:93): the first bail-out.
@@ -794,14 +840,24 @@ impl Editor {
             || vis_from < vf
             || vis_to > vt
             || !numbers_ok(self.display.update_line_numbers, vt)
-            || dirty;
+            || replaced
+            || !lines.is_empty();
         if redrawn {
+            // maybeUpdateLineNumberWidth, only past the first bail-out: a new
+            // number of digits resets the view (update_display.js:108).
+            if self.maybe_update_line_number_width() {
+                self.set_view(first, first);
+                (vf, vt) = (first, first);
+                lines.clear();
+                replaced = true;
+            }
             self.update_view_for((vis_from, vis_to));
             let view = (self.display.view_from, self.display.view_to);
             // The second bail-out: nothing to draw after `adjustView`.
             redrawn = view != (vf, vt)
-                || dirty
+                || replaced
                 || force
+                || lines.iter().any(|&n| n >= view.0 && n < view.1)
                 || !numbers_ok(self.display.update_line_numbers, view.1);
         }
         self.render_view_styles();
