@@ -140,6 +140,9 @@ pub struct Display {
     pub view_to: i64,
     /// `display.reportedViewFrom/To`: the range last reported by `viewportChange`.
     pub reported_view: (i64, i64),
+    /// `display.updateLineNumbers`: the first line whose number a change shifted
+    /// since the display was last drawn (set by `regChange`).
+    pub update_line_numbers: Option<i64>,
 }
 
 /// `lastCopied` (module state in src/input/input.js).
@@ -377,6 +380,7 @@ impl Editor {
                 view_from: first,
                 view_to: first,
                 reported_view: (first, first),
+                update_line_numbers: None,
             },
             overwrite: false,
             paste_incoming: -1.0,
@@ -576,7 +580,9 @@ impl Editor {
     }
     /// Remove the editor handler registered as `id`, whatever its event.
     pub fn off(&self, id: ListenerId) -> bool {
-        self.shared.ls.borrow_mut().off(id)
+        // Dropped with the tables released: a handler's destructor may use them.
+        let gone = self.shared.ls.borrow_mut().remove(id);
+        gone.is_some()
     }
     /// `on("beforeChange", f)`: before a change is applied, after the document's
     /// own handlers; `f` may `update` or `cancel` it (immediate).
@@ -711,54 +717,96 @@ impl Editor {
 
     /// `endOperation_R1` … `W2`: apply scroll requests and update the viewport.
     ///
-    /// The display counts as redrawn (`updateDisplayIfNeeded` does not bail out)
-    /// when something asked for a redraw (a change, a marker with a class or a
-    /// collapsed marker, an option, a resize), the gutter width changed, or the
-    /// visible lines left the rendered range. Then `update` is reported, and
-    /// `viewportChange` when the rendered range differs from the one last reported.
-    /// (The rendered range itself is recomputed every time; see behavior difference
-    /// #3.)
+    /// The operation's `regChange` calls are replayed against the rendered range it
+    /// started with (the range does not move during an operation: a scroll is
+    /// applied here, like `op.scrollTop`). Then `updateDisplayIfNeeded` decides:
+    /// it bails out, keeping the range, when nothing forces a redraw (a change
+    /// inside the range, an option, a resize, the gutter width), the visible lines
+    /// are rendered, and no line number before the range's end shifted; otherwise
+    /// the range is recomputed, and `update` is reported unless the second bail-out
+    /// applies (same range, nothing dirty, no shifted line numbers). `viewportChange`
+    /// follows when the range differs from the one last reported.
     pub(crate) fn end_operation_display(&mut self, rec: &mut OpRecord) {
         let (old_from, old_to) = (self.display.view_from, self.display.view_to);
         let old_gutter = self.gutter_width;
         self.take_sel_scroll();
         if let Some(st) = self.op.scroll_top.take() {
-            self.set_scroll_top(st);
+            self.put_scroll_top(st);
         }
         if let Some(sl) = self.op.scroll_left.take() {
             self.set_scroll_left(sl);
         }
+        // The `DisplayUpdate` viewport (endOperation_R1): `op.scrollTop`, and the
+        // lines `op.scrollToPos` will scroll to, before that scroll is applied.
+        let view_top = self.display.scroll_top;
+        let mut ensure = None;
         if let Some((from, to, margin)) = self.op.scroll_to_pos.take() {
             let from = self.doc.clip_pos(from);
             let to = self.doc.clip_pos(to);
+            ensure = Some((from.line, to.line));
             self.scroll_pos_into_view(from, to, margin);
         }
         if self.options.line_numbers {
             self.update_gutter();
         }
-        let (vis_from, vis_to) = self.visible_lines();
-        // `regChange` against the rendered range as it was during the operation: a
-        // change before it shifts it, one after it leaves it alone, an overlapping
-        // one dirties it (view_tracking.js:21).
+        // regChange (view_tracking.js:13), without collapsed spans: the view arrays
+        // are not kept, so a cut or a reset view counts as dirty, as it makes
+        // `renderedView != view` there.
+        let first = self.first_line();
         let (mut vf, mut vt) = (old_from, old_to);
         let mut dirty = false;
         for &(from, to, lendiff) in &rec.regs {
+            if lendiff != 0 && to < vt && self.display.update_line_numbers.is_none_or(|n| n > from)
+            {
+                self.display.update_line_numbers = Some(from);
+            }
             if from >= vt {
+                // Change after.
             } else if to <= vf {
+                // Change before.
                 vf += lendiff;
                 vt += lendiff;
+            } else if from <= vf && to >= vt {
+                // Full overlap: resetView.
+                (vf, vt) = (first, first);
+                dirty = true;
+            } else if from <= vf {
+                // Top overlap: viewCuttingPoint gives the line after the change.
+                vf = to + lendiff;
+                vt += lendiff;
+                dirty = true;
+            } else if to >= vt {
+                // Bottom overlap.
+                vt = from;
+                dirty = true;
             } else {
+                // Gap in the middle.
+                vt += lendiff;
                 dirty = true;
             }
         }
-        let redrawn = std::mem::take(&mut self.force_update)
-            || dirty
-            || self.gutter_width != old_gutter
+        self.set_view(vf, vt);
+        let force = std::mem::take(&mut self.force_update) || self.gutter_width != old_gutter;
+        let numbers_ok = |n: Option<i64>, to: i64| n.is_none_or(|n| n >= to);
+        let (vis_from, vis_to) = self.visible_lines_in(view_top, ensure);
+        // updateDisplayIfNeeded (update_display.js:93): the first bail-out.
+        let mut redrawn = force
             || vis_from < vf
-            || vis_to > vt;
-        self.update_view();
+            || vis_to > vt
+            || !numbers_ok(self.display.update_line_numbers, vt)
+            || dirty;
+        if redrawn {
+            self.update_view_for((vis_from, vis_to));
+            let view = (self.display.view_from, self.display.view_to);
+            // The second bail-out: nothing to draw after `adjustView`.
+            redrawn = view != (vf, vt)
+                || dirty
+                || force
+                || !numbers_ok(self.display.update_line_numbers, view.1);
+        }
         self.render_view_styles();
         if redrawn {
+            self.display.update_line_numbers = None;
             let ls = self.shared.ls.borrow();
             if !ls.update.is_empty() {
                 rec.display.push(DisplayEvent::Update);
@@ -955,7 +1003,7 @@ impl Editor {
             let (st, sl) = self.calculate_scroll_pos(rect);
             let (start_top, start_left) = (self.display.scroll_top, self.display.scroll_left);
             if let Some(v) = st {
-                self.set_scroll_top(v);
+                self.put_scroll_top(v);
                 if (self.display.scroll_top - start_top).abs() > 1.0 {
                     changed = true;
                 }
@@ -984,25 +1032,33 @@ impl Editor {
         };
         (h, w)
     }
-    /// `setScrollTop(cm, val)`.
+    /// `updateScrollTop(cm, val)`, run as an operation: the rendered range,
+    /// `update` and `viewportChange` follow at its end (`updateDisplaySimple`).
     pub fn set_scroll_top(&mut self, val: f64) {
+        self.run_op(|cm| cm.put_scroll_top(val));
+    }
+    /// `setScrollTop(cm, val)`: the scroll position only, clamped. The rendered
+    /// range follows in the display phase (`op.scrollTop`, endOperation_R1).
+    fn put_scroll_top(&mut self, val: f64) {
         let (mh, _) = self.max_scroll();
         self.display.scroll_top = val.min(mh).max(0.0);
-        self.update_view();
     }
     /// `setScrollLeft(cm, val)`.
     pub fn set_scroll_left(&mut self, val: f64) {
         let (_, mw) = self.max_scroll();
         self.display.scroll_left = val.min(mw).max(0.0);
     }
-    /// `scrollTo(x, y)`.
+    /// `scrollTo(x, y)` (a `methodOp`: the display, `update` and `viewportChange`
+    /// follow at the end of the operation).
     pub fn scroll_to(&mut self, x: Option<f64>, y: Option<f64>) {
-        if let Some(y) = y {
-            self.set_scroll_top(y);
-        }
-        if let Some(x) = x {
-            self.set_scroll_left(x);
-        }
+        self.run_op(|cm| {
+            if let Some(y) = y {
+                cm.put_scroll_top(y);
+            }
+            if let Some(x) = x {
+                cm.set_scroll_left(x);
+            }
+        });
     }
 
     /// Widest line, for the horizontal scroll extent (`display.maxLine`).
@@ -1032,19 +1088,36 @@ impl Editor {
 
     /// `visibleLines(display, doc)`: `[from, to)`.
     pub fn visible_lines(&self) -> (i64, i64) {
-        let top = (self.display.scroll_top - self.metrics.padding_top)
-            .floor()
-            .max(0.0);
+        self.visible_lines_in(self.display.scroll_top, None)
+    }
+
+    /// `visibleLines(display, doc, {top, ensure})`: the lines visible at scroll
+    /// position `top`, moved to take in the lines `ensure` when they are outside.
+    fn visible_lines_in(&self, top: f64, ensure: Option<(i64, i64)>) -> (i64, i64) {
+        let top = (top.max(0.0) - self.metrics.padding_top).floor();
         let bottom = top + self.display.height;
-        let from = self.line_at_height(top);
-        let to = self.line_at_height(bottom);
+        let mut from = self.line_at_height(top);
+        let mut to = self.line_at_height(bottom);
+        if let Some((ensure_from, ensure_to)) = ensure {
+            let last = self.first_line() + self.doc.line_count() as i64 - 1;
+            if ensure_from < from {
+                from = ensure_from;
+                to = self.line_at_height(self.height_at_line(ensure_from) + self.display.height);
+            } else if ensure_to.min(last) >= to {
+                from = self.line_at_height(self.height_at_line(ensure_to) - self.display.height);
+                to = ensure_to;
+            }
+        }
         (from, to.max(from + 1))
     }
 
     /// Update `viewFrom`/`viewTo` (`updateDisplayIfNeeded`: visible lines plus
     /// `viewportMargin` on each side).
     pub fn update_view(&mut self) {
-        let (from, to) = self.visible_lines();
+        self.update_view_for(self.visible_lines());
+    }
+
+    fn update_view_for(&mut self, (from, to): (i64, i64)) {
         let first = self.first_line();
         let end = first + self.doc.line_count() as i64;
         let m = self.options.viewport_margin;
@@ -1058,11 +1131,15 @@ impl Editor {
         if old_to > vt && old_to - vt < 20 {
             vt = old_to.min(end);
         }
-        self.display.view_from = vf;
-        self.display.view_to = vt;
+        self.set_view(vf, vt);
+    }
+
+    fn set_view(&mut self, from: i64, to: i64) {
+        self.display.view_from = from;
+        self.display.view_to = to;
         let mut hs = self.hs.borrow_mut();
-        hs.view_from = self.display.view_from;
-        hs.view_to = self.display.view_to;
+        hs.view_from = from;
+        hs.view_to = to;
     }
 
     // ------------------------------------------------------------------------------

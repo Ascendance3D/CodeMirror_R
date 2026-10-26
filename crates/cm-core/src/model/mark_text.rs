@@ -25,7 +25,7 @@ use super::spans::{
     remove_marked_span,
 };
 use crate::CmError;
-use crate::events::{ListenerId, Listeners};
+use crate::events::{ListenerId, Listeners, removed};
 use crate::operation_group::{Delayed, signal_later};
 use crate::pos::{Pos, cmp};
 
@@ -188,11 +188,14 @@ impl TextMarker {
     }
     /// Remove the marker handler registered as `id`, whatever its event.
     pub fn off(&self, id: ListenerId) -> bool {
-        let mut d = self.data_mut();
-        d.clear_handlers.off(id)
-            || d.before_cursor_enter.off(id)
-            || d.hide.off(id)
-            || d.unhide.off(id)
+        let gone = {
+            let mut d = self.data_mut();
+            removed(d.clear_handlers.remove(id))
+                .or_else(|| removed(d.before_cursor_enter.remove(id)))
+                .or_else(|| removed(d.hide.remove(id)))
+                .or_else(|| removed(d.unhide.remove(id)))
+        };
+        gone.is_some()
     }
     /// `signal(m, "beforeCursorEnter")`.
     pub(crate) fn signal_before_cursor_enter(&self) {
@@ -504,7 +507,8 @@ impl SharedTextMarker {
     }
     /// Remove the shared-marker handler registered as `id`.
     pub fn off(&self, id: ListenerId) -> bool {
-        self.0.borrow_mut().clear_handlers.off(id)
+        let gone = self.0.borrow_mut().clear_handlers.remove(id);
+        gone.is_some()
     }
     pub fn clear(&self) {
         if self.0.borrow().explicitly_cleared {

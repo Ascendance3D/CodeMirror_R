@@ -607,6 +607,44 @@ fn s10_viewport() {
     assert!(from <= 100 && 100 < to && from > 0, "({from},{to})");
 }
 
+/// s10 at the recording page's size (`.CodeMirror` 900x500, the oracle metrics):
+/// the recorded rendered range (76,110) itself.
+#[test]
+fn s10_viewport_at_the_recorded_size() {
+    let log: Log = Rc::default();
+    let mut cm = editor(&lines(200));
+    cm.set_size(900.0, 500.0);
+    watch(
+        &cm,
+        "A",
+        &log,
+        &[
+            "change",
+            "changes",
+            "cursorActivity",
+            "update",
+            "viewportChange",
+        ],
+    );
+    cm.run_op(|cm| {
+        cm.doc.replace_range("v", p(0, 0), None, None);
+        cm.scroll_to(None, Some(3000.0));
+        cm.doc.set_cursor(p(100, 0), None);
+    });
+    push(&log, "--- after op");
+    assert_eq!(
+        take(&log),
+        [
+            "A:cm.change(0:0,[\"v\"])",
+            "A:cm.cursorActivity",
+            "A:cm.changes(1)",
+            "A:cm.update",
+            "A:cm.viewportChange(76,110)",
+            "--- after op"
+        ]
+    );
+}
+
 /// An operation that changes nothing reports no `update` and no `viewportChange`
 /// (`updateDisplayIfNeeded` bails out).
 #[test]
@@ -804,9 +842,10 @@ fn marker_hide_and_unhide() {
 }
 
 /// `update` follows `updateDisplayIfNeeded`'s bail-out: an edit or a styled marker
-/// outside the rendered lines dirties nothing (`regChange`/`regLineChange`), and an
-/// edit before them only shifts them, so no `update` is reported; an edit inside
-/// them is.
+/// outside the rendered lines dirties nothing (`regChange`/`regLineChange`), and a
+/// one-line edit before them does not shift them, so no `update` is reported; an
+/// edit inside them is. (Edits that add or remove lines above them:
+/// `viewport_matrix.rs`.)
 #[test]
 fn update_only_for_changes_in_the_rendered_range() {
     let log: Log = Rc::default();
@@ -832,8 +871,7 @@ fn update_only_for_changes_in_the_rendered_range() {
     take(&log);
     let (from, _) = (cm.display.view_from, cm.display.view_to);
     assert!(from > 10, "scrolled ({from})");
-    // A one-line edit above the rendered lines shifts nothing; a line inserted
-    // above shifts the range, which still covers what is visible.
+    // A one-line edit above the rendered lines shifts nothing.
     rr(&mut cm, "Y", p(0, 0));
     assert!(take(&log).is_empty(), "before the rendered range");
     rr(&mut cm, "Z", p(from, 0));

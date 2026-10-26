@@ -9,7 +9,7 @@ use std::rc::Rc;
 use super::changes::ChangeObj;
 use super::spans::{SpanArr, attach_marked_spans, detach_marked_spans};
 use super::tree::NodeId;
-use crate::events::{ListenerId, Listeners};
+use crate::events::{ListenerId, Listeners, removed};
 use crate::operation_group::{Delayed, signal_later};
 use crate::text::Text;
 
@@ -103,10 +103,13 @@ impl LineHandle {
     }
     /// Remove the line handler registered as `id`.
     pub fn off(&self, id: ListenerId) -> bool {
-        let mut l = self.0.borrow_mut();
-        l.events
-            .as_mut()
-            .is_some_and(|e| e.change.off(id) || e.delete.off(id))
+        let gone = {
+            let mut l = self.0.borrow_mut();
+            l.events
+                .as_mut()
+                .and_then(|e| removed(e.change.remove(id)).or_else(|| removed(e.delete.remove(id))))
+        };
+        gone.is_some()
     }
     pub fn text(&self) -> String {
         crate::text::from_u16(&self.0.borrow().text)

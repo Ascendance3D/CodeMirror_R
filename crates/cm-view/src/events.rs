@@ -24,7 +24,7 @@ use std::cell::{Cell, RefCell};
 use std::ops::{Deref, DerefMut};
 use std::rc::{Rc, Weak};
 
-use cm_core::events::{Entry, ListenerId, Listeners};
+use cm_core::events::{Entry, ListenerId, Listeners, Removed, removed};
 use cm_core::operation_group::{
     BeforeChangeFn, BeforeSelectionChangeFn, Delayed, EdCall, EditorId, EditorSink, Editors,
     diagnostic, signal_later,
@@ -98,7 +98,7 @@ pub type BeforeChangeHandler = dyn Fn(&Doc, EditorId, &mut BeforeChange);
 pub type BeforeSelHandler = dyn Fn(&Doc, EditorId, &mut BeforeSelectionChange);
 
 /// The handlers of one editor, by event.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct EditorListeners {
     /// Immediate, inside the model, after the document's own handlers.
     pub before_change: Listeners<BeforeChangeHandler>,
@@ -130,20 +130,49 @@ pub struct EditorListeners {
 impl EditorListeners {
     /// Remove the handler registered as `id`, whatever its event.
     pub fn off(&mut self, id: ListenerId) -> bool {
-        self.before_change.off(id)
-            || self.before_selection_change.off(id)
-            || self.change.off(id)
-            || self.changes.off(id)
-            || self.cursor_activity.off(id)
-            || self.update.off(id)
-            || self.viewport_change.off(id)
-            || self.marker_added.off(id)
-            || self.marker_cleared.off(id)
-            || self.key_handled.off(id)
-            || self.input_read.off(id)
-            || self.electric_input.off(id)
-            || self.focus.off(id)
-            || self.blur.off(id)
+        self.remove(id).is_some()
+    }
+    /// [`EditorListeners::off`], returning the entry to drop once the tables are
+    /// released.
+    pub fn remove(&mut self, id: ListenerId) -> Removed {
+        removed(self.before_change.remove(id))
+            .or_else(|| removed(self.before_selection_change.remove(id)))
+            .or_else(|| removed(self.change.remove(id)))
+            .or_else(|| removed(self.changes.remove(id)))
+            .or_else(|| removed(self.cursor_activity.remove(id)))
+            .or_else(|| removed(self.update.remove(id)))
+            .or_else(|| removed(self.viewport_change.remove(id)))
+            .or_else(|| removed(self.marker_added.remove(id)))
+            .or_else(|| removed(self.marker_cleared.remove(id)))
+            .or_else(|| removed(self.key_handled.remove(id)))
+            .or_else(|| removed(self.input_read.remove(id)))
+            .or_else(|| removed(self.electric_input.remove(id)))
+            .or_else(|| removed(self.focus.remove(id)))
+            .or_else(|| removed(self.blur.remove(id)))
+    }
+    /// [`Listeners::merge`] for each list.
+    fn merge(&mut self, base: &EditorListeners, ours: EditorListeners) {
+        self.before_change
+            .merge(&base.before_change, ours.before_change);
+        self.before_selection_change
+            .merge(&base.before_selection_change, ours.before_selection_change);
+        self.change.merge(&base.change, ours.change);
+        self.changes.merge(&base.changes, ours.changes);
+        self.cursor_activity
+            .merge(&base.cursor_activity, ours.cursor_activity);
+        self.update.merge(&base.update, ours.update);
+        self.viewport_change
+            .merge(&base.viewport_change, ours.viewport_change);
+        self.marker_added
+            .merge(&base.marker_added, ours.marker_added);
+        self.marker_cleared
+            .merge(&base.marker_cleared, ours.marker_cleared);
+        self.key_handled.merge(&base.key_handled, ours.key_handled);
+        self.input_read.merge(&base.input_read, ours.input_read);
+        self.electric_input
+            .merge(&base.electric_input, ours.electric_input);
+        self.focus.merge(&base.focus, ours.focus);
+        self.blur.merge(&base.blur, ours.blur);
     }
 }
 
@@ -517,14 +546,26 @@ impl EditorEvents {
         self.0.id
     }
     /// Run `f` on the listener tables, for `on_rc`/`off_fn` (function identity).
-    /// The tables are borrowed while `f` runs: `f` must not register or remove
-    /// this editor's handlers another way (that panics).
+    ///
+    /// `f` works on a copy, so no table is borrowed while it runs: it may register
+    /// or remove this editor's handlers another way too (`Editor::on_*`, `off`, a
+    /// nested `with_listeners`), and both sets of changes are kept
+    /// ([`Listeners::merge`]). A dispatch that is running keeps its snapshot. If `f`
+    /// panics, its own changes are discarded.
     pub fn with_listeners<R>(&self, f: impl FnOnce(&mut EditorListeners) -> R) -> R {
-        f(&mut self.0.ls.borrow_mut())
+        let base = self.0.ls.borrow().clone();
+        let mut ours = base.clone();
+        let r = f(&mut ours);
+        self.0.ls.borrow_mut().merge(&base, ours);
+        // `base` holds every entry either side removed: they are dropped here, with
+        // the tables released.
+        drop(base);
+        r
     }
     /// Remove the handler registered as `id`, whatever its event.
     pub fn off(&self, id: ListenerId) -> bool {
-        self.0.ls.borrow_mut().off(id)
+        let gone = self.0.ls.borrow_mut().remove(id);
+        gone.is_some()
     }
 }
 

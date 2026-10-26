@@ -41,7 +41,7 @@ use super::spans::{
 };
 use super::tree::Tree;
 use crate::CmError;
-use crate::events::{ListenerId, Listeners};
+use crate::events::{ListenerId, Listeners, removed};
 use crate::operation_group::{EditorId, EditorSink, Editors, NoEditors, run_in_op};
 use crate::pos::{CH_END, Pos, PosRef};
 use crate::text::{Text, from_u16, join, split_by, split_lines_auto, to_u16};
@@ -603,12 +603,15 @@ impl Doc {
     /// Remove the document handler registered as `id`, whatever its event.
     /// `false` when no document handler has that id.
     pub fn off(&self, id: ListenerId) -> bool {
-        let mut i = self.inner_mut();
-        i.before_change.off(id)
-            || i.before_selection_change.off(id)
-            || i.change.off(id)
-            || i.cursor_activity.off(id)
-            || i.history_added.off(id)
+        let gone = {
+            let mut i = self.inner_mut();
+            removed(i.before_change.remove(id))
+                .or_else(|| removed(i.before_selection_change.remove(id)))
+                .or_else(|| removed(i.change.remove(id)))
+                .or_else(|| removed(i.cursor_activity.remove(id)))
+                .or_else(|| removed(i.history_added.remove(id)))
+        };
+        gone.is_some()
     }
     /// `on("change", f)`: called after each change to this document, with the
     /// change as applied here. Delayed (`signalLater`): it runs when the outermost

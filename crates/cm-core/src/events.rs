@@ -9,7 +9,12 @@
 //! [`Listeners::off`] removes by id. [`Listeners::off_fn`] removes by function
 //! identity, like `off(emitter, type, f)`: the same handler `Rc` registered twice is
 //! two entries, and one `off_fn` removes the first of them.
+//!
+//! Dropping the last reference to a removed handler runs its destructor, which may
+//! use the same emitter again; owners of a list therefore take the entry out with
+//! [`Listeners::remove`] and drop it after they release the list ([`Removed`]).
 
+use std::any::Any;
 use std::cell::Cell;
 use std::rc::Rc;
 
@@ -55,6 +60,14 @@ impl<H: ?Sized> Entry<H> {
     }
 }
 
+/// A removed handler, kept alive until its owner has released the list.
+pub type Removed = Option<Box<dyn Any>>;
+
+/// [`Removed`] for one entry.
+pub fn removed<H: ?Sized + 'static>(e: Option<Entry<H>>) -> Removed {
+    e.map(|e| Box::new(e) as Box<dyn Any>)
+}
+
 /// The handlers of one event type on one emitter, copy-on-write.
 pub struct Listeners<H: ?Sized>(Rc<[Entry<H>]>);
 
@@ -81,21 +94,39 @@ impl<H: ?Sized> Listeners<H> {
     }
     /// Remove the handler registered as `id`. `false` when it is not in this list.
     pub fn off(&mut self, id: ListenerId) -> bool {
+        self.remove(id).is_some()
+    }
+    /// Remove the handler registered as `id` and return it.
+    pub fn remove(&mut self, id: ListenerId) -> Option<Entry<H>> {
         self.remove_where(|e| e.id == id)
     }
     /// `off(emitter, type, f)`: remove the first entry with the same function.
     pub fn off_fn(&mut self, f: &Rc<H>) -> bool {
-        self.remove_where(|e| e.same_fn(f))
+        self.remove_where(|e| e.same_fn(f)).is_some()
     }
-    fn remove_where(&mut self, pred: impl Fn(&Entry<H>) -> bool) -> bool {
-        match self.0.iter().position(pred) {
-            Some(i) => {
-                let mut v = self.0.to_vec();
-                v.remove(i);
-                self.0 = v.into();
-                true
-            }
-            None => false,
+    fn remove_where(&mut self, pred: impl Fn(&Entry<H>) -> bool) -> Option<Entry<H>> {
+        let i = self.0.iter().position(pred)?;
+        let mut v = self.0.to_vec();
+        let e = v.remove(i);
+        self.0 = v.into();
+        Some(e)
+    }
+    /// Keep both sets of changes when the list was changed on a copy (`ours`, taken
+    /// from `base`) while it was also changed directly (`self`, from the same
+    /// `base`): an entry either side removed is gone; `ours` keeps its order, and
+    /// the entries added directly follow it.
+    pub fn merge(&mut self, base: &Listeners<H>, ours: Listeners<H>) {
+        if Rc::ptr_eq(&self.0, &base.0) {
+            self.0 = ours.0;
+        } else if !Rc::ptr_eq(&ours.0, &base.0) {
+            let mut v: Vec<Entry<H>> = ours
+                .0
+                .iter()
+                .filter(|e| !base.contains(e.id) || self.contains(e.id))
+                .cloned()
+                .collect();
+            v.extend(self.0.iter().filter(|e| !base.contains(e.id)).cloned());
+            self.0 = v.into();
         }
     }
     /// `getHandlers(emitter, type)`: the handlers as of now. Later `on`/`off` calls
@@ -186,5 +217,34 @@ mod tests {
         let other: Rc<H> = Rc::new(|_| {});
         assert!(!ls.off_fn(&other), "another closure is another function");
         assert!(ls.off_fn(&dup) && ls.is_empty());
+    }
+
+    #[test]
+    fn merge_keeps_changes_made_both_ways() {
+        let f: Rc<H> = Rc::new(|_| {});
+        let mut live: Listeners<H> = Listeners::default();
+        let (a, b) = (live.on_rc(f.clone()), live.on_rc(f.clone()));
+        let base = live.clone();
+        let mut ours = base.clone();
+        assert!(ours.off(a));
+        let c = ours.on_rc(f.clone());
+        // Meanwhile, directly:
+        assert!(live.off(b));
+        let d = live.on_rc(f.clone());
+        live.merge(&base, ours);
+        let ids: Vec<ListenerId> = live.snapshot().iter().map(|e| e.id).collect();
+        assert_eq!(ids, [c, d]);
+
+        // One side unchanged: the other side's list is taken as is.
+        let base = live.clone();
+        let mut ours = base.clone();
+        let e = ours.on_rc(f.clone());
+        live.merge(&base, ours);
+        assert_eq!(live.len(), 3);
+        assert!(live.contains(e));
+        let base = live.clone();
+        let g = live.on_rc(f);
+        live.merge(&base, base.clone());
+        assert!(live.contains(g) && live.len() == 4);
     }
 }
