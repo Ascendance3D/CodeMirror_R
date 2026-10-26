@@ -501,6 +501,8 @@ impl Doc {
         let mut i = self.inner_mut();
         i.editor = None;
         i.cur_op = None;
+        // CM5 writes each request into the old editor's `curOp`; none outlives it.
+        i.scroll_requests.clear();
     }
     /// `cm.operation(f)`: group calls into one operation (only meaningful with
     /// editor semantics).
