@@ -148,7 +148,15 @@ impl JsStr {
     }
     /// `self + suffix` with JS string conversion.
     pub fn concat(&self, suffix: &str) -> JsStr {
-        JsStr::S(format!("{}{}", self.as_js_string(), suffix))
+        let prefix = match self {
+            JsStr::Undefined => "undefined",
+            JsStr::Null => "null",
+            JsStr::S(s) => s.as_str(),
+        };
+        let mut res = String::with_capacity(prefix.len() + suffix.len());
+        res.push_str(prefix);
+        res.push_str(suffix);
+        JsStr::S(res)
     }
     /// `String(self)`.
     pub fn as_js_string(&self) -> String {
