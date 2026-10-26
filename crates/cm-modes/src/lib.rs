@@ -10,6 +10,11 @@
 //! `startState` fallback returns `true` when a mode has no `startState`) or a boxed
 //! value of the mode's own state type.
 //!
+//! Mode infrastructure: [`simple`] (`addon/mode/simple.js`), [`overlay`]
+//! (`addon/mode/overlay.js`), [`multiplex`] (`addon/mode/multiplex.js`), [`meta`]
+//! (`mode/meta.js`) and [`helpers`] (`registerHelper` / `getHelpers` from
+//! `src/edit/methods.js`). JS regexps are [`RegExp`] (`cm_core::util::regexp`).
+//!
 //! Modes ported so far: [`toml`] (`mode/toml/toml.js`), [`xml`] (`mode/xml/xml.js`),
 //! [`javascript`] (`mode/javascript/javascript.js`, json/json-ld/typescript included),
 //! [`css`] (`mode/css/css.js`, scss/less/gss included), [`htmlmixed`]
@@ -32,15 +37,23 @@ use std::fmt::Debug;
 use std::rc::Rc;
 
 use cm_core::text::{Text, from_u16};
+pub use cm_core::util::regexp::{Match, RegExp, RegExpError};
 use cm_core::util::string_stream::{LineOracle, StringStream};
 
 pub mod css;
+pub mod helpers;
 pub mod htmlmixed;
 pub mod javascript;
 pub mod js;
+pub mod meta;
+pub mod multiplex;
+pub mod overlay;
+pub mod simple;
 pub mod toml;
 pub mod vrml;
 pub mod xml;
+
+pub use helpers::{HelperValue, Helpers};
 
 // --------------------------------------------------------------------------------
 // State
@@ -299,8 +312,10 @@ pub trait Mode {
     }
     /// `mode.token(stream, state)`: the style, `None` for null/undefined.
     fn token(&self, stream: &mut StringStream<'_>, state: &mut State) -> Option<String>;
-    /// `mode.blankLine`: `None` when the mode has none.
-    fn blank_line(&self, _state: &mut State) -> Option<()> {
+    /// `mode.blankLine(state)`: its return value, a style that `highlight.js` scans
+    /// for `line-` classes (`None` for null/undefined). Whether the method exists is
+    /// [`Mode::has_blank_line`].
+    fn blank_line(&self, _state: &mut State) -> Option<String> {
         None
     }
     fn has_blank_line(&self) -> bool {
@@ -310,8 +325,31 @@ pub trait Mode {
     fn copy_state(&self, _state: &State) -> Option<State> {
         None
     }
-    /// `mode.innerMode(state)`; `None` = absent or returned nothing.
+    /// Whether `mode.innerMode` exists (`if (!mode.innerMode)` in `getModeAt`,
+    /// `findStartLine`, `callBlankLine`).
+    fn has_inner_mode(&self) -> bool {
+        false
+    }
+    /// `mode.innerMode(state)`; `None` = absent or returned nothing. The returned
+    /// state is a copy; [`Mode::inner_mode_mut`] reaches the inner state itself.
     fn inner_mode(&self, _state: &State) -> Option<(Rc<dyn Mode>, State)> {
+        None
+    }
+    /// `mode.innerMode(state)` for callers that change the inner state (JS returns
+    /// the inner state object, so `callBlankLine` updates it in place): calls `f`
+    /// with the inner mode and the inner state inside `state`. Returns false, without
+    /// calling `f`, when there is no inner mode. Composite modes implement both
+    /// methods.
+    fn inner_mode_mut(
+        &self,
+        _state: &mut State,
+        _f: &mut dyn FnMut(&Rc<dyn Mode>, &mut State),
+    ) -> bool {
+        false
+    }
+    /// `state.combineTokens` of this mode's state, which `addon/mode/overlay.js` reads
+    /// from the overlay state: `None` = null/undefined.
+    fn combine_tokens(&self, _state: &State) -> Option<bool> {
         None
     }
     /// `mode.indent(state, textAfter, line)`; `None` = absent or `CodeMirror.Pass`.
@@ -368,6 +406,10 @@ pub struct Registry {
     modes: HashMap<String, ModeFactory>,
     mime_modes: HashMap<String, MimeTarget>,
     mode_extensions: HashMap<String, HashMap<String, ConfigValue>>,
+    /// `mode.dependencies`: `defineMode`'s extra arguments.
+    dependencies: HashMap<String, Vec<String>>,
+    /// `registerHelper` / `registerGlobalHelper` tables.
+    pub helpers: Helpers,
 }
 
 impl Default for Registry {
@@ -410,7 +452,7 @@ impl Mode for Named {
     fn token(&self, stream: &mut StringStream<'_>, state: &mut State) -> Option<String> {
         self.inner.token(stream, state)
     }
-    fn blank_line(&self, state: &mut State) -> Option<()> {
+    fn blank_line(&self, state: &mut State) -> Option<String> {
         self.inner.blank_line(state)
     }
     fn has_blank_line(&self) -> bool {
@@ -422,6 +464,19 @@ impl Mode for Named {
     fn inner_mode(&self, state: &State) -> Option<(Rc<dyn Mode>, State)> {
         self.inner.inner_mode(state)
     }
+    fn has_inner_mode(&self) -> bool {
+        self.inner.has_inner_mode()
+    }
+    fn inner_mode_mut(
+        &self,
+        state: &mut State,
+        f: &mut dyn FnMut(&Rc<dyn Mode>, &mut State),
+    ) -> bool {
+        self.inner.inner_mode_mut(state, f)
+    }
+    fn combine_tokens(&self, state: &State) -> Option<bool> {
+        self.inner.combine_tokens(state)
+    }
     fn indent(&self, state: &State, text_after: &[u16], line: &[u16]) -> Option<f64> {
         self.inner.indent(state, text_after, line)
     }
@@ -432,7 +487,8 @@ impl Mode for Named {
         self.inner.electric_input(text)
     }
     /// `getMode` copies `modeExtensions[name]`, then `spec.modeProps`, onto the mode
-    /// object: later sources win over the mode's own properties.
+    /// object: later sources win over the mode's own properties. An extension that
+    /// replaces an own property keeps the old value as `"_" + prop`.
     fn prop(&self, name: &str) -> Option<ConfigValue> {
         if let Some(v) = self.mode_props.get(name) {
             return Some(v.clone());
@@ -440,24 +496,46 @@ impl Mode for Named {
         if let Some(v) = self.extensions.get(name) {
             return Some(v.clone());
         }
+        if let Some(own) = name.strip_prefix('_')
+            && self.extensions.contains_key(own)
+            && let Some(v) = self.inner.prop(own)
+        {
+            return Some(v);
+        }
         self.inner.prop(name)
     }
     fn electric_chars(&self) -> Option<&str> {
-        self.inner.electric_chars()
+        self.str_override("electricChars")
+            .unwrap_or_else(|| self.inner.electric_chars())
     }
     fn line_comment(&self) -> Option<&str> {
-        self.inner.line_comment()
+        self.str_override("lineComment")
+            .unwrap_or_else(|| self.inner.line_comment())
     }
     fn block_comment_start(&self) -> Option<&str> {
-        self.inner.block_comment_start()
+        self.str_override("blockCommentStart")
+            .unwrap_or_else(|| self.inner.block_comment_start())
     }
     fn block_comment_end(&self) -> Option<&str> {
-        self.inner.block_comment_end()
+        self.str_override("blockCommentEnd")
+            .unwrap_or_else(|| self.inner.block_comment_end())
     }
     fn helper_type(&self) -> Option<&str> {
         self.helper_type
             .as_deref()
             .or_else(|| self.inner.helper_type())
+    }
+}
+
+impl Named {
+    /// A string-valued property set by `modeProps` or an extension: `Some(value)`
+    /// when one of them sets it (a non-string value reads as absent), `None` when
+    /// neither does.
+    fn str_override(&self, name: &str) -> Option<Option<&str>> {
+        self.mode_props
+            .get(name)
+            .or_else(|| self.extensions.get(name))
+            .map(ConfigValue::as_str)
     }
 }
 
@@ -485,6 +563,8 @@ impl Registry {
             modes: HashMap::new(),
             mime_modes: HashMap::new(),
             mode_extensions: HashMap::new(),
+            dependencies: HashMap::new(),
+            helpers: Helpers::default(),
         };
         r.define_mode(
             "null",
@@ -520,9 +600,31 @@ impl Registry {
     pub fn has_mime(&self, mime: &str) -> bool {
         self.mime_modes.contains_key(mime)
     }
-    /// `defineMode(name, factory)`.
+    /// `defineMode(name, factory)`. Redefining a name replaces the factory, as the
+    /// JS assignment does; the dependencies of the old definition are dropped.
     pub fn define_mode(&mut self, name: &str, factory: ModeFactory) {
         self.modes.insert(name.to_string(), factory);
+        self.dependencies.remove(name);
+    }
+    /// `defineMode(name, factory, dep1, dep2, ...)`: the extra arguments become
+    /// `mode.dependencies` (read by the legacy `loadmode.js`).
+    pub fn define_mode_with_dependencies(
+        &mut self,
+        name: &str,
+        factory: ModeFactory,
+        dependencies: &[&str],
+    ) {
+        self.define_mode(name, factory);
+        if !dependencies.is_empty() {
+            self.dependencies.insert(
+                name.to_string(),
+                dependencies.iter().map(|d| d.to_string()).collect(),
+            );
+        }
+    }
+    /// `CodeMirror.modes[name].dependencies`.
+    pub fn dependencies(&self, name: &str) -> Option<&[String]> {
+        self.dependencies.get(name).map(Vec::as_slice)
     }
     /// `defineMIME(mime, spec)`.
     pub fn define_mime(&mut self, mime: &str, spec: MimeTarget) {
@@ -530,6 +632,26 @@ impl Registry {
     }
     pub fn has_mode(&self, name: &str) -> bool {
         self.modes.contains_key(name)
+    }
+    /// The keys of `CodeMirror.modes`, sorted.
+    pub fn mode_names(&self) -> Vec<&str> {
+        let mut v: Vec<&str> = self.modes.keys().map(String::as_str).collect();
+        v.sort_unstable();
+        v
+    }
+    /// `CodeMirror.mimeModes[mime]`.
+    pub fn mime_target(&self, mime: &str) -> Option<&MimeTarget> {
+        self.mime_modes.get(mime)
+    }
+    /// The keys of `CodeMirror.mimeModes`, sorted.
+    pub fn mime_types(&self) -> Vec<&str> {
+        let mut v: Vec<&str> = self.mime_modes.keys().map(String::as_str).collect();
+        v.sort_unstable();
+        v
+    }
+    /// `CodeMirror.modeExtensions[mode]`.
+    pub fn mode_extensions(&self, mode: &str) -> Option<&HashMap<String, ConfigValue>> {
+        self.mode_extensions.get(mode)
     }
 
     /// `resolveMode(spec)`.
@@ -602,6 +724,44 @@ pub fn copy_state(mode: &dyn Mode, state: &State) -> State {
         return State::True;
     }
     mode.copy_state(state).unwrap_or_else(|| state.clone())
+}
+
+/// `innerMode(mode, state)` for callers that change the inner state: calls `f`
+/// with the innermost mode and its state inside `state` (the outer mode and `state`
+/// itself when there is no inner mode), following the same loop as [`inner_mode`].
+pub fn with_inner_mode_mut<R>(
+    mode: &Rc<dyn Mode>,
+    state: &mut State,
+    f: impl FnOnce(&Rc<dyn Mode>, &mut State) -> R,
+) -> R {
+    let mut f = Some(f);
+    let mut out = None;
+    walk_inner_mut(mode, state, &mut |m, s| {
+        if let Some(f) = f.take() {
+            out = Some(f(m, s));
+        }
+    });
+    out.expect("with_inner_mode_mut calls f once")
+}
+
+fn walk_inner_mut(
+    mode: &Rc<dyn Mode>,
+    state: &mut State,
+    f: &mut dyn FnMut(&Rc<dyn Mode>, &mut State),
+) {
+    let mut reached = false;
+    let had = mode.inner_mode_mut(state, &mut |m, s| {
+        reached = true;
+        if Rc::ptr_eq(m, mode) {
+            // `info.mode == mode`: the loop stops with this info.
+            f(m, s);
+        } else {
+            walk_inner_mut(m, s, f);
+        }
+    });
+    if !had && !reached {
+        f(mode, state);
+    }
 }
 
 /// `innerMode(mode, state)`.

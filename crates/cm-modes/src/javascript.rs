@@ -2540,6 +2540,12 @@ pub fn register(r: &mut Registry) {
         "javascript",
         Rc::new(|_, config, spec| Rc::new(JsMode::new(config, spec)) as Rc<dyn Mode>),
     );
+    // `CodeMirror.registerHelper("wordChars", "javascript", /[\w$]/)`
+    r.helpers.register(
+        "wordChars",
+        "javascript",
+        Rc::new(crate::RegExp::new(r"[\w$]", "").expect("wordChars regexp")),
+    );
     for mime in [
         "text/javascript",
         "text/ecmascript",

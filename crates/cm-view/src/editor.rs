@@ -11,9 +11,9 @@
 //! Not ported:
 //! * the `scroll`/`swapDoc`/`refresh`/
 //!   `optionChange`/`gutterClick`/DOM editor events.
-//! * `addOverlay`/`removeOverlay`, `getHelper`/`registerHelper`: `findWordAt` and
-//!   group motion use plain `isWordChar`, so javascript's `wordChars` helper
-//!   (`[\w$]`) is ignored and `$` is not a word character.
+//! * `addOverlay`/`removeOverlay`. `getHelper`/`getHelpers` are ported, but
+//!   `findWordAt` and group motion still use plain `isWordChar`, so javascript's
+//!   `wordChars` helper (`[\w$]`) is ignored and `$` is not a word character.
 //! * `addLineClass`, `setGutterMarker` and the `gutters` option; `addLineWidget`,
 //!   `addWidget`.
 //! * collapsed ranges in layout: line heights and the viewport count every line
@@ -1550,6 +1550,18 @@ impl Editor {
         }
         let st = self.get_token_at(pos, false).state;
         inner_mode(self.mode.clone(), st).0
+    }
+
+    /// `cm.getHelpers(pos, type)`: the helpers of [`Registry::helpers`] for the mode
+    /// at `pos`. Global helper predicates receive this editor as `&dyn Any`.
+    pub fn get_helpers(&self, pos: Pos, ty: &str) -> Vec<cm_modes::HelperValue> {
+        let mode = self.get_mode_at(pos);
+        self.registry.helpers.for_mode(&*mode, ty, self)
+    }
+
+    /// `cm.getHelper(pos, type)`: the first of [`Editor::get_helpers`].
+    pub fn get_helper(&self, pos: Pos, ty: &str) -> Option<cm_modes::HelperValue> {
+        self.get_helpers(pos, ty).into_iter().next()
     }
 
     // ------------------------------------------------------------------------------

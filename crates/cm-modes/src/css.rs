@@ -1120,6 +1120,9 @@ fn mime(cfg: CssConfig, helper_type: Option<&str>) -> ModeSpec {
 
 /// `defineMode("css")` and the four `defineMIME` calls.
 pub fn register(r: &mut Registry) {
+    // `CodeMirror.registerHelper("hintWords", "css", allWords)`
+    let all_words: Vec<String> = CSS_HINT_WORDS.iter().map(|w| w.to_string()).collect();
+    r.helpers.register("hintWords", "css", Rc::new(all_words));
     r.define_mode(
         "css",
         Rc::new(|reg, config, spec| Rc::new(make(reg, config, spec)) as Rc<dyn Mode>),
