@@ -101,7 +101,7 @@ impl EditorSink for HeadlessSink {
     fn end_display(&self, rec: Box<dyn Any>, _: &mut dyn Editors) -> Option<Box<dyn Any>> {
         Some(rec)
     }
-    fn park_call(&self, _: crate::operation_group::EdCall) {
+    fn park_call(&self, _: crate::operation_group::Batch, _: crate::operation_group::EdCall) {
         crate::operation_group::diagnostic(format!(
             "discarded a callback for headless editor {}",
             self.id.get()

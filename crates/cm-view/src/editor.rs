@@ -27,7 +27,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::rc::Rc;
 
 use cm_core::events::ListenerId;
-use cm_core::operation_group::{end_group, group_open, start_operation};
+use cm_core::operation_group::{Batch, end_group, group_open, start_operation};
 use cm_core::pos::{Sticky, cmp};
 use cm_core::text::{Text, from_u16, is_js_space, split_lines_auto, to_u16};
 use cm_core::util::misc::count_column;
@@ -553,40 +553,45 @@ impl Editor {
 
     /// [`Editor::flush_parked`] with other editors reachable.
     ///
-    /// Parked work keeps its order. A panic in a parked callback skips the
-    /// callbacks after it up to the operation end that follows (the rest of that
-    /// group's queue, as in `fireCallbacksForOps`), but every parked operation end
-    /// still runs; the first panic resumes when the parked work is done (D4).
+    /// Parked work keeps its order. A panic in a parked callback skips the parked
+    /// callbacks of the same batch after it (the rest of that group's queue, as in
+    /// `fireCallbacksForOps`); callbacks of other batches, and every parked
+    /// operation end, still run. A panic in an operation's display or finish phase
+    /// skips nothing. The first panic resumes, with its payload, when the parked
+    /// work is done (D4).
     pub fn flush_parked_with(&mut self, rest: &mut dyn Editors) {
         let mut panicked: Option<Box<dyn std::any::Any + Send>> = None;
+        let mut skipped: Vec<Batch> = Vec::new();
         loop {
             let items = std::mem::take(&mut *self.shared.parked.borrow_mut());
             if items.is_empty() {
                 break;
             }
-            let mut skipping = false;
             for item in items {
                 let r = match item {
-                    Parked::Call(_) if skipping => continue,
-                    Parked::Call(call) => {
+                    Parked::Call(batch, _) if skipped.contains(&batch) => continue,
+                    Parked::Call(batch, call) => {
+                        let r = catch_unwind(AssertUnwindSafe(|| call(&mut *self, &mut *rest)));
+                        if r.is_err() {
+                            skipped.push(batch);
+                        }
+                        r
+                    }
+                    Parked::Finish(call) => {
                         catch_unwind(AssertUnwindSafe(|| call(&mut *self, &mut *rest)))
                     }
-                    Parked::End(mut rec) => {
-                        skipping = false;
-                        catch_unwind(AssertUnwindSafe(|| {
-                            self.end_operation_display(&mut rec);
-                            finish(
-                                &mut Cx {
-                                    editor: &mut *self,
-                                    others: &mut *rest,
-                                },
-                                *rec,
-                            );
-                        }))
-                    }
+                    Parked::End(mut rec) => catch_unwind(AssertUnwindSafe(|| {
+                        self.end_operation_display(&mut rec);
+                        finish(
+                            &mut Cx {
+                                editor: &mut *self,
+                                others: &mut *rest,
+                            },
+                            *rec,
+                        );
+                    })),
                 };
                 if let Err(p) = r {
-                    skipping = true;
                     panicked.get_or_insert(p);
                 }
             }

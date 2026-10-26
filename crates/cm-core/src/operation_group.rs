@@ -66,6 +66,26 @@ impl EditorId {
     }
 }
 
+/// The id of one delivery of queued callbacks: an operation group's delayed queue
+/// (`fireCallbacksForOps`), one `fireOrphanDelayed` run, or one [`deliver`] call.
+/// Unique on the thread and never reused.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Batch(u64);
+
+thread_local! {
+    static NEXT_BATCH: Cell<u64> = const { Cell::new(1) };
+}
+
+impl Batch {
+    fn next() -> Batch {
+        NEXT_BATCH.with(|n| {
+            let v = n.get();
+            n.set(v + 1);
+            Batch(v)
+        })
+    }
+}
+
 /// An editor-targeted call: receives the editor (as `dyn Any`; the view crate
 /// downcasts it to its editor type) and access to the other reachable editors.
 pub type EdCall = Box<dyn FnOnce(&mut dyn Any, &mut dyn Editors)>;
@@ -137,8 +157,11 @@ pub trait EditorSink {
     fn end_display(&self, rec: Box<dyn Any>, access: &mut dyn Editors) -> Option<Box<dyn Any>>;
     /// `endOperation_finish`: the events fired after the group is closed.
     fn end_finish(&self, _rec: Box<dyn Any>, _access: &mut dyn Editors) {}
-    /// Keep `call` until the editor's next entry.
-    fn park_call(&self, call: EdCall);
+    /// Keep `call` until the editor's next entry. `batch` names the queue it was
+    /// delivered from ([`Batch`]): a panic in a parked call skips only the parked
+    /// calls of the same batch, as a throw in `fireCallbacksForOps` drops only the
+    /// rest of that group's queue.
+    fn park_call(&self, batch: Batch, call: EdCall);
 
     /// The editor's `beforeChange` handlers as of now (`signal(doc.cm, …)` runs them
     /// after the document's own handlers).
@@ -187,6 +210,7 @@ pub trait EditorSink {
 }
 
 struct Group {
+    batch: Batch,
     ops: Vec<Rc<dyn EditorSink>>,
     delayed: VecDeque<Delayed>,
 }
@@ -228,6 +252,7 @@ pub fn start_operation(sink: &Rc<dyn EditorSink>) -> Option<bool> {
             }
             None => {
                 *g = Some(Group {
+                    batch: Batch::next(),
                     ops: vec![sink.clone()],
                     delayed: VecDeque::new(),
                 });
@@ -301,8 +326,9 @@ pub fn orphans_pending() -> bool {
 /// go to `access`, or are parked on their editor.
 pub fn fire_orphan_delayed(access: &mut dyn Editors) {
     let q = ORPHANS.with(|o| o.borrow_mut().take()).unwrap_or_default();
+    let batch = Batch::next();
     for d in q {
-        deliver(d, access);
+        deliver_in(d, batch, access);
     }
 }
 
@@ -317,8 +343,14 @@ pub fn diagnostic(msg: String) {
     DIAGNOSTICS.with(|d| d.borrow_mut().push(msg));
 }
 
-/// Deliver one callback now.
+/// Deliver one callback now, as a batch of its own.
 pub fn deliver(d: Delayed, access: &mut dyn Editors) {
+    deliver_in(d, Batch::next(), access);
+}
+
+/// Deliver one callback of `batch` now; parked with `batch` when its editor cannot
+/// be reached.
+fn deliver_in(d: Delayed, batch: Batch, access: &mut dyn Editors) {
     match d {
         Delayed::Free(f) => f(),
         Delayed::Editor { target, sink, call } => {
@@ -331,7 +363,7 @@ pub fn deliver(d: Delayed, access: &mut dyn Editors) {
             }
             let call = call.expect("not delivered");
             match sink.upgrade() {
-                Some(s) => s.park_call(call),
+                Some(s) => s.park_call(batch, call),
                 None => diagnostic(format!(
                     "discarded a callback for editor {}, which no longer exists",
                     target.0
@@ -353,9 +385,10 @@ fn pop_delayed() -> Option<Delayed> {
 
 /// `fireCallbacksForOps` (operation_group.js:119-133).
 fn fire_callbacks_for_ops(access: &mut dyn Editors) {
+    let batch = GROUP.with(|g| g.borrow().as_ref().expect("group").batch);
     loop {
         while let Some(d) = pop_delayed() {
-            deliver(d, access);
+            deliver_in(d, batch, access);
         }
         // The live length: editors may join the group while handlers run.
         let mut j = 0;
@@ -363,12 +396,13 @@ fn fire_callbacks_for_ops(access: &mut dyn Editors) {
             GROUP.with(|g| g.borrow().as_ref().expect("group").ops.get(j).cloned())
         {
             while let Some(call) = sink.next_cursor_activity() {
-                deliver(
+                deliver_in(
                     Delayed::Editor {
                         target: sink.id(),
                         sink: Rc::downgrade(&sink),
                         call,
                     },
+                    batch,
                     access,
                 );
             }
@@ -497,7 +531,7 @@ mod tests {
         fn end_finish(&self, _: Box<dyn Any>, _: &mut dyn Editors) {
             log(format!("{}:finish", self.name));
         }
-        fn park_call(&self, call: EdCall) {
+        fn park_call(&self, _: Batch, call: EdCall) {
             log(format!("{}:parked call", self.name));
             self.parked.borrow_mut().push(call);
         }

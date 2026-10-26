@@ -26,7 +26,7 @@ use std::rc::{Rc, Weak};
 
 use cm_core::events::{Entry, ListenerId, Listeners, Removed, removed};
 use cm_core::operation_group::{
-    BeforeChangeFn, BeforeSelectionChangeFn, Delayed, EdCall, EditorId, EditorSink, Editors,
+    Batch, BeforeChangeFn, BeforeSelectionChangeFn, Delayed, EdCall, EditorId, EditorSink, Editors,
     diagnostic, signal_later,
 };
 use cm_core::{
@@ -232,8 +232,13 @@ impl OpRecord {
 /// Work for the editor that could not be delivered when it was due (the editor
 /// was not reachable), delivered at its next entry.
 pub(crate) enum Parked {
-    Call(EdCall),
+    /// A queued callback (`signalLater`, `cursorActivity`) of a delivery batch.
+    Call(Batch, EdCall),
+    /// An operation's display and finish phases.
     End(Box<OpRecord>),
+    /// An operation's finish phase, when the editor was reached for its display
+    /// phase but not for its finish.
+    Finish(EdCall),
 }
 
 /// The part of an editor its document can reach (`doc.cm`). Its cells are never
@@ -415,7 +420,7 @@ impl EditorSink for EditorShared {
             )
         });
         if !reached && let Some(rec) = rec {
-            self.park(Parked::Call(Box::new(move |ed, rest| {
+            self.park(Parked::Finish(Box::new(move |ed, rest| {
                 finish(
                     &mut Cx {
                         editor: editor_of(ed),
@@ -426,8 +431,8 @@ impl EditorSink for EditorShared {
             })));
         }
     }
-    fn park_call(&self, call: EdCall) {
-        self.park(Parked::Call(call));
+    fn park_call(&self, batch: Batch, call: EdCall) {
+        self.park(Parked::Call(batch, call));
     }
 
     fn before_change_handlers(&self) -> Vec<Rc<BeforeChangeFn>> {

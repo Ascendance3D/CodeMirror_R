@@ -83,8 +83,12 @@ impl EditorSet {
         Some(r)
     }
 
-    /// Deliver the work parked on the editors of the set, until none is left.
+    /// Deliver the work parked on the editors of the set, until none is left. A
+    /// panic in one editor's parked work does not hold back the other editors'
+    /// ([`Editor::flush_parked_with`]); the first panic resumes, with its payload,
+    /// when none is left.
     pub fn flush_parked(&mut self) {
+        let mut panicked: Option<Box<dyn Any + Send>> = None;
         loop {
             let ids: Vec<EditorId> = self
                 .slots
@@ -93,7 +97,7 @@ impl EditorSet {
                 .map(|(id, _)| *id)
                 .collect();
             if ids.is_empty() {
-                return;
+                break;
             }
             for id in ids {
                 let Some(mut ed) = self.slots.get_mut(&id).and_then(Option::take) else {
@@ -102,9 +106,12 @@ impl EditorSet {
                 let r = catch_unwind(AssertUnwindSafe(|| ed.flush_parked_with(self)));
                 self.slots.insert(id, Some(ed));
                 if let Err(p) = r {
-                    resume_unwind(p);
+                    panicked.get_or_insert(p);
                 }
             }
+        }
+        if let Some(p) = panicked {
+            resume_unwind(p);
         }
     }
 
