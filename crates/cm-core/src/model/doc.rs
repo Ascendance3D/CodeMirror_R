@@ -493,7 +493,13 @@ impl Doc {
 
     /// Make the model behave as if the document were attached to an editor.
     pub fn attach_editor_semantics(&self, sem: EditorSemantics) {
-        self.inner_mut().editor = Some(sem);
+        let mut i = self.inner_mut();
+        i.editor = Some(sem);
+        // A request belongs to the editor it was made for (see
+        // `detach_editor_semantics`); a new editor starts with none, even when the
+        // previous one was dropped without detaching.
+        i.scroll_requests.clear();
+        drop(i);
         // The `undoDepth` option handler runs when the editor is created.
         self.set_undo_depth(sem.undo_depth);
     }
