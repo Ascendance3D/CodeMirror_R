@@ -11,6 +11,7 @@
 //! upstream/codemirror5/mode/css/scss_test.js
 //! upstream/codemirror5/mode/css/less_test.js
 //! upstream/codemirror5/mode/rust/test.js
+//! upstream/codemirror5/mode/clike/test.js
 
 #![cfg_attr(rustfmt, rustfmt::skip)]
 
@@ -1838,5 +1839,246 @@ fn rust_string_literals_test() {
         "[string br##\"foo #\" bar\"##]",
         "[string-2 'h']",
         "[string-2 b'h']",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_indent`
+#[test]
+fn clike_indent() {
+    mt("mode/clike/test.js", "clike_indent", Spec::from("text/x-c"), 2, &[
+        "[type void] [def foo]([type void*] [variable a], [type int] [variable b]) {",
+        "  [type int] [variable c] [operator =] [variable b] [operator +]",
+        "    [number 1];",
+        "  [keyword return] [operator *][variable a];",
+        "}",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_indent_switch`
+#[test]
+fn clike_indent_switch() {
+    mt("mode/clike/test.js", "clike_indent_switch", Spec::from("text/x-c"), 2, &[
+        "[keyword switch] ([variable x]) {",
+        "  [keyword case] [number 10]:",
+        "    [keyword return] [number 20];",
+        "  [keyword default]:",
+        "    [variable printf]([string \"foo %c\"], [variable x]);",
+        "}",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_def`
+#[test]
+fn clike_def() {
+    mt("mode/clike/test.js", "clike_def", Spec::from("text/x-c"), 2, &[
+        "[type void] [def foo]() {}",
+        "[keyword struct] [def bar]{}",
+        "[keyword enum] [def zot]{}",
+        "[keyword union] [def ugh]{}",
+        "[type int] [type *][def baz]() {}",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_def_new_line`
+#[test]
+fn clike_def_new_line() {
+    mt("mode/clike/test.js", "clike_def_new_line", Spec::from("text/x-c"), 2, &[
+        "::[variable std]::[variable SomeTerribleType][operator <][variable T][operator >]",
+        "[def SomeLongMethodNameThatDoesntFitIntoOneLine]([keyword const] [variable MyType][operator &] [variable param]) {}",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_double_block`
+#[test]
+fn clike_double_block() {
+    mt("mode/clike/test.js", "clike_double_block", Spec::from("text/x-c"), 2, &[
+        "[keyword for] (;;)",
+        "  [keyword for] (;;)",
+        "    [variable x][operator ++];",
+        "[keyword return];",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_preprocessor`
+#[test]
+fn clike_preprocessor() {
+    mt("mode/clike/test.js", "clike_preprocessor", Spec::from("text/x-c"), 2, &[
+        "[meta #define FOO 3]",
+        "[type int] [variable foo];",
+        "[meta #define BAR\\]",
+        "[meta 4]",
+        "[type unsigned] [type int] [variable bar] [operator =] [number 8];",
+        "[meta #include <baz> ][comment // comment]",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_c_underscores`
+#[test]
+fn clike_c_underscores() {
+    mt("mode/clike/test.js", "clike_c_underscores", Spec::from("text/x-c"), 2, &[
+        "[builtin __FOO];",
+        "[builtin _Complex];",
+        "[builtin __aName];",
+        "[variable _aName];",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_c_types`
+#[test]
+fn clike_c_types() {
+    mt("mode/clike/test.js", "clike_c_types", Spec::from("text/x-c"), 2, &[
+        "[type int];",
+        "[type long];",
+        "[type char];",
+        "[type short];",
+        "[type double];",
+        "[type float];",
+        "[type unsigned];",
+        "[type signed];",
+        "[type void];",
+        "[type bool];",
+        "[type foo_t];",
+        "[variable foo_T];",
+        "[variable _t];",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_cpp14_literal`
+#[test]
+fn clike_cpp14_literal() {
+    mt("mode/clike/test.js", "clike_cpp14_literal", Spec::from("text/x-c++src"), 2, &[
+        "[number 10'000];",
+        "[number 0b10'000];",
+        "[number 0x10'000];",
+        "[string '100000'];",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_ctor_dtor`
+#[test]
+fn clike_ctor_dtor() {
+    mt("mode/clike/test.js", "clike_ctor_dtor", Spec::from("text/x-c++src"), 2, &[
+        "[def Foo::Foo]() {}",
+        "[def Foo::~Foo]() {}",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_cpp_underscores`
+#[test]
+fn clike_cpp_underscores() {
+    mt("mode/clike/test.js", "clike_cpp_underscores", Spec::from("text/x-c++src"), 2, &[
+        "[builtin __FOO];",
+        "[builtin _Complex];",
+        "[builtin __aName];",
+        "[variable _aName];",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_objc_underscores`
+#[test]
+fn clike_objc_underscores() {
+    mt("mode/clike/test.js", "clike_objc_underscores", Spec::from("text/x-objectivec"), 2, &[
+        "[builtin __FOO];",
+        "[builtin _Complex];",
+        "[builtin __aName];",
+        "[variable _aName];",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_objc_interface`
+#[test]
+fn clike_objc_interface() {
+    mt("mode/clike/test.js", "clike_objc_interface", Spec::from("text/x-objectivec"), 2, &[
+        "[keyword @interface] [def foo] {",
+        "  [type int] [variable bar];",
+        "}",
+        "[keyword @property] ([keyword atomic], [keyword nullable]) [variable NSString][operator *] [variable a];",
+        "[keyword @property] ([keyword nonatomic], [keyword assign]) [type int] [variable b];",
+        "[operator -]([type instancetype])[variable initWithFoo]:([type int])[variable a] [builtin NS_DESIGNATED_INITIALIZER];",
+        "[keyword @end]",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_objc_implementation`
+#[test]
+fn clike_objc_implementation() {
+    mt("mode/clike/test.js", "clike_objc_implementation", Spec::from("text/x-objectivec"), 2, &[
+        "[keyword @implementation] [def foo] {",
+        "  [type int] [variable bar];",
+        "}",
+        "[keyword @property] ([keyword readwrite]) [type SEL] [variable a];",
+        "[operator -]([type instancetype])[variable initWithFoo]:([type int])[variable a] {",
+        "  [keyword if](([keyword self] [operator =] [[[keyword super] [variable init] ]])) {}",
+        "  [keyword return] [keyword self];",
+        "}",
+        "[keyword @end]",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_objc_types`
+#[test]
+fn clike_objc_types() {
+    mt("mode/clike/test.js", "clike_objc_types", Spec::from("text/x-objectivec"), 2, &[
+        "[type int];",
+        "[type foo_t];",
+        "[variable foo_T];",
+        "[type id];",
+        "[type SEL];",
+        "[type instancetype];",
+        "[type Class];",
+        "[type Protocol];",
+        "[type BOOL];",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_scala_nested_comments`
+#[test]
+fn clike_scala_nested_comments() {
+    mt("mode/clike/test.js", "clike_scala_nested_comments", Spec::from("text/x-scala"), 2, &[
+        "[comment /*]",
+        "[comment But wait /* this is a nested comment */ for real]",
+        "[comment /**** let * me * show * you ****/]",
+        "[comment ///// let / me / show / you /////]",
+        "[comment */]",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_java_types`
+#[test]
+fn clike_java_types() {
+    mt("mode/clike/test.js", "clike_java_types", Spec::from("text/x-java"), 2, &[
+        "[type byte];",
+        "[type short];",
+        "[type int];",
+        "[type long];",
+        "[type float];",
+        "[type double];",
+        "[type boolean];",
+        "[type char];",
+        "[type void];",
+        "[type Boolean];",
+        "[type Byte];",
+        "[type Character];",
+        "[type Double];",
+        "[type Float];",
+        "[type Integer];",
+        "[type Long];",
+        "[type Number];",
+        "[type Object];",
+        "[type Short];",
+        "[type String];",
+        "[type StringBuffer];",
+        "[type StringBuilder];",
+        "[type Void];",
+    ]);
+}
+
+/// mode/clike/test.js: `clike_java_indent`
+#[test]
+fn clike_java_indent() {
+    mt("mode/clike/test.js", "clike_java_indent", Spec::from("text/x-java"), 2, &[
+        "[keyword public] [keyword class] [def A] [keyword extends] [variable B]",
+        "{",
+        "  [variable c]()",
     ]);
 }

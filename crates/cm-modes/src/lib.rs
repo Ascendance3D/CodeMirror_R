@@ -18,7 +18,9 @@
 //! Modes ported so far: [`toml`] (`mode/toml/toml.js`), [`xml`] (`mode/xml/xml.js`),
 //! [`javascript`] (`mode/javascript/javascript.js`, json/json-ld/typescript included),
 //! [`css`] (`mode/css/css.js`, scss/less/gss included), [`htmlmixed`]
-//! (`mode/htmlmixed/htmlmixed.js`), [`rust`] (`mode/rust/rust.js`, a [`simple`] mode). [`vrml`] is new (CM5 has no VRML mode); its JS
+//! (`mode/htmlmixed/htmlmixed.js`), [`rust`] (`mode/rust/rust.js`, a [`simple`] mode),
+//! [`clike`] (`mode/clike/clike.js`, C/C++/Java/C#/Scala/Kotlin/... included).
+//! [`vrml`] is new (CM5 has no VRML mode); its JS
 //! twin is `oracle/cm5-vrml-mode.js`.
 //!
 //! ## Copying states
@@ -40,6 +42,7 @@ use cm_core::text::{Text, from_u16};
 pub use cm_core::util::regexp::{Match, RegExp, RegExpError};
 use cm_core::util::string_stream::{LineOracle, StringStream};
 
+pub mod clike;
 pub mod css;
 pub mod helpers;
 pub mod htmlmixed;
@@ -588,6 +591,7 @@ impl Registry {
         javascript::register(&mut r);
         css::register(&mut r);
         htmlmixed::register(&mut r);
+        clike::register(&mut r);
         rust::register(&mut r);
         vrml::register(&mut r);
         r

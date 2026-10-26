@@ -9,7 +9,7 @@ This repository is private. It was extracted from `Ascendance3D/X_ITE_R` at `ffe
 | crate | contents |
 | --- | --- |
 | `cm-core` | the CM5 document model and utilities, no UI |
-| `cm-modes` | the mode API, the tokenization loop, and the js, xml, css, htmlmixed, rust, toml and VRML modes |
+| `cm-modes` | the mode API, the tokenization loop, and the js, xml, css, htmlmixed, clike, rust, toml and VRML modes |
 | `cm-view` | commands, keymaps, measurement, highlighting, input, and a native wgpu editor (`cm-edit`, `cm-render`) |
 | `cm-evidence` | the test evidence policy: a test that cannot run fails or skips by name |
 
@@ -55,11 +55,13 @@ Editor, document, line and marker events follow CM5's order: immediate events (`
 
 ## Modes
 
-`cm-modes` holds the mode API of `src/modes.js` (`Registry`: `defineMode`, `defineMIME`, `resolveMode`, `getMode`, `extendMode`, helpers from `registerHelper`), the composite-mode addons `addon/mode/simple.js` (`simple`), `overlay.js` (`overlay`) and `multiplex.js` (`multiplex`), and `mode/meta.js` (`meta`: `modeInfo`, `findModeBy*`). Modes match with `cm_core::util::regexp::RegExp`, a JS `RegExp` on UTF-16 code units. A `modeInfo` entry is metadata, not an implementation: `ModeInfo::is_available` tells whether its mode is registered. Ported modes: css, htmlmixed, javascript, rust, toml and xml (plus the native VRML mode); the other CM5 modes are not ported yet.
+`cm-modes` holds the mode API of `src/modes.js` (`Registry`: `defineMode`, `defineMIME`, `resolveMode`, `getMode`, `extendMode`, helpers from `registerHelper`), the composite-mode addons `addon/mode/simple.js` (`simple`), `overlay.js` (`overlay`) and `multiplex.js` (`multiplex`), and `mode/meta.js` (`meta`: `modeInfo`, `findModeBy*`). Modes match with `cm_core::util::regexp::RegExp`, a JS `RegExp` on UTF-16 code units. A `modeInfo` entry is metadata, not an implementation: `ModeInfo::is_available` tells whether its mode is registered. Ported modes: clike, css, htmlmixed, javascript, rust, toml and xml (plus the native VRML mode); the other CM5 modes are not ported yet.
 
 `crates/cm-modes/tests/mode_infra_oracle.rs` compares the infrastructure with CM5 recordings. To record again, build a disposable copy as for the C0 suite, then run `node oracle/cm5-mode-infra.mjs <copy>/oracle/cm5-build`. Its inputs come from `node oracle/cm5-mode-infra-cases.mjs`.
 
 The rust mode (`mode/rust/rust.js`, a simple mode) is checked by `crates/cm-modes/tests/rust_oracle.rs` (tables, resolution, per-line state, indent and tokens, `runMode`) and `crates/cm-view/tests/rust_mode_editor.rs` (editor tokens, smart indent, electric `}`). Record them again with `node oracle/cm5-rust-mode.mjs <copy>/oracle/cm5-build` and `CM5_BUILD_DIR=<copy>/oracle/cm5-build node oracle/cm5-rust-editor.mjs`.
+
+The clike mode (`mode/clike/clike.js`: C, C++, Java, C#, Scala, Kotlin, GLSL shaders, nesC, Objective-C, Objective-C++, Squirrel and Ceylon, 16 MIME types) is checked by `crates/cm-modes/tests/clike_oracle.rs` (every `def` configuration and its `hintWords`, mode properties, resolution, per-line state, indent and tokens, restarts from saved states, `runMode`) and `crates/cm-view/tests/clike_mode_editor.rs` (editor tokens, smart indent, `getHelpers`, typed electric input). Record them again with `node oracle/cm5-clike-mode.mjs <copy>/oracle/cm5-build` and `CM5_BUILD_DIR=<copy>/oracle/cm5-build node oracle/cm5-clike-editor.mjs`.
 
 ## C0 suite
 
