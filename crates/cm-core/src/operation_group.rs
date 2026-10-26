@@ -107,6 +107,11 @@ pub enum Delayed {
     },
 }
 
+/// An editor's `beforeChange` handler bound to its editor.
+pub type BeforeChangeFn = dyn Fn(&Doc, &mut BeforeChange);
+/// An editor's `beforeSelectionChange` handler bound to its editor.
+pub type BeforeSelectionChangeFn = dyn Fn(&Doc, &mut BeforeSelectionChange);
+
 /// What a document sees of its editor (`doc.cm`): the editor's operation state and
 /// listener tables. Every method is called without any document borrow held, and
 /// implementations do not hold their own borrows across a call into user code.
@@ -135,18 +140,23 @@ pub trait EditorSink {
     /// Keep `call` until the editor's next entry.
     fn park_call(&self, call: EdCall);
 
+    /// The editor's `beforeChange` handlers as of now (`signal(doc.cm, …)` runs them
+    /// after the document's own handlers).
+    fn before_change_handlers(&self) -> Vec<Rc<BeforeChangeFn>> {
+        Vec::new()
+    }
     /// `hasHandler(doc.cm, "beforeChange")`.
     fn has_before_change(&self) -> bool {
-        false
+        !self.before_change_handlers().is_empty()
     }
-    /// `signal(doc.cm, "beforeChange", …)`, after the document's own handlers.
-    fn before_change(&self, _doc: &Doc, _change: &mut BeforeChange) {}
+    /// The editor's `beforeSelectionChange` handlers as of now.
+    fn before_selection_change_handlers(&self) -> Vec<Rc<BeforeSelectionChangeFn>> {
+        Vec::new()
+    }
     /// `hasHandler(doc.cm, "beforeSelectionChange")`.
     fn has_before_selection_change(&self) -> bool {
-        false
+        !self.before_selection_change_handlers().is_empty()
     }
-    /// `signal(doc.cm, "beforeSelectionChange", …)`, after the document's handlers.
-    fn before_selection_change(&self, _doc: &Doc, _sel: &mut BeforeSelectionChange) {}
     /// `makeChangeSingleDocInEditor`, after the change is applied to the lines.
     fn change_applied(&self, _doc: &Doc, _change: &Rc<ChangeObj>) {}
     /// `signalCursorActivity(cm)`.
@@ -157,14 +167,20 @@ pub trait EditorSink {
     }
     /// `markText` on a document with this editor (`markerAdded`, redraw).
     fn marker_added(&self, _doc: &Doc, _marker: &TextMarker) {}
-    /// `TextMarker.clear` on a document with this editor: `markerCleared` and the
-    /// redraw of lines `min..=max` (both `None` for a marker that is not collapsed).
+    /// `detachLine` emptied the marker's lines (`op.maybeHiddenMarkers`).
+    fn marker_maybe_hidden(&self, _marker: &TextMarker) {}
+    /// `attachLine` gave an empty marker a line (`op.maybeUnhiddenMarkers`).
+    fn marker_maybe_unhidden(&self, _marker: &TextMarker) {}
+    /// `TextMarker.clear` on a document with this editor: `markerCleared(min, max)`
+    /// (both `None` for a marker that is not collapsed); `redraw` when lines of the
+    /// marker must be redrawn.
     fn marker_cleared(
         &self,
         _doc: &Doc,
         _marker: &TextMarker,
         _min: Option<i64>,
         _max: Option<i64>,
+        _redraw: bool,
     ) {
     }
 }

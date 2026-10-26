@@ -303,6 +303,15 @@ impl Doc {
     pub(crate) fn has_editor(&self) -> bool {
         self.inner().sink.is_some()
     }
+    /// `hasHandler(doc, "beforeChange") || doc.cm && hasHandler(doc.cm, "beforeChange")`.
+    pub(crate) fn has_before_change(&self) -> bool {
+        !self.inner().before_change.is_empty() || self.sink().is_some_and(|s| s.has_before_change())
+    }
+    /// The same for `beforeSelectionChange`.
+    pub(crate) fn has_before_selection_change(&self) -> bool {
+        !self.inner().before_selection_change.is_empty()
+            || self.sink().is_some_and(|s| s.has_before_selection_change())
+    }
     /// `doc.cm`, cloned so no document borrow is held while it is used.
     pub fn sink(&self) -> Option<Rc<dyn EditorSink>> {
         self.inner().sink.clone()
@@ -403,6 +412,7 @@ impl Doc {
             i.tree.remove_inner(super::tree::ROOT, rel, n);
             std::mem::take(&mut i.tree.deleted_with_handlers)
         };
+        super::mark_text::flush_marker_line_hooks();
         // chunk.js removeInner: `signalLater(line, "delete")` for each removed line.
         for line in deleted {
             super::line::signal_line_delete(&line);

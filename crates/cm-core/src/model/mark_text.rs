@@ -29,6 +29,18 @@ use crate::events::{ListenerId, Listeners};
 use crate::operation_group::{Delayed, signal_later};
 use crate::pos::{Pos, cmp};
 
+thread_local! {
+    static DEFERRED_LINE_HOOKS: RefCell<Vec<(TextMarker, bool)>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Deliver the marker line hooks deferred while a document was borrowed.
+pub(crate) fn flush_marker_line_hooks() {
+    let q = DEFERRED_LINE_HOOKS.with(|q| std::mem::take(&mut *q.borrow_mut()));
+    for (m, hidden) in q {
+        m.lines_hook(hidden);
+    }
+}
+
 /// `nextMarkerId` — module-global in the JS.
 static NEXT_MARKER_ID: AtomicU64 = AtomicU64::new(0);
 
@@ -220,6 +232,10 @@ impl TextMarker {
     }
 
     pub(crate) fn attach_line(&self, line: &LineRef) {
+        // `if (!this.lines.length && this.doc.cm) … maybeUnhiddenMarkers.push(this)`
+        if self.data().lines.is_empty() {
+            self.lines_hook(false);
+        }
         self.data_mut().lines.push(Rc::downgrade(line));
     }
 
@@ -237,6 +253,35 @@ impl TextMarker {
             }
             None => {
                 d.lines.pop();
+            }
+        }
+        let emptied = d.lines.is_empty();
+        drop(d);
+        // `if (!this.lines.length && this.doc.cm) … maybeHiddenMarkers.push(this)`
+        if emptied {
+            self.lines_hook(true);
+        }
+    }
+
+    /// Tell the editor that the marker lost its last line (`hidden`) or got a first
+    /// one. Inside a document borrow (lines removed from the tree) the call waits
+    /// until the document calls [`flush_marker_line_hooks`].
+    fn lines_hook(&self, hidden: bool) {
+        let Some(doc) = self.data().doc.upgrade() else {
+            return;
+        };
+        let sink = match doc.try_borrow() {
+            Ok(d) => d.sink.clone(),
+            Err(_) => {
+                DEFERRED_LINE_HOOKS.with(|q| q.borrow_mut().push((self.clone(), hidden)));
+                return;
+            }
+        };
+        if let Some(s) = sink {
+            if hidden {
+                s.marker_maybe_hidden(self);
+            } else {
+                s.marker_maybe_unhidden(self);
             }
         }
     }
@@ -367,6 +412,7 @@ impl TextMarker {
         }
         let sink = doc.and_then(|d| d.sink());
         let collapsed = self.data().collapsed;
+        let had_lines = !self.data().lines.is_empty();
         let (mut min, mut max) = (None, None);
         for line in self.live_lines() {
             let spans = line.borrow().marked_spans.clone();
@@ -405,7 +451,9 @@ impl TextMarker {
         }
         // `if (cm) signalLater(cm, "markerCleared", cm, this, min, max)`
         if let (Some(s), Some(d)) = (&sink, &doc) {
-            s.marker_cleared(d, self, min, max);
+            // Non-collapsed: `regLineChange` for each line; collapsed: `regChange`.
+            let redraw = if collapsed { min.is_some() } else { had_lines };
+            s.marker_cleared(d, self, min, max, redraw);
         }
     }
 }

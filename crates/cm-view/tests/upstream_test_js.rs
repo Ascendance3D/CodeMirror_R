@@ -39,8 +39,7 @@
 //! lineWidgetIssue5486, resizeLineWidget, the widget half of jumpTheGap), collapsed
 //! ranges in layout/measurement (collapsedLines, collapsedRangeCoordsChar, clickFold,
 //! everythingFolded, structuredFold, nestedFold, badNestedFold, nestedFoldOnSide,
-//! editInFold), line classes (addLineClass), `change`/`changes`/`cursorActivity`/
-//! line `change` events (lineChangeEvents, change_removedText, eventOrder), overlays
+//! editInFold), line classes (addLineClass), overlays
 //! (addOverlay, the overlay half of getTokenTypeAt), helpers (`registerHelper`),
 //! mouse button key bindings and the `configureMouse` option (mouseBinding,
 //! configureMouse), wrapped-line measurement against a real browser

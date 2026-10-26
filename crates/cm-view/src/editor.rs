@@ -6,11 +6,11 @@
 //! "display" is a scroll position, a size, and the viewport (`viewFrom`/`viewTo`)
 //! that decides which lines a renderer draws and which keep a saved mode state.
 //!
+//! Events are typed (`on_change`, `on_cursor_activity`, …; see [`crate::events`]).
+//!
 //! Not ported:
-//! * events: no generic `on`/`off`/`signal`/`signalLater`; only the typed
-//!   [`cm_core::Doc`] hooks (`on_before_change`, `on_before_selection_change`, and
-//!   `on_change`, which runs synchronously) and marker `on_clear`. No `changes`/
-//!   `cursorActivity`/`keyHandled`/`scroll`/`focus`/... editor events.
+//! * the `scroll`/`focus`/`blur`/`inputRead`/`electricInput`/`swapDoc`/`refresh`/
+//!   `optionChange`/`gutterClick`/DOM editor events.
 //! * `addOverlay`/`removeOverlay`, `getHelper`/`registerHelper`: `findWordAt` and
 //!   group motion use plain `isWordChar`, so javascript's `wordChars` helper
 //!   (`[\w$]`) is ignored and `$` is not a word character.
@@ -21,11 +21,12 @@
 //! * bidi in measurement, cursors, selection drawing and clicks (left to right only;
 //!   `moveVisually` and `endOfLine` do use the ported bidi ordering).
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::rc::Rc;
 
+use cm_core::events::ListenerId;
 use cm_core::operation_group::{end_group, group_open, start_operation};
 use cm_core::pos::{Sticky, cmp};
 use cm_core::text::{Text, from_u16, is_js_space, split_lines_auto, to_u16};
@@ -36,7 +37,11 @@ use cm_core::{
 };
 use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_mode};
 
-use crate::events::{EditorShared, Parked, WithSelf};
+use crate::events::{
+    ChangeHandler, ChangesHandler, Cx, DisplayEvent, EditorEvents, EditorHandler, EditorShared,
+    MarkerClearedHandler, MarkerHandler, NameHandler, OpRecord, Parked, ViewportHandler, WithSelf,
+    finish,
+};
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
 use crate::measure::{LineLayout, Metrics, PosInfo, Rect, coords_char_inner};
@@ -133,6 +138,8 @@ pub struct Display {
     pub shift: bool,
     pub view_from: i64,
     pub view_to: i64,
+    /// `display.reportedViewFrom/To`: the range last reported by `viewportChange`.
+    pub reported_view: (i64, i64),
 }
 
 /// `lastCopied` (module state in src/input/input.js).
@@ -206,9 +213,9 @@ pub struct Editor {
     pub keymaps: KeyMaps,
     /// `CodeMirror.commands`, including user-defined ones (`save`, ...).
     pub commands: HashMap<String, CommandFn>,
-    /// Names of the keys `dispatchKeyInner` handled, in order. It stands in for
-    /// `signalLater(cm, "keyHandled", cm, name, e)`; nothing here clears it.
-    pub keyhandled: Vec<String>,
+    /// `cm.curOp.forceUpdate`, or a redraw an option change asked for: the next
+    /// display phase redraws (and reports `update`).
+    pub(crate) force_update: bool,
     op: OpState,
     pub(crate) heights: Rc<RefCell<HeightCache>>,
     pub(crate) mouse: Option<MouseState>,
@@ -320,21 +327,17 @@ impl Editor {
         hs.flatten_spans = options.flatten_spans;
         let hs = Rc::new(RefCell::new(hs));
         let heights = Rc::new(RefCell::new(HeightCache::default()));
-        let id = EditorId::next();
-        let shared = Rc::new(EditorShared {
-            id,
-            sem: Cell::new(EditorSemantics {
+        let shared = EditorShared::new(
+            EditorSemantics {
                 history_event_delay: options.history_event_delay,
                 whole_line_update_before: true,
                 selections_may_touch: options.selections_may_touch,
                 undo_depth: options.undo_depth,
-            }),
-            op: RefCell::new(None),
-            parked: RefCell::new(Vec::new()),
-            destroyed: Cell::new(false),
-            hs: hs.clone(),
-            heights: heights.clone(),
-        });
+            },
+            hs.clone(),
+            heights.clone(),
+        );
+        let id = shared.id;
         doc.attach_editor(shared.clone());
         let mut ed = Editor {
             id,
@@ -354,6 +357,7 @@ impl Editor {
                 shift: false,
                 view_from: first,
                 view_to: first,
+                reported_view: (first, first),
             },
             overwrite: false,
             paste_incoming: -1.0,
@@ -363,7 +367,7 @@ impl Editor {
             extra_keys: None,
             keymaps: KeyMaps::standard(options.mac),
             commands: crate::commands::builtin_commands(),
-            keyhandled: Vec::new(),
+            force_update: false,
             op: OpState::default(),
             heights,
             mouse: None,
@@ -374,6 +378,8 @@ impl Editor {
         ed.update_gutter();
         ed.update_view();
         ed.render_view_styles();
+        // The constructor's operation draws the display and reports its range.
+        ed.display.reported_view = (ed.display.view_from, ed.display.view_to);
         ed
     }
 
@@ -387,29 +393,39 @@ impl Editor {
             tab_size: self.options.tab_size,
             highlight_non_standard_property_keywords: None,
         };
-        self.mode = self.registry.get_mode(&mode_opts, &spec);
-        self.mode_spec = spec;
-        highlight::reset_mode_state(&self.doc, &mut self.hs.borrow_mut());
+        self.run_op(|cm| {
+            cm.mode = cm.registry.get_mode(&mode_opts, &spec);
+            cm.mode_spec = spec;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.force_update = true;
+        });
     }
     /// `setOption("tabSize", n)`: `resetModeState`, `clearCaches`.
     pub fn set_tab_size(&mut self, n: i64) {
-        self.options.tab_size = n;
-        self.hs.borrow_mut().tab_size = n;
-        highlight::reset_mode_state(&self.doc, &mut self.hs.borrow_mut());
-        self.invalidate_heights();
+        self.run_op(|cm| {
+            cm.options.tab_size = n;
+            cm.hs.borrow_mut().tab_size = n;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.invalidate_heights();
+            cm.force_update = true;
+        });
     }
     /// `setOption("lineWrapping", v)`.
     pub fn set_line_wrapping(&mut self, v: bool) {
-        self.options.line_wrapping = v;
-        self.invalidate_heights();
-        self.update_view();
+        self.run_op(|cm| {
+            cm.options.line_wrapping = v;
+            cm.invalidate_heights();
+            cm.force_update = true;
+        });
     }
     /// `setSize(width, height)`.
     pub fn set_size(&mut self, width: f64, height: f64) {
-        self.display.width = width;
-        self.display.height = height;
-        self.invalidate_heights();
-        self.update_view();
+        self.run_op(|cm| {
+            cm.display.width = width;
+            cm.display.height = height;
+            cm.invalidate_heights();
+            cm.force_update = true;
+        });
     }
     /// `isReadOnly()`.
     pub fn is_read_only(&self) -> bool {
@@ -496,18 +512,114 @@ impl Editor {
             for item in items {
                 match item {
                     Parked::Call(call) => call(&mut *self, &mut *rest),
-                    Parked::End(rec) => {
-                        self.end_operation_display();
-                        let sink = self.shared.clone();
-                        sink.end_finish(rec, &mut WithSelf { me: self, rest });
+                    Parked::End(mut rec) => {
+                        self.end_operation_display(&mut rec);
+                        finish(
+                            &mut Cx {
+                                editor: self,
+                                others: rest,
+                            },
+                            *rec,
+                        );
                     }
                 }
             }
         }
     }
 
+    // ------------------------------------------------------------------------------
+    // Events
+
+    /// A handle on this editor's listener tables (usable from any handler).
+    pub fn events(&self) -> EditorEvents {
+        EditorEvents(self.shared.clone())
+    }
+    /// Remove the editor handler registered as `id`, whatever its event.
+    pub fn off(&self, id: ListenerId) -> bool {
+        self.shared.ls.borrow_mut().off(id)
+    }
+    /// `on("beforeChange", f)`: before a change is applied, after the document's
+    /// own handlers; `f` may `update` or `cancel` it (immediate).
+    pub fn on_before_change(
+        &self,
+        f: impl Fn(&Doc, EditorId, &mut cm_core::BeforeChange) + 'static,
+    ) -> ListenerId {
+        self.shared.ls.borrow_mut().before_change.on_rc(Rc::new(f))
+    }
+    /// `on("beforeSelectionChange", f)` (immediate).
+    pub fn on_before_selection_change(
+        &self,
+        f: impl Fn(&Doc, EditorId, &mut cm_core::BeforeSelectionChange) + 'static,
+    ) -> ListenerId {
+        self.shared
+            .ls
+            .borrow_mut()
+            .before_selection_change
+            .on_rc(Rc::new(f))
+    }
+    /// `on("change", f)`: once per change (delayed to the end of the operation).
+    pub fn on_change(&self, f: impl Fn(&mut Cx, &cm_core::ChangeObj) + 'static) -> ListenerId {
+        let f: Rc<ChangeHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().change.on_rc(f)
+    }
+    /// `on("changes", f)`: all changes of an operation, at its end.
+    pub fn on_changes(
+        &self,
+        f: impl Fn(&mut Cx, &[Rc<cm_core::ChangeObj>]) + 'static,
+    ) -> ListenerId {
+        let f: Rc<ChangesHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().changes.on_rc(f)
+    }
+    /// `on("cursorActivity", f)`: the selection changed in the operation.
+    pub fn on_cursor_activity(&self, f: impl Fn(&mut Cx) + 'static) -> ListenerId {
+        let f: Rc<EditorHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().cursor_activity.on_rc(f)
+    }
+    /// `on("update", f)`: the operation redrew the display.
+    pub fn on_update(&self, f: impl Fn(&mut Cx) + 'static) -> ListenerId {
+        let f: Rc<EditorHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().update.on_rc(f)
+    }
+    /// `on("viewportChange", f)`: the rendered line range is now `from..to`.
+    pub fn on_viewport_change(&self, f: impl Fn(&mut Cx, i64, i64) + 'static) -> ListenerId {
+        let f: Rc<ViewportHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().viewport_change.on_rc(f)
+    }
+    /// `on("markerAdded", f)` (delayed).
+    pub fn on_marker_added(
+        &self,
+        f: impl Fn(&mut Cx, &cm_core::TextMarker) + 'static,
+    ) -> ListenerId {
+        let f: Rc<MarkerHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().marker_added.on_rc(f)
+    }
+    /// `on("markerCleared", f)`: `min`/`max` are the lines of a collapsed marker
+    /// (delayed).
+    pub fn on_marker_cleared(
+        &self,
+        f: impl Fn(&mut Cx, &cm_core::TextMarker, Option<i64>, Option<i64>) + 'static,
+    ) -> ListenerId {
+        let f: Rc<MarkerClearedHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().marker_cleared.on_rc(f)
+    }
+    /// `on("keyHandled", f)`: a key binding handled a key, with its name (delayed).
+    pub fn on_key_handled(&self, f: impl Fn(&mut Cx, &str) + 'static) -> ListenerId {
+        let f: Rc<NameHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().key_handled.on_rc(f)
+    }
+
     /// `endOperation_R1` … `W2`: apply scroll requests and update the viewport.
-    pub(crate) fn end_operation_display(&mut self) {
+    ///
+    /// The display counts as redrawn (`updateDisplayIfNeeded` does not bail out)
+    /// when something asked for a redraw (a change, a marker with a class or a
+    /// collapsed marker, an option, a resize), the gutter width changed, or the
+    /// visible lines left the rendered range. Then `update` is reported, and
+    /// `viewportChange` when the rendered range differs from the one last reported.
+    /// (The rendered range itself is recomputed every time; see behavior difference
+    /// #3.)
+    pub(crate) fn end_operation_display(&mut self, rec: &mut OpRecord) {
+        let (old_from, old_to) = (self.display.view_from, self.display.view_to);
+        let old_gutter = self.gutter_width;
         self.take_sel_scroll();
         if let Some(st) = self.op.scroll_top.take() {
             self.set_scroll_top(st);
@@ -523,8 +635,28 @@ impl Editor {
         if self.options.line_numbers {
             self.update_gutter();
         }
+        let (vis_from, vis_to) = self.visible_lines();
+        let redrawn = std::mem::take(&mut self.force_update)
+            || rec.view_changed
+            || self.gutter_width != old_gutter
+            || vis_from < old_from
+            || vis_to > old_to;
         self.update_view();
         self.render_view_styles();
+        if redrawn {
+            let ls = self.shared.ls.borrow();
+            if !ls.update.is_empty() {
+                rec.display.push(DisplayEvent::Update);
+            }
+            let view = (self.display.view_from, self.display.view_to);
+            if view != self.display.reported_view {
+                if !ls.viewport_change.is_empty() {
+                    rec.display
+                        .push(DisplayEvent::ViewportChange(view.0, view.1));
+                }
+                self.display.reported_view = view;
+            }
+        }
     }
 
     /// The highlighting side effects of drawing the viewport (`patchDisplay` ->
@@ -1780,7 +1912,12 @@ impl Editor {
             self.key_seq = Some(name.to_string());
         }
         if result == Some(Lookup::Handled) {
-            self.keyhandled.push(name.to_string());
+            // `signalLater(cm, "keyHandled", cm, name, e)`
+            let snap = self.shared.ls.borrow().key_handled.snapshot();
+            for e in snap.iter() {
+                let (f, name) = (e.f.clone(), name.to_string());
+                self.shared.later(move |cx| f(cx, &name));
+            }
         }
         result.is_some()
     }
@@ -1813,12 +1950,19 @@ impl Editor {
 
     /// `onKeyDown(e)`; returns whether a binding handled it.
     pub fn key_down(&mut self, e: &KeyEvent) -> bool {
-        self.display.shift = e.key == "Shift" || e.shift;
-        self.handle_key_binding(e)
+        // input.js: `on(d.input, "keydown", operation(cm, onKeyDown))`
+        self.run_op(|cm| {
+            cm.display.shift = e.key == "Shift" || e.shift;
+            cm.handle_key_binding(e)
+        })
     }
 
     /// `onKeyPress(e)` for a typed character: char bindings (`"'x'"`), then input.
     pub fn key_press(&mut self, ch: &str, e: &KeyEvent) -> bool {
+        // `on(d.input, "keypress", operation(cm, onKeyPress))`
+        self.run_op(|cm| cm.key_press_in_op(ch, e))
+    }
+    fn key_press_in_op(&mut self, ch: &str, e: &KeyEvent) -> bool {
         if e.ctrl && !e.alt || self.options.mac && e.meta {
             return false;
         }

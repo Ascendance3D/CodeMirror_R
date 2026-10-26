@@ -2,9 +2,10 @@
 //! selections, and keeping cursors out of atomic markers.
 
 use std::cmp::Ordering;
+use std::rc::Rc;
 
 use super::changes::BeforeSelectionChange;
-use super::doc::Doc;
+use super::doc::{BeforeSelHandler, Doc};
 use super::history::{HistEvent, SelHistOpts, add_selection_to_history};
 use super::mark_text::{SideFind, TextMarker};
 use super::selection::{
@@ -111,7 +112,13 @@ pub(crate) fn set_simple_selection(
 
 /// `filterSelectionChange(doc, sel, options)`.
 fn filter_selection_change(doc: &Doc, sel: Sel, options: Option<&SelOptions>) -> Sel {
-    let handlers = doc.inner().before_selection_change.snapshot();
+    let handlers: Vec<Rc<BeforeSelHandler>> = doc
+        .inner()
+        .before_selection_change
+        .snapshot()
+        .iter()
+        .map(|e| e.f.clone())
+        .collect();
     let mut obj = BeforeSelectionChange::new(
         sel.ranges
             .iter()
@@ -123,8 +130,26 @@ fn filter_selection_change(doc: &Doc, sel: Sel, options: Option<&SelOptions>) ->
         options.and_then(|o| o.origin.clone()),
     );
     let mut updated: Option<Vec<Range>> = None;
-    for h in handlers.iter() {
-        (h.f)(doc, &mut obj);
+    // The document's handlers, then the editor's (looked up after them).
+    let mut editor_handlers = None;
+    let mut i = 0;
+    loop {
+        let h = match handlers.get(i) {
+            Some(h) => h.clone(),
+            None => {
+                let eh = editor_handlers.get_or_insert_with(|| {
+                    doc.sink()
+                        .map(|s| s.before_selection_change_handlers())
+                        .unwrap_or_default()
+                });
+                match eh.get(i - handlers.len()) {
+                    Some(h) => h.clone(),
+                    None => break,
+                }
+            }
+        };
+        i += 1;
+        h(doc, &mut obj);
         if let Some(rs) = obj.updated.take() {
             let clipped: Vec<Range> = rs
                 .iter()
@@ -183,7 +208,7 @@ pub(crate) fn set_selection(doc: &Doc, sel: Sel, options: Option<&SelOptions>) {
 
 /// `setSelectionNoUndo(doc, sel, options)`.
 pub(crate) fn set_selection_no_undo(doc: &Doc, sel: Sel, options: Option<&SelOptions>) {
-    let sel = if doc.inner().before_selection_change.is_empty() {
+    let sel = if !doc.has_before_selection_change() {
         sel
     } else {
         filter_selection_change(doc, sel, options)

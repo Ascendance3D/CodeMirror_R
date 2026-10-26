@@ -138,6 +138,7 @@ pub(crate) fn update_doc(
         }
         doc.insert_lines(from.line + 1, added);
     }
+    super::mark_text::flush_marker_line_hooks();
     // `signalLater(doc, "change", doc, change)`.
     if let Some(obj) = obj {
         let snap = doc.inner().change.snapshot();

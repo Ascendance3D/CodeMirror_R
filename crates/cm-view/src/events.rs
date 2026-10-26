@@ -1,35 +1,181 @@
-//! The editor side of the event system: what the document reaches as `doc.cm`
-//! ([`EditorShared`], an [`EditorSink`]), the operation record (`cm.curOp`), and the
-//! editor-access adapters used when an operation group ends.
+//! Editor events (`src/util/event.js` on a `CodeMirror` instance): the listener
+//! tables, the handler context [`Cx`], what the document reaches as `doc.cm`
+//! ([`EditorShared`], an [`EditorSink`]), and the operation record (`cm.curOp`) with
+//! its display and finish phases.
 //!
 //! See [`cm_core::operation_group`] for the ownership model and the order contract.
+//!
+//! ## Handlers
+//! * Events fired by the editor (`change`, `changes`, `cursorActivity`, `update`,
+//!   `viewportChange`, `markerAdded`, `markerCleared`, `keyHandled`, …) get a
+//!   [`Cx`]: the editor (`&mut`, through `Deref`) and the other editors the caller
+//!   could reach ([`Cx::others`]). Editor methods called from a handler join the
+//!   operation that is still open, or start a new one that the handler's call
+//!   completes, as in the JS.
+//! * `beforeChange` and `beforeSelectionChange` fire inside the document model,
+//!   where no `&mut Editor` exists: they get the document and the editor's
+//!   [`EditorId`] (decision D3). The payload is mutable (`update`, `cancel`), as in
+//!   the JS; every other payload is immutable (decision D8).
+//! * Handlers are registered with `on_*` and removed with [`Editor::off`] by id, or
+//!   by function identity through [`EditorEvents::listeners`] (`off_fn`).
 
 use std::any::Any;
-use std::cell::{Cell, RefCell};
-use std::rc::Rc;
+use std::cell::{Cell, RefCell, RefMut};
+use std::ops::{Deref, DerefMut};
+use std::rc::{Rc, Weak};
 
-use cm_core::operation_group::{EdCall, EditorId, EditorSink, Editors, diagnostic};
-use cm_core::{ChangeObj, Doc, EditorSemantics};
+use cm_core::events::{Entry, ListenerId, Listeners};
+use cm_core::operation_group::{
+    BeforeChangeFn, BeforeSelectionChangeFn, Delayed, EdCall, EditorId, EditorSink, Editors,
+    diagnostic, signal_later,
+};
+use cm_core::{BeforeChange, BeforeSelectionChange, ChangeObj, Doc, EditorSemantics, TextMarker};
 
 use crate::editor::{Editor, HeightCache};
 use crate::highlight::{self, HighlightState};
 
+/// The context of an editor event handler: the editor, and the other editors the
+/// code that ended the operation could reach.
+pub struct Cx<'a> {
+    pub editor: &'a mut Editor,
+    pub others: &'a mut dyn Editors,
+}
+
+impl Deref for Cx<'_> {
+    type Target = Editor;
+    fn deref(&self) -> &Editor {
+        self.editor
+    }
+}
+
+impl DerefMut for Cx<'_> {
+    fn deref_mut(&mut self) -> &mut Editor {
+        self.editor
+    }
+}
+
+impl Cx<'_> {
+    /// `cm.operation(f)` with the other editors reachable, so an edit of a linked
+    /// document's editor is delivered in this group.
+    pub fn run_op<R>(&mut self, f: impl FnOnce(&mut Editor, &mut dyn Editors) -> R) -> R {
+        let others = &mut *self.others;
+        self.editor.run_op_with(others, f)
+    }
+    /// Run `f` with editor `id` (another editor reached by the caller). `false`
+    /// when it cannot be reached (unknown, or busy further up the stack).
+    pub fn with_editor(&mut self, id: EditorId, mut f: impl FnMut(&mut Cx)) -> bool {
+        self.others.with_editor(id, &mut |ed, rest| {
+            f(&mut Cx {
+                editor: editor_of(ed),
+                others: rest,
+            })
+        })
+    }
+}
+
+pub type ChangeHandler = dyn Fn(&mut Cx<'_>, &ChangeObj);
+pub type ChangesHandler = dyn Fn(&mut Cx<'_>, &[Rc<ChangeObj>]);
+pub type EditorHandler = dyn Fn(&mut Cx<'_>);
+pub type ViewportHandler = dyn Fn(&mut Cx<'_>, i64, i64);
+pub type MarkerHandler = dyn Fn(&mut Cx<'_>, &TextMarker);
+pub type MarkerClearedHandler = dyn Fn(&mut Cx<'_>, &TextMarker, Option<i64>, Option<i64>);
+pub type NameHandler = dyn Fn(&mut Cx<'_>, &str);
+pub type BeforeChangeHandler = dyn Fn(&Doc, EditorId, &mut BeforeChange);
+pub type BeforeSelHandler = dyn Fn(&Doc, EditorId, &mut BeforeSelectionChange);
+
+/// The handlers of one editor, by event.
+#[derive(Default)]
+pub struct EditorListeners {
+    /// Immediate, inside the model, after the document's own handlers.
+    pub before_change: Listeners<BeforeChangeHandler>,
+    pub before_selection_change: Listeners<BeforeSelHandler>,
+    /// Delayed, once per change.
+    pub change: Listeners<ChangeHandler>,
+    /// At the end of the operation, with every change of the operation.
+    pub changes: Listeners<ChangesHandler>,
+    /// Collected when the selection changes; called after the delayed queue.
+    pub cursor_activity: Listeners<EditorHandler>,
+    /// At the end of an operation that redrew the display.
+    pub update: Listeners<EditorHandler>,
+    /// After `update`, when the rendered line range changed.
+    pub viewport_change: Listeners<ViewportHandler>,
+    /// Delayed.
+    pub marker_added: Listeners<MarkerHandler>,
+    pub marker_cleared: Listeners<MarkerClearedHandler>,
+    /// Delayed: a key binding handled a key (the binding's name).
+    pub key_handled: Listeners<NameHandler>,
+}
+
+impl EditorListeners {
+    /// Remove the handler registered as `id`, whatever its event.
+    pub fn off(&mut self, id: ListenerId) -> bool {
+        self.before_change.off(id)
+            || self.before_selection_change.off(id)
+            || self.change.off(id)
+            || self.changes.off(id)
+            || self.cursor_activity.off(id)
+            || self.update.off(id)
+            || self.viewport_change.off(id)
+            || self.marker_added.off(id)
+            || self.marker_cleared.off(id)
+            || self.key_handled.off(id)
+    }
+}
+
+/// What the display phase decided to report at the finish phase
+/// (`DisplayUpdate.signal`: recorded only when a handler exists at that point).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum DisplayEvent {
+    Update,
+    ViewportChange(i64, i64),
+}
+
 /// `cm.curOp`: what one operation collected for its end.
 pub(crate) struct OpRecord {
     pub id: u64,
+    /// `op.changeObjs`: the changes made while a `changes` handler existed.
+    pub change_objs: Vec<Rc<ChangeObj>>,
+    /// `op.cursorActivityHandlers` and `op.cursorActivityCalled`.
+    pub cursor_activity: Vec<Entry<EditorHandler>>,
+    pub ca_called: usize,
+    /// `regChange`/`regLineChange` was called: the display must redraw.
+    pub view_changed: bool,
+    pub selection_changed: bool,
+    pub maybe_hidden: Vec<TextMarker>,
+    pub maybe_unhidden: Vec<TextMarker>,
+    pub display: Vec<DisplayEvent>,
+}
+
+impl OpRecord {
+    fn new(id: u64) -> OpRecord {
+        OpRecord {
+            id,
+            change_objs: Vec::new(),
+            cursor_activity: Vec::new(),
+            ca_called: 0,
+            view_changed: false,
+            selection_changed: false,
+            maybe_hidden: Vec::new(),
+            maybe_unhidden: Vec::new(),
+            display: Vec::new(),
+        }
+    }
 }
 
 /// Work for the editor that could not be delivered when it was due (the editor
 /// was not reachable), delivered at its next entry.
 pub(crate) enum Parked {
     Call(EdCall),
-    End(Box<dyn Any>),
+    End(Box<OpRecord>),
 }
 
-/// The part of an editor its document can reach.
+/// The part of an editor its document can reach (`doc.cm`). Its cells are never
+/// borrowed while a handler runs.
 pub(crate) struct EditorShared {
     pub id: EditorId,
+    pub me: Weak<EditorShared>,
     pub sem: Cell<EditorSemantics>,
+    pub ls: RefCell<EditorListeners>,
     pub op: RefCell<Option<OpRecord>>,
     pub parked: RefCell<Vec<Parked>>,
     /// Set when the editor is dropped: later work for it is discarded.
@@ -39,7 +185,25 @@ pub(crate) struct EditorShared {
 }
 
 impl EditorShared {
-    fn park(&self, item: Parked) {
+    pub(crate) fn new(
+        sem: EditorSemantics,
+        hs: Rc<RefCell<HighlightState>>,
+        heights: Rc<RefCell<HeightCache>>,
+    ) -> Rc<EditorShared> {
+        Rc::new_cyclic(|me| EditorShared {
+            id: EditorId::next(),
+            me: me.clone(),
+            sem: Cell::new(sem),
+            ls: RefCell::new(EditorListeners::default()),
+            op: RefCell::new(None),
+            parked: RefCell::new(Vec::new()),
+            destroyed: Cell::new(false),
+            hs,
+            heights,
+        })
+    }
+
+    pub(crate) fn park(&self, item: Parked) {
         if self.destroyed.get() {
             diagnostic(format!(
                 "discarded work for editor {}, which was dropped",
@@ -49,12 +213,75 @@ impl EditorShared {
         }
         self.parked.borrow_mut().push(item);
     }
+
+    /// `signalLater(cm, …)`: queue `call` for this editor.
+    pub(crate) fn later(&self, call: impl FnOnce(&mut Cx) + 'static) {
+        let sink: Weak<dyn EditorSink> = self.me.clone();
+        signal_later(Delayed::Editor {
+            target: self.id,
+            sink,
+            call: Box::new(move |ed, rest| {
+                call(&mut Cx {
+                    editor: editor_of(ed),
+                    others: rest,
+                })
+            }),
+        });
+    }
+
+    fn with_op(&self, f: impl FnOnce(&mut OpRecord)) {
+        if let Some(op) = self.op.borrow_mut().as_mut() {
+            f(op);
+        }
+    }
 }
 
 /// The editor behind a `dyn Any` handed out by [`Editors`].
 pub(crate) fn editor_of(ed: &mut dyn Any) -> &mut Editor {
     ed.downcast_mut::<Editor>()
         .expect("editor calls receive a cm_view::Editor")
+}
+
+/// `endOperation_finish`: marker `hide`/`unhide`, then `changes`, then the display
+/// events, with the handlers registered at this point.
+pub(crate) fn finish(cx: &mut Cx, rec: OpRecord) {
+    for m in &rec.maybe_hidden {
+        if m.line_count() == 0 {
+            m.signal_hidden(true);
+        }
+    }
+    for m in &rec.maybe_unhidden {
+        if m.line_count() > 0 {
+            m.signal_hidden(false);
+        }
+    }
+    if !rec.change_objs.is_empty() {
+        let snap = cx.editor.shared.ls.borrow().changes.snapshot();
+        for e in snap.iter() {
+            (e.f)(cx, &rec.change_objs);
+        }
+    }
+    for ev in rec.display {
+        match ev {
+            DisplayEvent::Update => {
+                let snap = cx.editor.shared.ls.borrow().update.snapshot();
+                for e in snap.iter() {
+                    (e.f)(cx);
+                }
+            }
+            DisplayEvent::ViewportChange(from, to) => {
+                let snap = cx.editor.shared.ls.borrow().viewport_change.snapshot();
+                for e in snap.iter() {
+                    (e.f)(cx, from, to);
+                }
+            }
+        }
+    }
+}
+
+fn record(rec: Box<dyn Any>) -> Box<OpRecord> {
+    rec.downcast::<OpRecord>()
+        .expect("an editor operation record")
 }
 
 impl EditorSink for EditorShared {
@@ -68,14 +295,30 @@ impl EditorSink for EditorShared {
         self.op.borrow().as_ref().map(|o| o.id)
     }
     fn open_op(&self, id: u64) {
-        *self.op.borrow_mut() = Some(OpRecord { id });
+        *self.op.borrow_mut() = Some(OpRecord::new(id));
     }
     fn close_op(&self) -> Box<dyn Any> {
         Box::new(self.op.borrow_mut().take().expect("an open operation"))
     }
+    fn next_cursor_activity(&self) -> Option<EdCall> {
+        let h = {
+            let mut op = self.op.borrow_mut();
+            let op = op.as_mut()?;
+            let h = op.cursor_activity.get(op.ca_called)?.f.clone();
+            op.ca_called += 1;
+            h
+        };
+        Some(Box::new(move |ed, rest| {
+            h(&mut Cx {
+                editor: editor_of(ed),
+                others: rest,
+            })
+        }))
+    }
     fn end_display(&self, rec: Box<dyn Any>, access: &mut dyn Editors) -> Option<Box<dyn Any>> {
+        let mut rec = record(rec);
         let reached = access.with_editor(self.id, &mut |ed, _| {
-            editor_of(ed).end_operation_display();
+            editor_of(ed).end_operation_display(&mut rec);
         });
         if reached {
             Some(rec)
@@ -84,26 +327,169 @@ impl EditorSink for EditorShared {
             None
         }
     }
+    fn end_finish(&self, rec: Box<dyn Any>, access: &mut dyn Editors) {
+        let mut rec = Some(*record(rec));
+        let reached = access.with_editor(self.id, &mut |ed, rest| {
+            finish(
+                &mut Cx {
+                    editor: editor_of(ed),
+                    others: rest,
+                },
+                rec.take().expect("finished once"),
+            )
+        });
+        if !reached && let Some(rec) = rec {
+            self.park(Parked::Call(Box::new(move |ed, rest| {
+                finish(
+                    &mut Cx {
+                        editor: editor_of(ed),
+                        others: rest,
+                    },
+                    rec,
+                )
+            })));
+        }
+    }
     fn park_call(&self, call: EdCall) {
         self.park(Parked::Call(call));
+    }
+
+    fn before_change_handlers(&self) -> Vec<Rc<BeforeChangeFn>> {
+        let id = self.id;
+        let snap = self.ls.borrow().before_change.snapshot();
+        snap.iter()
+            .map(|e| {
+                let f = e.f.clone();
+                Rc::new(move |d: &Doc, c: &mut BeforeChange| f(d, id, c)) as Rc<BeforeChangeFn>
+            })
+            .collect()
+    }
+    fn before_selection_change_handlers(&self) -> Vec<Rc<BeforeSelectionChangeFn>> {
+        let id = self.id;
+        let snap = self.ls.borrow().before_selection_change.snapshot();
+        snap.iter()
+            .map(|e| {
+                let f = e.f.clone();
+                Rc::new(move |d: &Doc, s: &mut BeforeSelectionChange| f(d, id, s))
+                    as Rc<BeforeSelectionChangeFn>
+            })
+            .collect()
     }
     fn change_applied(&self, doc: &Doc, c: &Rc<ChangeObj>) {
         // makeChangeSingleDocInEditor: `retreatFrontier(doc, from.line)`.
         highlight::retreat_frontier(doc, &mut self.hs.borrow_mut(), c.from.line);
-        let mut h = self.heights.borrow_mut();
-        if !h.heights.is_empty() {
-            let first = doc.first_line();
-            let a = (c.from.line - first).max(0) as usize;
-            let b = ((c.to.line - first + 1).max(0) as usize).min(h.heights.len());
-            if a <= b {
-                h.heights
-                    .splice(a..b, std::iter::repeat_n(f64::NAN, c.text.len()));
-            } else {
-                h.heights.clear();
+        {
+            let mut h = self.heights.borrow_mut();
+            if !h.heights.is_empty() {
+                let first = doc.first_line();
+                let a = (c.from.line - first).max(0) as usize;
+                let b = ((c.to.line - first + 1).max(0) as usize).min(h.heights.len());
+                if a <= b {
+                    h.heights
+                        .splice(a..b, std::iter::repeat_n(f64::NAN, c.text.len()));
+                } else {
+                    h.heights.clear();
+                }
             }
+            h.prefix = None;
+            h.max_width = None;
         }
-        h.prefix = None;
-        h.max_width = None;
+        // `regChange`, then `signalLater(cm, "change", cm, obj)` and `changeObjs`.
+        let (snap, has_changes) = {
+            let ls = self.ls.borrow();
+            (ls.change.snapshot(), !ls.changes.is_empty())
+        };
+        self.with_op(|op| {
+            op.view_changed = true;
+            if has_changes {
+                op.change_objs.push(c.clone());
+            }
+        });
+        for e in snap.iter() {
+            let (f, c) = (e.f.clone(), c.clone());
+            self.later(move |cx| f(cx, &c));
+        }
+    }
+    fn signal_cursor_activity(&self) {
+        // event.js:58-64: add each handler not yet collected (function identity).
+        let snap = self.ls.borrow().cursor_activity.snapshot();
+        self.with_op(|op| {
+            for e in snap.iter() {
+                if !op.cursor_activity.iter().any(|x| x.same_fn(&e.f)) {
+                    op.cursor_activity.push(e.clone());
+                }
+            }
+        });
+    }
+    fn selection_changed(&self) {
+        self.with_op(|op| op.selection_changed = true);
+        self.signal_cursor_activity();
+    }
+    fn marker_added(&self, _doc: &Doc, marker: &TextMarker) {
+        let o = marker.options();
+        // markText: `regChange` for a collapsed marker, `regLineChange` for each line
+        // of one with a class or style.
+        let redraw = marker.is_collapsed()
+            || o.class_name.is_some()
+            || o.start_style.is_some()
+            || o.end_style.is_some()
+            || o.css.is_some()
+            || o.title.is_some();
+        if redraw {
+            self.with_op(|op| op.view_changed = true);
+        }
+        let snap = self.ls.borrow().marker_added.snapshot();
+        for e in snap.iter() {
+            let (f, m) = (e.f.clone(), marker.clone());
+            self.later(move |cx| f(cx, &m));
+        }
+    }
+    fn marker_maybe_hidden(&self, marker: &TextMarker) {
+        self.with_op(|op| op.maybe_hidden.push(marker.clone()));
+    }
+    fn marker_maybe_unhidden(&self, marker: &TextMarker) {
+        self.with_op(|op| {
+            if !op.maybe_hidden.contains(marker) {
+                op.maybe_unhidden.push(marker.clone());
+            }
+        });
+    }
+    fn marker_cleared(
+        &self,
+        _doc: &Doc,
+        marker: &TextMarker,
+        min: Option<i64>,
+        max: Option<i64>,
+        redraw: bool,
+    ) {
+        if redraw {
+            self.with_op(|op| op.view_changed = true);
+        }
+        let snap = self.ls.borrow().marker_cleared.snapshot();
+        for e in snap.iter() {
+            let (f, m) = (e.f.clone(), marker.clone());
+            self.later(move |cx| f(cx, &m, min, max));
+        }
+    }
+}
+
+/// A handle on an editor's listener tables, usable without the editor (for example
+/// from a handler that removes itself).
+#[derive(Clone)]
+pub struct EditorEvents(pub(crate) Rc<EditorShared>);
+
+impl EditorEvents {
+    pub fn id(&self) -> EditorId {
+        self.0.id
+    }
+    /// The listener tables, for `on_rc`/`off_fn` (function identity). Do not hold
+    /// the borrow while editor code runs.
+    pub fn listeners(&self) -> RefMut<'_, EditorListeners> {
+        self.0.ls.borrow_mut()
+    }
+    /// Remove the handler registered as `id`, whatever its event.
+    pub fn off(&self, id: ListenerId) -> bool {
+        self.0.ls.borrow_mut().off(id)
     }
 }
 

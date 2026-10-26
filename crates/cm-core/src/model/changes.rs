@@ -4,7 +4,7 @@
 use std::rc::Rc;
 
 use super::change_measurement::compute_sel_after_change;
-use super::doc::Doc;
+use super::doc::{BeforeChangeHandler, Doc};
 use super::document_data::update_doc;
 use super::history::{
     ChangeEvent, HistEvent, HistRef, add_change_to_history, history_change_from_change,
@@ -113,7 +113,13 @@ impl BeforeChange {
 /// `filterChange(doc, change, update)`: run `beforeChange` handlers. `None` when a
 /// handler cancelled the change. Note the result drops `full`, like the JS.
 fn filter_change(doc: &Doc, change: &Change, update: bool) -> Option<Change> {
-    let handlers = doc.inner().before_change.snapshot();
+    let handlers: Vec<Rc<BeforeChangeHandler>> = doc
+        .inner()
+        .before_change
+        .snapshot()
+        .iter()
+        .map(|e| e.f.clone())
+        .collect();
     let mut obj = BeforeChange {
         from: change.from,
         to: change.to,
@@ -128,8 +134,27 @@ fn filter_change(doc: &Doc, change: &Change, update: bool) -> Option<Change> {
         pending: None,
     };
     let mut text_u16: Vec<Text> = change.text().clone();
-    for h in handlers.iter() {
-        (h.f)(doc, &mut obj);
+    // `signal(doc, "beforeChange", …)`, then `if (doc.cm) signal(doc.cm, …)`: the
+    // editor's handlers are looked up after the document's ran.
+    let mut editor_handlers = None;
+    let mut i = 0;
+    loop {
+        let h = match handlers.get(i) {
+            Some(h) => h.clone(),
+            None => {
+                let eh = editor_handlers.get_or_insert_with(|| {
+                    doc.sink()
+                        .map(|s| s.before_change_handlers())
+                        .unwrap_or_default()
+                });
+                match eh.get(i - handlers.len()) {
+                    Some(h) => h.clone(),
+                    None => break,
+                }
+            }
+        };
+        i += 1;
+        h(doc, &mut obj);
         // Apply updates the way the JS closure does: immediately, with clipping.
         if let Some(p) = obj.pending.take() {
             if let Some(f) = p.from {
@@ -167,7 +192,7 @@ pub(crate) fn make_change(doc: &Doc, change: Change, ignore_read_only: bool) {
     }
     doc.in_op(|| {
         let mut change = change;
-        if !doc.inner().before_change.is_empty() {
+        if doc.has_before_change() {
             match filter_change(doc, &change, true) {
                 Some(c) => change = c,
                 None => return,
@@ -339,7 +364,7 @@ pub(crate) fn make_change_from_history(doc: &Doc, undo: bool, allow_selection_on
         idx
     };
 
-    let filter = !doc.inner().before_change.is_empty();
+    let filter = doc.has_before_change();
 
     for i in (0..event.changes.len()).rev() {
         let hchange = &event.changes[i];

@@ -30,6 +30,7 @@ pub mod render;
 pub mod window;
 
 pub use editor::{CoordSys, Editor, EditorOptions, Indent};
+pub use events::{Cx, EditorEvents, EditorListeners};
 pub use keymap::KeyEvent;
 pub use measure::Metrics;
 pub use mouse::MouseEvent;
