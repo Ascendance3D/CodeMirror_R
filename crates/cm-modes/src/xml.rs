@@ -579,7 +579,7 @@ impl XmlMode {
         full_line: &[u16],
     ) -> Option<f64> {
         let c = &self.config;
-        let mut context = state.context.clone();
+        let mut context = state.context.as_deref();
         // Indent multi-line strings (e.g. css).
         if let Tokenize::InAttribute(_) = state.tokenize {
             return Some(if state.tag_start == Some(state.indented) {
@@ -588,7 +588,7 @@ impl XmlMode {
                 state.indented + self.indent_unit
             });
         }
-        if context.as_ref().is_some_and(|c| c.no_indent) {
+        if context.is_some_and(|c| c.no_indent) {
             return None;
         }
         if state.tokenize != Tokenize::InTag && state.tokenize != Tokenize::InText {
@@ -624,29 +624,29 @@ impl XmlMode {
             let name = &text_after[s..s + n];
             if close {
                 // Closing tag spotted
-                while let Some(cx) = context.clone() {
+                while let Some(cx) = context {
                     if cx.tag_name == name {
-                        context = cx.prev.clone();
+                        context = cx.prev.as_deref();
                         break;
                     } else if c.implicitly_closed.contains(lower(&cx.tag_name).as_str()) {
-                        context = cx.prev.clone();
+                        context = cx.prev.as_deref();
                     } else {
                         break;
                     }
                 }
             } else {
                 // Opening tag spotted
-                while let Some(cx) = context.clone() {
+                while let Some(cx) = context {
                     match c.context_grabbers.get(lower(&cx.tag_name).as_str()) {
-                        Some(g) if g.contains(lower(name).as_str()) => context = cx.prev.clone(),
+                        Some(g) if g.contains(lower(name).as_str()) => context = cx.prev.as_deref(),
                         _ => break,
                     }
                 }
             }
         }
-        while let Some(cx) = context.clone() {
+        while let Some(cx) = context {
             if cx.prev.is_some() && !cx.start_of_line {
-                context = cx.prev.clone();
+                context = cx.prev.as_deref();
             } else {
                 break;
             }
