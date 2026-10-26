@@ -17,7 +17,9 @@
 //!   [`EditorId`] (decision D3). The payload is mutable (`update`, `cancel`), as in
 //!   the JS; every other payload is immutable (decision D8).
 //! * Handlers are registered with `on_*` and removed with [`Editor::off`] by id, or
-//!   by function identity through [`EditorEvents::listeners`] (`off_fn`).
+//!   by function identity through [`EditorEvents::with_listeners`] (`off_fn`).
+//!   Every change applies to the live table when it is made, in call order, as
+//!   CM5's `on`/`off` do; a dispatch that is running keeps its snapshot.
 
 use std::any::Any;
 use std::cell::{Cell, RefCell};
@@ -149,30 +151,6 @@ impl EditorListeners {
             .or_else(|| removed(self.electric_input.remove(id)))
             .or_else(|| removed(self.focus.remove(id)))
             .or_else(|| removed(self.blur.remove(id)))
-    }
-    /// [`Listeners::merge`] for each list.
-    fn merge(&mut self, base: &EditorListeners, ours: EditorListeners) {
-        self.before_change
-            .merge(&base.before_change, ours.before_change);
-        self.before_selection_change
-            .merge(&base.before_selection_change, ours.before_selection_change);
-        self.change.merge(&base.change, ours.change);
-        self.changes.merge(&base.changes, ours.changes);
-        self.cursor_activity
-            .merge(&base.cursor_activity, ours.cursor_activity);
-        self.update.merge(&base.update, ours.update);
-        self.viewport_change
-            .merge(&base.viewport_change, ours.viewport_change);
-        self.marker_added
-            .merge(&base.marker_added, ours.marker_added);
-        self.marker_cleared
-            .merge(&base.marker_cleared, ours.marker_cleared);
-        self.key_handled.merge(&base.key_handled, ours.key_handled);
-        self.input_read.merge(&base.input_read, ours.input_read);
-        self.electric_input
-            .merge(&base.electric_input, ours.electric_input);
-        self.focus.merge(&base.focus, ours.focus);
-        self.blur.merge(&base.blur, ours.blur);
     }
 }
 
@@ -603,6 +581,84 @@ impl EditorSink for EditorShared {
     }
 }
 
+/// One of an editor's listener tables, changed in place ([`EditorEvents::with_listeners`]).
+pub struct Table<'a, H: ?Sized> {
+    shared: &'a EditorShared,
+    pick: fn(&mut EditorListeners) -> &mut Listeners<H>,
+}
+
+impl<H: ?Sized> Table<'_, H> {
+    /// `on(cm, type, f)`: append `f`.
+    pub fn on_rc(&self, f: Rc<H>) -> ListenerId {
+        (self.pick)(&mut self.shared.ls.borrow_mut()).on_rc(f)
+    }
+    /// Remove the handler registered as `id`. `false` when it is not in this table.
+    pub fn off(&self, id: ListenerId) -> bool {
+        // Dropped after the borrow ends.
+        let gone = (self.pick)(&mut self.shared.ls.borrow_mut()).remove(id);
+        gone.is_some()
+    }
+    /// `off(cm, type, f)`: remove the first entry with the same function.
+    pub fn off_fn(&self, f: &Rc<H>) -> bool {
+        let gone = (self.pick)(&mut self.shared.ls.borrow_mut()).remove_fn(f);
+        gone.is_some()
+    }
+    /// The handlers as of now (`getHandlers`).
+    pub fn snapshot(&self) -> Rc<[Entry<H>]> {
+        (self.pick)(&mut self.shared.ls.borrow_mut()).snapshot()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn len(&self) -> usize {
+        (self.pick)(&mut self.shared.ls.borrow_mut()).len()
+    }
+    pub fn contains(&self, id: ListenerId) -> bool {
+        (self.pick)(&mut self.shared.ls.borrow_mut()).contains(id)
+    }
+}
+
+macro_rules! listener_tables {
+    ($($name:ident: $h:ty),* $(,)?) => {
+        /// An editor's listener tables, by event ([`EditorListeners`]), each changed in
+        /// place.
+        pub struct ListenerTables<'a> {
+            $(pub $name: Table<'a, $h>,)*
+        }
+
+        impl<'a> ListenerTables<'a> {
+            fn new(shared: &'a EditorShared) -> ListenerTables<'a> {
+                $(
+                    let $name = {
+                        fn pick(l: &mut EditorListeners) -> &mut Listeners<$h> {
+                            &mut l.$name
+                        }
+                        Table { shared, pick }
+                    };
+                )*
+                ListenerTables { $($name,)* }
+            }
+        }
+    };
+}
+
+listener_tables! {
+    before_change: BeforeChangeHandler,
+    before_selection_change: BeforeSelHandler,
+    change: ChangeHandler,
+    changes: ChangesHandler,
+    cursor_activity: EditorHandler,
+    update: EditorHandler,
+    viewport_change: ViewportHandler,
+    marker_added: MarkerHandler,
+    marker_cleared: MarkerClearedHandler,
+    key_handled: NameHandler,
+    input_read: InputReadHandler,
+    electric_input: LineHandler,
+    focus: EditorHandler,
+    blur: EditorHandler,
+}
+
 /// A handle on an editor's listener tables, usable without the editor (for example
 /// from a handler that removes itself).
 #[derive(Clone)]
@@ -612,22 +668,19 @@ impl EditorEvents {
     pub fn id(&self) -> EditorId {
         self.0.id
     }
-    /// Run `f` on the listener tables, for `on_rc`/`off_fn` (function identity).
+    /// Run `f` with the listener tables, for `on_rc`/`off_fn` (function identity).
     ///
-    /// `f` works on a copy, so no table is borrowed while it runs: it may register
-    /// or remove this editor's handlers another way too (`Editor::on_*`, `off`, a
-    /// nested `with_listeners`), and both sets of changes are kept
-    /// ([`Listeners::merge`]). A dispatch that is running keeps its snapshot. If `f`
-    /// panics, its own changes are discarded.
-    pub fn with_listeners<R>(&self, f: impl FnOnce(&mut EditorListeners) -> R) -> R {
-        let base = self.0.ls.borrow().clone();
-        let mut ours = base.clone();
-        let r = f(&mut ours);
-        self.0.ls.borrow_mut().merge(&base, ours);
-        // `base` holds every entry either side removed: they are dropped here, with
-        // the tables released.
-        drop(base);
-        r
+    /// Each call on a table (`ls.update.on_rc(f)`, `ls.change.off_fn(&f)`, …)
+    /// changes the live table at once, like CM5's `on`/`off`: changes made through
+    /// `f`, through `Editor::on_*`/`off`, or in a nested `with_listeners` apply in
+    /// the order they are made, so every `off_fn` sees the removals made before it.
+    /// No table is borrowed while user code runs: each call borrows the table only
+    /// for its own change, and a removed handler is dropped after the borrow ends
+    /// (its destructor may use the tables). A dispatch that is running keeps its
+    /// snapshot. If `f` panics, the changes it made before the panic stay, as in
+    /// the JS.
+    pub fn with_listeners<R>(&self, f: impl FnOnce(&mut ListenerTables) -> R) -> R {
+        f(&mut ListenerTables::new(&self.0))
     }
     /// Remove the handler registered as `id`, whatever its event.
     pub fn off(&self, id: ListenerId) -> bool {
