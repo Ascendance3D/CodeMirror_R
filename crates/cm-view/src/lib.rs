@@ -17,6 +17,7 @@
 pub mod app;
 pub mod commands;
 pub mod editor;
+pub mod editor_set;
 pub mod events;
 pub mod fileio;
 pub mod highlight;
@@ -30,6 +31,7 @@ pub mod render;
 pub mod window;
 
 pub use editor::{CoordSys, Editor, EditorOptions, Indent};
+pub use editor_set::EditorSet;
 pub use events::{Cx, EditorEvents, EditorListeners};
 pub use keymap::KeyEvent;
 pub use measure::Metrics;
