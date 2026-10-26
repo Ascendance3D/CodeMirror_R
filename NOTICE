@@ -12,3 +12,13 @@ This software ports the behavior of CodeMirror 5 (version 5.65.21, commit
 
 oracle/cm5-build/ is an unchanged copy of the upstream source tree. upstream/codemirror5/ is
 fetched from the upstream repository and is not part of this repository.
+
+Bundled test font: crates/cm-view/tests/visual/fonts/DejaVuSansMono.ttf
+
+  DejaVu Sans Mono, version 2.37 (unmodified; SHA-256
+  c805f9436dbc268644c1d9584f01a601a653e028e08fd74b9b949f6cf8304d88), used only by the
+  renderer tests (crates/cm-view/tests/visual_render.rs). https://dejavu-fonts.github.io/
+  Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved. Bitstream Vera is a trademark of
+  Bitstream, Inc. DejaVu changes are in the public domain.
+  License: Bitstream Vera Fonts license. The full text is in
+  crates/cm-view/tests/visual/fonts/LICENSE.

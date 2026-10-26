@@ -34,7 +34,15 @@ The default evidence mode is strict (`CM_EVIDENCE` unset). An absent tool or GPU
 
 CI runs `CM_EVIDENCE=ci` with `CM_EVIDENCE_ALLOW=no-gpu-adapter,tool-absent`. Each permitted skip is one line in `CM_EVIDENCE_LOG`, which `tools/evidence_summary.py` checks.
 
-Baseline: 335 passed, 0 failed, 0 ignored, 0 skips (332 port tests, 3 `cm-evidence` tests; strict, GPU and `xvfb-run` present).
+Renderer goldens are exact only for the adapter of a reviewed golden set (`crates/cm-view/tests/visual/goldens/ADAPTER.txt`, `REVIEWED.txt`). On any other adapter the geometry checks still run and the pixel comparison ends as a named `golden-unverified` evidence skip, which fails in strict mode. See the `visual_render.rs` header.
+
+Recorded baselines (strict, `CM_EVIDENCE` unset, GPU adapter of the reviewed golden set, `xvfb-run` present). The count changes as tests are added; these numbers apply only to the commits named:
+
+| commit | passed | failed | ignored | skips |
+| --- | --- | --- | --- | --- |
+| `cab938c` | 335 | 0 | 0 | 0 |
+| `44ad822` (P0) | 381 | 0 | 0 | 0 |
+| the commit that last changed this table (`git log -1 -- README.md`) | 387 | 0 | 0 | 0 |
 
 ## C0 suite
 
