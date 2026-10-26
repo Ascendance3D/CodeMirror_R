@@ -507,7 +507,7 @@ fn make_change_single_doc_in_op(
     {
         s.signal_cursor_activity();
     }
-    update_doc(doc, &change, spans);
+    update_doc(doc, &change, spans, Some(&obj));
     if let Some(s) = &sink {
         s.change_applied(doc, &obj);
     }

@@ -20,7 +20,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use super::change_measurement::compute_replaced_sel;
 use super::changes::{
-    BeforeChange, BeforeSelectionChange, Change, make_change, make_change_from_history,
+    BeforeChange, BeforeSelectionChange, Change, ChangeObj, make_change, make_change_from_history,
     replace_range,
 };
 use super::history::{
@@ -117,6 +117,7 @@ pub(crate) struct Link {
 
 pub(crate) type BeforeChangeHandler = dyn Fn(&Doc, &mut BeforeChange);
 pub(crate) type BeforeSelHandler = dyn Fn(&Doc, &mut BeforeSelectionChange);
+pub(crate) type ChangeHandler = dyn Fn(&Doc, &ChangeObj);
 
 pub(crate) struct DocInner {
     pub id: u32,
@@ -138,6 +139,12 @@ pub(crate) struct DocInner {
     pub op_span_arrays: (u64, Vec<super::spans::SpanArr>),
     pub before_change: Listeners<BeforeChangeHandler>,
     pub before_selection_change: Listeners<BeforeSelHandler>,
+    /// `change` (delayed).
+    pub change: Listeners<ChangeHandler>,
+    /// `cursorActivity` (delayed).
+    pub cursor_activity: Listeners<dyn Fn(&Doc)>,
+    /// `historyAdded` (immediate).
+    pub history_added: Listeners<dyn Fn(&Doc)>,
     /// `cm.state.suppressEdits`: set while a key handler runs in a read-only editor.
     pub suppress_edits: bool,
     /// The cursor at each `ensureCursorVisible(doc.cm)` call of `setSelectionNoUndo`
@@ -241,6 +248,9 @@ impl Doc {
             display_shift: false,
             scroll_requests: Vec::new(),
             before_selection_change: Listeners::default(),
+            change: Listeners::default(),
+            cursor_activity: Listeners::default(),
+            history_added: Listeners::default(),
         };
         let doc = Doc(Rc::new(RefCell::new(inner)));
         let text = match lines {
@@ -257,6 +267,7 @@ impl Doc {
                 origin: None,
                 full: false,
             },
+            None,
             None,
         );
         set_selection(
@@ -386,9 +397,16 @@ impl Doc {
     }
     /// `doc.remove(at, n)`.
     pub(crate) fn remove_lines(&self, at: i64, n: usize) {
-        let mut i = self.inner_mut();
-        let rel = at - i.first;
-        i.tree.remove_inner(super::tree::ROOT, rel, n);
+        let deleted = {
+            let mut i = self.inner_mut();
+            let rel = at - i.first;
+            i.tree.remove_inner(super::tree::ROOT, rel, n);
+            std::mem::take(&mut i.tree.deleted_with_handlers)
+        };
+        // chunk.js removeInner: `signalLater(line, "delete")` for each removed line.
+        for line in deleted {
+            super::line::signal_line_delete(&line);
+        }
     }
     /// `getBetween(doc, start, end)`.
     pub(crate) fn get_between(&self, start: Pos, end: Pos) -> Vec<Text> {
@@ -559,7 +577,27 @@ impl Doc {
     /// `false` when no document handler has that id.
     pub fn off(&self, id: ListenerId) -> bool {
         let mut i = self.inner_mut();
-        i.before_change.off(id) || i.before_selection_change.off(id)
+        i.before_change.off(id)
+            || i.before_selection_change.off(id)
+            || i.change.off(id)
+            || i.cursor_activity.off(id)
+            || i.history_added.off(id)
+    }
+    /// `on("change", f)`: called after each change to this document, with the
+    /// change as applied here. Delayed (`signalLater`): it runs when the outermost
+    /// operation ends, or, with no operation open (no editor), when the host
+    /// delivers the orphan queue ([`crate::operation_group::fire_orphan_delayed`]).
+    pub fn on_change<F: Fn(&Doc, &ChangeObj) + 'static>(&self, f: F) -> ListenerId {
+        self.inner_mut().change.on_rc(Rc::new(f))
+    }
+    /// `on("cursorActivity", f)`: the selection changed. Delayed like `change`.
+    pub fn on_cursor_activity<F: Fn(&Doc) + 'static>(&self, f: F) -> ListenerId {
+        self.inner_mut().cursor_activity.on_rc(Rc::new(f))
+    }
+    /// `on("historyAdded", f)`: a change started a new history event (it was not
+    /// merged into the previous one). Immediate.
+    pub fn on_history_added<F: Fn(&Doc) + 'static>(&self, f: F) -> ListenerId {
+        self.inner_mut().history_added.on_rc(Rc::new(f))
     }
     /// `cm.state.suppressEdits` (src/edit/key_events.js:doHandleBinding sets it while a
     /// key handler runs in a read-only editor). Only honored with editor semantics,

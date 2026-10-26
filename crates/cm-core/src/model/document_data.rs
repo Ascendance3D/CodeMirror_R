@@ -1,10 +1,14 @@
 //! `src/model/document_data.js`: `updateDoc`, `isWholeLineUpdate`. (`linkedDocs` is
 //! [`Doc::linked_docs`]; `attachDoc` and direction classes belong to the editor.)
 
-use super::changes::Change;
+use std::rc::Rc;
+
+use super::changes::{Change, ChangeObj};
 use super::doc::Doc;
+use super::line::signal_line_change;
 use super::line::{LineRef, new_line};
 use super::spans::{NewSpans, SpanArr, attach_marked_spans, detach_marked_spans};
+use crate::operation_group::{Delayed, signal_later};
 use crate::text::Text;
 
 /// `isWholeLineUpdate(doc, change)`: updates that start and end at line starts are
@@ -17,7 +21,13 @@ pub(crate) fn is_whole_line_update(doc: &Doc, change: &Change) -> bool {
 }
 
 /// `updateLine(line, text, markedSpans)` (height estimate is 1 without a view).
-fn update_line(doc: &Doc, line: &LineRef, text: Text, spans: Option<SpanArr>) {
+fn update_line(
+    doc: &Doc,
+    line: &LineRef,
+    text: Text,
+    spans: Option<SpanArr>,
+    obj: Option<&Rc<ChangeObj>>,
+) {
     {
         let mut l = line.borrow_mut();
         l.text = text;
@@ -30,10 +40,19 @@ fn update_line(doc: &Doc, line: &LineRef, text: Text, spans: Option<SpanArr>) {
     if line.borrow().height != 1.0 {
         doc.inner_mut().tree.update_line_height(line, 1.0);
     }
+    if let Some(obj) = obj {
+        signal_line_change(line, obj);
+    }
 }
 
-/// `updateDoc(doc, change, markedSpans)`.
-pub(crate) fn update_doc(doc: &Doc, change: &Change, marked_spans: Option<NewSpans>) {
+/// `updateDoc(doc, change, markedSpans)`. `obj` is the change as `change` handlers
+/// see it; `None` only when the document is being created (no handlers yet).
+pub(crate) fn update_doc(
+    doc: &Doc,
+    change: &Change,
+    marked_spans: Option<NewSpans>,
+    obj: Option<&Rc<ChangeObj>>,
+) {
     let spans_for = |n: usize| -> Option<SpanArr> {
         marked_spans
             .as_ref()
@@ -75,7 +94,7 @@ pub(crate) fn update_doc(doc: &Doc, change: &Change, marked_spans: Option<NewSpa
         // A whole-line replace: make sure line objects move the way they should.
         let added = lines_for(0, tlen - 1);
         let lt = last_line.borrow().text.clone();
-        update_line(doc, &last_line, lt, last_spans);
+        update_line(doc, &last_line, lt, last_spans, obj);
         if nlines > 0 {
             doc.remove_lines(from.line, nlines as usize);
         }
@@ -89,7 +108,7 @@ pub(crate) fn update_doc(doc: &Doc, change: &Change, marked_spans: Option<NewSpa
                 &last_text,
                 &slice(&first_line, to.ch, None),
             ]);
-            update_line(doc, &first_line, t, last_spans);
+            update_line(doc, &first_line, t, last_spans, obj);
         } else {
             let mut added = lines_for(1, tlen - 1);
             added.push(new_line(
@@ -97,7 +116,7 @@ pub(crate) fn update_doc(doc: &Doc, change: &Change, marked_spans: Option<NewSpa
                 last_spans,
             ));
             let t = concat(&[&slice(&first_line, 0, Some(from.ch)), &text0]);
-            update_line(doc, &first_line, t, spans_for(0));
+            update_line(doc, &first_line, t, spans_for(0), obj);
             doc.insert_lines(from.line + 1, added);
         }
     } else if text.len() == 1 {
@@ -106,17 +125,25 @@ pub(crate) fn update_doc(doc: &Doc, change: &Change, marked_spans: Option<NewSpa
             &text0,
             &slice(&last_line, to.ch, None),
         ]);
-        update_line(doc, &first_line, t, spans_for(0));
+        update_line(doc, &first_line, t, spans_for(0), obj);
         doc.remove_lines(from.line + 1, nlines as usize);
     } else {
         let t = concat(&[&slice(&first_line, 0, Some(from.ch)), &text0]);
-        update_line(doc, &first_line, t, spans_for(0));
+        update_line(doc, &first_line, t, spans_for(0), obj);
         let t = concat(&[&last_text, &slice(&last_line, to.ch, None)]);
-        update_line(doc, &last_line, t, last_spans);
+        update_line(doc, &last_line, t, last_spans, obj);
         let added = lines_for(1, tlen - 1);
         if nlines > 1 {
             doc.remove_lines(from.line + 1, nlines as usize - 1);
         }
         doc.insert_lines(from.line + 1, added);
+    }
+    // `signalLater(doc, "change", doc, change)`.
+    if let Some(obj) = obj {
+        let snap = doc.inner().change.snapshot();
+        for e in snap.iter() {
+            let (f, d, c) = (e.f.clone(), doc.clone(), obj.clone());
+            signal_later(Delayed::Free(Box::new(move || f(&d, &c))));
+        }
     }
 }

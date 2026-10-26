@@ -222,3 +222,59 @@ fn replace_selection_detached_doc() {
     assert_eq!(doc.history_size().undo, 1);
     assert!(doc.take_scroll_requests().is_empty());
 }
+
+/// G13 #9, scenario `marker_clear_order`: a marker's `clear` handlers are delayed
+/// (`signalLater`, src/model/mark_text.js:50) to the end of the operation that
+/// cleared it, and see the found range and the document as of that end; a clear
+/// outside an operation opens its own (mark_text.js:46) and delivers before it
+/// returns. Recorded: `[["after clear"], ["after edit"], ["clear", 1, 0, 1, 4,
+/// "Xline 1"], ["after operation"], ["clear2"], ["after clear2 outside operation"]]`.
+#[test]
+fn g13_9_marker_clear_handlers_are_delayed() {
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    let mut cm = editor();
+    let log: Rc<RefCell<Vec<String>>> = Rc::default();
+    let m = cm.run_op(|cm| cm.doc.mark_text(p(1, 0), p(1, 4), Default::default()));
+    let m = m.unwrap().text_marker();
+    let (l, d) = (log.clone(), cm.doc.clone());
+    m.on_clear(move |r| {
+        let (from, to) = r.expect("a range marker reports its range");
+        let to = to.unwrap();
+        l.borrow_mut().push(format!(
+            "clear {} {} {} {} {}",
+            from.line,
+            from.ch,
+            to.line,
+            to.ch,
+            d.get_line(1).unwrap()
+        ));
+    });
+    cm.run_op(|cm| {
+        m.clear();
+        log.borrow_mut().push("after clear".into());
+        cm.doc.replace_range("X", p(1, 0), None, None);
+        log.borrow_mut().push("after edit".into());
+    });
+    log.borrow_mut().push("after operation".into());
+    let m2 = cm
+        .run_op(|cm| cm.doc.mark_text(p(2, 0), p(2, 4), Default::default()))
+        .unwrap()
+        .text_marker();
+    let l = log.clone();
+    m2.on_clear(move |_| l.borrow_mut().push("clear2".into()));
+    m2.clear();
+    log.borrow_mut()
+        .push("after clear2 outside operation".into());
+    assert_eq!(
+        *log.borrow(),
+        [
+            "after clear",
+            "after edit",
+            "clear 1 0 1 4 Xline 1",
+            "after operation",
+            "clear2",
+            "after clear2 outside operation"
+        ]
+    );
+}

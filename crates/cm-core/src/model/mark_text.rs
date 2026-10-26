@@ -1,12 +1,15 @@
 //! `src/model/mark_text.js`: `TextMarker`, `SharedTextMarker`, `markText`, and the
 //! shared-marker plumbing for linked documents.
 //!
-//! Not ported: `replacedWith`/widget nodes, `changed()`, the `attributes` option, and
-//! the editor events `markerAdded`/`markerCleared`/`markerChanged`. `className`,
-//! `startStyle`, `endStyle`, `css` and `title` are stored but nothing draws them.
-//! The marker `clear` handlers (`on_clear`) run synchronously at the end of
-//! `clear()`; the JS defers them with `signalLater`. There are no user
-//! `beforeCursorEnter`/`hide`/`unhide` listeners (only `clearOnEnter` is honored).
+//! Events: marker `clear` (delayed, with the found range), `beforeCursorEnter`
+//! (immediate; `clearOnEnter` registers one), `hide`/`unhide` (fired by an editor at
+//! the end of its operation), and on the editor `markerAdded`/`markerCleared`
+//! through [`crate::EditorSink`]. `clear()` opens an editor operation when none is
+//! open, and a shared marker's `clear` is queued after its children's.
+//!
+//! Not ported: `replacedWith`/widget nodes, `changed()` (and so `markerChanged`),
+//! and the `attributes` option. `className`, `startStyle`, `endStyle`, `css` and
+//! `title` are stored but nothing draws them.
 
 use std::cell::{Ref, RefCell, RefMut};
 use std::rc::{Rc, Weak};
@@ -23,6 +26,7 @@ use super::spans::{
 };
 use crate::CmError;
 use crate::events::{ListenerId, Listeners};
+use crate::operation_group::{Delayed, signal_later};
 use crate::pos::{Pos, cmp};
 
 /// `nextMarkerId` — module-global in the JS.
@@ -77,6 +81,11 @@ pub(crate) struct MarkerData {
     pub explicitly_cleared: bool,
     pub parent: Option<SharedTextMarker>,
     pub clear_handlers: Listeners<ClearHandler>,
+    /// `beforeCursorEnter` (immediate; `clearOnEnter` registers one).
+    pub before_cursor_enter: Listeners<dyn Fn()>,
+    /// `hide` / `unhide` (immediate, at the end of an editor operation).
+    pub hide: Listeners<dyn Fn()>,
+    pub unhide: Listeners<dyn Fn()>,
 }
 
 /// A marker in one document (`TextMarker`). Clones share the marker.
@@ -151,9 +160,49 @@ impl TextMarker {
     pub fn on_clear<F: Fn(Option<(Pos, Option<Pos>)>) + 'static>(&self, f: F) -> ListenerId {
         self.data_mut().clear_handlers.on_rc(Rc::new(f))
     }
-    /// Remove the marker handler registered as `id`.
+    /// `on("beforeCursorEnter", f)`: the cursor is about to be moved into the
+    /// marker (immediate; the handler may clear the marker).
+    pub fn on_before_cursor_enter<F: Fn() + 'static>(&self, f: F) -> ListenerId {
+        self.data_mut().before_cursor_enter.on_rc(Rc::new(f))
+    }
+    /// `on("hide", f)`: an edit removed the last of the marker's text (fired at the
+    /// end of the editor operation; only documents with an editor track this).
+    pub fn on_hide<F: Fn() + 'static>(&self, f: F) -> ListenerId {
+        self.data_mut().hide.on_rc(Rc::new(f))
+    }
+    /// `on("unhide", f)`: an undo brought a hidden marker's text back.
+    pub fn on_unhide<F: Fn() + 'static>(&self, f: F) -> ListenerId {
+        self.data_mut().unhide.on_rc(Rc::new(f))
+    }
+    /// Remove the marker handler registered as `id`, whatever its event.
     pub fn off(&self, id: ListenerId) -> bool {
-        self.data_mut().clear_handlers.off(id)
+        let mut d = self.data_mut();
+        d.clear_handlers.off(id)
+            || d.before_cursor_enter.off(id)
+            || d.hide.off(id)
+            || d.unhide.off(id)
+    }
+    /// `signal(m, "beforeCursorEnter")`.
+    pub(crate) fn signal_before_cursor_enter(&self) {
+        let snap = self.data().before_cursor_enter.snapshot();
+        for e in snap.iter() {
+            (e.f)();
+        }
+    }
+    /// `signal(m, "hide")` / `signal(m, "unhide")`, for the view's operation end.
+    pub fn signal_hidden(&self, hidden: bool) {
+        let snap = if hidden {
+            self.data().hide.snapshot()
+        } else {
+            self.data().unhide.snapshot()
+        };
+        for e in snap.iter() {
+            (e.f)();
+        }
+    }
+    /// The number of lines the marker spans (`marker.lines.length`).
+    pub fn line_count(&self) -> usize {
+        self.live_lines().len()
     }
 
     /// Debug aid: line numbers of `marker.lines` (None for a detached line).
@@ -280,28 +329,69 @@ impl TextMarker {
         }
     }
 
-    /// `marker.clear()`.
+    /// `marker.clear()`: inside an editor operation (one is opened when the
+    /// document has an editor and none is open). The marker's `clear` handlers and
+    /// the editor's `markerCleared` are delayed (`signalLater`); the parent shared
+    /// marker is cleared after the operation ends.
     pub fn clear(&self) {
         if self.data().explicitly_cleared {
             return;
         }
-        let found = if self.data().clear_handlers.is_empty() {
-            None
-        } else {
-            self.find_range_raw()
-        };
+        let doc = self.doc();
+        match &doc {
+            Some(d) => d.in_op(|| self.clear_in_op(Some(d))),
+            None => self.clear_in_op(None),
+        }
+        let parent = self.data().parent.clone();
+        if let Some(p) = parent {
+            p.clear();
+        }
+    }
+
+    fn clear_in_op(&self, doc: Option<&Doc>) {
+        // `if (hasHandler(this, "clear")) { let found = this.find(); if (found)
+        // signalLater(this, "clear", found.from, found.to) }`
+        if !self.data().clear_handlers.is_empty()
+            && let Some(found) = self.find()
+        {
+            let range = match found {
+                MarkerFind::Range { from, to } => Some((from, to)),
+                // A bookmark's `find()` is a position: `found.from` is undefined.
+                MarkerFind::Point(_) => None,
+            };
+            let snap = self.data().clear_handlers.snapshot();
+            for e in snap.iter() {
+                let f = e.f.clone();
+                signal_later(Delayed::Free(Box::new(move || f(range))));
+            }
+        }
+        let sink = doc.and_then(|d| d.sink());
+        let collapsed = self.data().collapsed;
+        let (mut min, mut max) = (None, None);
         for line in self.live_lines() {
             let spans = line.borrow().marked_spans.clone();
+            if sink.is_some()
+                && collapsed
+                && let Some(span) = get_marked_span_for(spans.as_ref(), self)
+            {
+                let n = self.line_no(&line);
+                if span.to.is_some() {
+                    max = Some(n);
+                }
+                if span.from.is_some() {
+                    min = Some(n);
+                }
+            }
             if let Some(spans) = spans {
                 line.borrow_mut().marked_spans = remove_marked_span(&spans, self);
             }
         }
-        let doc = self.doc();
-        let (atomic, parent, handlers) = {
+        let doc = doc.cloned();
+        let atomic = {
             let mut d = self.data_mut();
             d.lines.clear();
             d.explicitly_cleared = true;
-            (d.atomic, d.parent.clone(), d.clear_handlers.snapshot())
+            d.atomic
         };
         if atomic {
             if let Some(doc) = &doc {
@@ -313,11 +403,9 @@ impl TextMarker {
                 }
             }
         }
-        for h in handlers.iter() {
-            (h.f)(found);
-        }
-        if let Some(p) = parent {
-            p.clear();
+        // `if (cm) signalLater(cm, "markerCleared", cm, this, min, max)`
+        if let (Some(s), Some(d)) = (&sink, &doc) {
+            s.marker_cleared(d, self, min, max);
         }
     }
 }
@@ -371,9 +459,11 @@ impl SharedTextMarker {
         for m in markers {
             m.clear();
         }
-        let handlers = self.0.borrow().clear_handlers.snapshot();
-        for h in handlers.iter() {
-            (h.f)();
+        // `signalLater(this, "clear")`
+        let snap = self.0.borrow().clear_handlers.snapshot();
+        for e in snap.iter() {
+            let f = e.f.clone();
+            signal_later(Delayed::Free(Box::new(move || f())));
         }
     }
     pub fn find(&self) -> Option<MarkerFind> {
@@ -463,6 +553,9 @@ pub(crate) fn mark_text_inner(
         explicitly_cleared: false,
         parent: None,
         clear_handlers: Listeners::default(),
+        before_cursor_enter: Listeners::default(),
+        hide: Listeners::default(),
+        unhide: Listeners::default(),
     })));
     let diff = cmp(&from, &to);
     // Don't connect empty markers unless clearWhenEmpty is false.
@@ -542,8 +635,21 @@ pub(crate) fn mark_text_inner(
         d.id = next_marker_id();
         d.atomic = true;
     }
+    if marker.data().opts.clear_on_enter {
+        // `on(marker, "beforeCursorEnter", () => marker.clear())`
+        let weak = Rc::downgrade(&marker.0);
+        marker.on_before_cursor_enter(move || {
+            if let Some(m) = weak.upgrade() {
+                TextMarker(m).clear();
+            }
+        });
+    }
     if doc.has_editor() && marker.data().atomic {
         re_check_selection(doc);
+    }
+    // `signalLater(cm, "markerAdded", cm, marker)` and the redraw of its lines.
+    if let Some(s) = doc.sink() {
+        s.marker_added(doc, &marker);
     }
     Ok(marker)
 }

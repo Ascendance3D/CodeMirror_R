@@ -6,8 +6,11 @@ use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use super::changes::ChangeObj;
 use super::spans::{SpanArr, attach_marked_spans, detach_marked_spans};
 use super::tree::NodeId;
+use crate::events::{ListenerId, Listeners};
+use crate::operation_group::{Delayed, signal_later};
 use crate::text::Text;
 
 pub(crate) struct Line {
@@ -20,6 +23,49 @@ pub(crate) struct Line {
     pub state_after: Option<Rc<dyn Any>>,
     /// `line.styles`, owned by a view; `updateLine` clears it.
     pub styles: Option<Rc<dyn Any>>,
+    /// Line handle listeners (`change`, `delete`), allocated on first use.
+    pub events: Option<Box<LineEvents>>,
+}
+
+pub(crate) type LineChangeHandler = dyn Fn(&LineHandle, &ChangeObj);
+
+/// The listeners of one line handle.
+#[derive(Default)]
+pub(crate) struct LineEvents {
+    pub change: Listeners<LineChangeHandler>,
+    pub delete: Listeners<dyn Fn()>,
+}
+
+/// `signalLater(line, "change", line, change)` (document_data.js:27).
+pub(crate) fn signal_line_change(line: &LineRef, change: &Rc<ChangeObj>) {
+    let snap = match &line.borrow().events {
+        Some(e) if !e.change.is_empty() => e.change.snapshot(),
+        _ => return,
+    };
+    for e in snap.iter() {
+        let (f, h, c) = (e.f.clone(), LineHandle(line.clone()), change.clone());
+        signal_later(Delayed::Free(Box::new(move || f(&h, &c))));
+    }
+}
+
+/// `signalLater(line, "delete")` (chunk.js:38).
+pub(crate) fn signal_line_delete(line: &LineRef) {
+    let snap = match &line.borrow().events {
+        Some(e) if !e.delete.is_empty() => e.delete.snapshot(),
+        _ => return,
+    };
+    for e in snap.iter() {
+        let f = e.f.clone();
+        signal_later(Delayed::Free(Box::new(move || f())));
+    }
+}
+
+/// Whether the line has `delete` listeners.
+pub(crate) fn has_delete_handlers(line: &LineRef) -> bool {
+    line.borrow()
+        .events
+        .as_ref()
+        .is_some_and(|e| !e.delete.is_empty())
 }
 
 pub(crate) type LineRef = Rc<RefCell<Line>>;
@@ -34,6 +80,7 @@ pub(crate) fn new_line(text: Text, spans: Option<SpanArr>) -> LineRef {
         parent: None,
         state_after: None,
         styles: None,
+        events: None,
     }));
     attach_marked_spans(&line, spans);
     line
@@ -44,6 +91,23 @@ pub(crate) fn new_line(text: Text, spans: Option<SpanArr>) -> LineRef {
 pub struct LineHandle(pub(crate) LineRef);
 
 impl LineHandle {
+    /// `on("change", f)`: the line's text or markers changed (delayed).
+    pub fn on_change<F: Fn(&LineHandle, &ChangeObj) + 'static>(&self, f: F) -> ListenerId {
+        let mut l = self.0.borrow_mut();
+        l.events.get_or_insert_default().change.on_rc(Rc::new(f))
+    }
+    /// `on("delete", f)`: the line was removed from the document (delayed).
+    pub fn on_delete<F: Fn() + 'static>(&self, f: F) -> ListenerId {
+        let mut l = self.0.borrow_mut();
+        l.events.get_or_insert_default().delete.on_rc(Rc::new(f))
+    }
+    /// Remove the line handler registered as `id`.
+    pub fn off(&self, id: ListenerId) -> bool {
+        let mut l = self.0.borrow_mut();
+        l.events
+            .as_mut()
+            .is_some_and(|e| e.change.off(id) || e.delete.off(id))
+    }
     pub fn text(&self) -> String {
         crate::text::from_u16(&self.0.borrow().text)
     }

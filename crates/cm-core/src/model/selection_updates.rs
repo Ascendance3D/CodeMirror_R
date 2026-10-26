@@ -10,6 +10,7 @@ use super::mark_text::{SideFind, TextMarker};
 use super::selection::{
     Range, Sel, SelRange, new_sel, normalize_selection, sel_equals, simple_selection,
 };
+use crate::operation_group::{Delayed, signal_later};
 use crate::pos::{Pos, PosRef, cmp, cmp_num};
 
 /// Selection update options (`{origin, bias, scroll, clearRedo}`). Whether options
@@ -206,12 +207,23 @@ pub(crate) fn set_selection_no_undo(doc: &Doc, sel: Sel, options: Option<&SelOpt
     }
 }
 
+/// `setSelectionInner(doc, sel)`.
 fn set_selection_inner(doc: &Doc, sel: Sel) {
     let same = sel_equals(&sel, &doc.inner().sel);
     if same {
         return;
     }
     doc.inner_mut().sel = sel;
+    // `if (doc.cm) { …; signalCursorActivity(doc.cm) }`
+    if let Some(s) = doc.sink() {
+        s.selection_changed();
+    }
+    // `signalLater(doc, "cursorActivity", doc)`
+    let snap = doc.inner().cursor_activity.snapshot();
+    for e in snap.iter() {
+        let (f, d) = (e.f.clone(), doc.clone());
+        signal_later(Delayed::Free(Box::new(move || f(&d))));
+    }
 }
 
 /// `reCheckSelection(doc)`: make sure the selection does not partially select any
@@ -355,11 +367,7 @@ fn skip_atomic_inner_body(
         };
         if left_ok && right_ok {
             if may_clear {
-                // signal(m, "beforeCursorEnter"): the only model-level listener is
-                // the clearOnEnter one.
-                if m.data().opts.clear_on_enter {
-                    m.clear();
-                }
+                m.signal_before_cursor_enter();
                 if m.data().explicitly_cleared {
                     if line.borrow().marked_spans.is_none() {
                         break;

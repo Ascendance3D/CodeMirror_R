@@ -31,6 +31,9 @@ pub(crate) enum Node {
 pub(crate) struct Tree {
     nodes: Vec<Node>,
     free: Vec<NodeId>,
+    /// Lines removed by `remove_inner` that have `delete` listeners, for the caller
+    /// to signal once the document borrow is released.
+    pub deleted_with_handlers: Vec<LineRef>,
 }
 
 pub(crate) const ROOT: NodeId = 0;
@@ -41,6 +44,7 @@ impl Tree {
         let mut t = Tree {
             nodes: Vec::new(),
             free: Vec::new(),
+            deleted_with_handlers: Vec::new(),
         };
         // Reserve the root slot first so it gets id 0.
         t.nodes.push(Node::Free);
@@ -192,6 +196,9 @@ impl Tree {
             };
             for l in &removed {
                 clean_up_line(l);
+                if super::line::has_delete_handlers(l) {
+                    self.deleted_with_handlers.push(l.clone());
+                }
             }
             return;
         }
