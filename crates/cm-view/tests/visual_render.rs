@@ -947,3 +947,144 @@ fn wrapped_selection() {
 fn wrapped_selection_2x() {
     run("wrapped_selection_2x");
 }
+
+// -------------------------------------------------------------------------------
+// Horizontal scrolling with line numbers (review finding M1, 2026-10-26)
+//
+// The gutter (`.CodeMirror-gutters`, z-index 3, after the sizer in the DOM) covers
+// the cursor layer (z-index 3). A cursor scrolled behind it must leave every gutter
+// pixel unchanged, and the part to the right of the gutter edge stays visible and
+// above the text. These cases need no golden: the expectations are geometric.
+
+/// Line numbers, 200-column lines with glyph ink everywhere, the cursor at `1:ch`,
+/// scrolled horizontally so the cursor's left edge is at window x `gutter + offset`.
+fn hscroll_scene(gpu: &Gpu, scale: f32, ch: i64, offset: f64) -> Scene {
+    let text: String = (0..30)
+        .map(|i| format!("{i:02} {}\n", "abcdefghij".repeat(20)))
+        .collect();
+    let c = Case {
+        line_numbers: true,
+        ..Case::new("hscroll", &text, p(1, ch)).scale(scale)
+    };
+    let mut s = Scene::new(gpu, &c);
+    let left = s.editor.cursor_coords(p(1, ch), CoordSys::Div).left;
+    s.editor.scroll_to(Some(left - offset), None);
+    assert_eq!(
+        s.editor.display.scroll_left,
+        left - offset,
+        "scroll_left was clamped"
+    );
+    s
+}
+
+/// Renders the scene with and without the cursor and checks the gutter and the
+/// visible part of the cursor. Returns the visible cursor columns and the cursor width.
+fn check_hscroll(gpu: &Gpu, scale: f32, ch: i64, offset: f64, r: &mut Report) -> (i64, i64) {
+    let mut s = hscroll_scene(gpu, scale, ch, offset);
+    let shown = s.frame(gpu, true);
+    let hidden = s.frame(gpu, false);
+    let g = s.editor.gutter_width;
+    let c = s.editor.cursor_coords(p(1, ch), CoordSys::Div);
+    let cw = (s.editor.metrics.char_width / 8.0).max(1.0).round();
+    let x = s.wx(c.left);
+    r.note(format!(
+        "scale {scale} ch {ch} offset {offset}: gutter_width {g}, cursor window x {x:.3}, width {cw}, scroll_left {:.3}",
+        s.editor.display.scroll_left
+    ));
+    check_gutter(&s, &shown, r);
+    let in_gutter = (0..s.h)
+        .flat_map(|y| (0..g as u32).map(move |x| (x, y)))
+        .filter(|&(x, y)| shown.at(x, y) != hidden.at(x, y))
+        .count();
+    if in_gutter != 0 {
+        r.fail(format!(
+            "scale {scale} offset {offset}: {in_gutter} gutter pixels change when the cursor is shown"
+        ));
+    } else {
+        r.note("ok 0 gutter pixels change when the cursor is shown");
+    }
+    // The visible part: the cursor quad clipped at the gutter edge.
+    let (x0, x1) = (x.max(g), (x + cw).max(g));
+    let want = px_rect(x0, s.wy(c.top), x1, s.wy(c.bottom), s.w, s.h);
+    let regions = diff_regions(&shown, &hidden);
+    let bbox = regions
+        .iter()
+        .copied()
+        .reduce(|a, b| (a.0.min(b.0), a.1.max(b.1), a.2.min(b.2), a.3.max(b.3)));
+    let cols = (want.1 - want.0 + 1).max(0);
+    let out = (cols, cw as i64);
+    match bbox {
+        None if cols == 0 => r.note("ok cursor fully behind the gutter: no pixel changes"),
+        None => r.fail(format!(
+            "scale {scale} offset {offset}: cursor expected at {want:?}, nothing drawn"
+        )),
+        Some(b) if cols == 0 => r.fail(format!(
+            "scale {scale} offset {offset}: cursor should be hidden, changed {b:?}"
+        )),
+        Some(b) => {
+            // Exact: the clip edge is on a pixel boundary, not a pixel center.
+            if b != want {
+                r.fail(format!(
+                    "scale {scale} offset {offset}: cursor measured {b:?}, clipped model {want:?}"
+                ));
+            } else {
+                r.note(format!("ok cursor measured {b:?} = clipped model"));
+            }
+            // Above the text: every pixel of the visible part is the cursor color.
+            let color = theme_px(s.renderer.theme.cursor);
+            for y in b.2..=b.3 {
+                for xx in b.0..=b.1 {
+                    let px = shown.at(xx as u32, y as u32);
+                    if px != color {
+                        r.fail(format!("cursor pixel ({xx},{y}) is {}", hex(px)));
+                        return out;
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
+fn run_hscroll(scale: f32) {
+    let gpu = match gpu() {
+        Ok((g, _)) => g,
+        Err(e) => return cm_evidence::no_gpu(e),
+    };
+    let mut r = Report::default();
+    // Behind the gutter (left edge 12 and 2 logical px inside it).
+    let deep = check_hscroll(gpu, scale, 40, -12.0 * scale as f64, &mut r).0;
+    let near = check_hscroll(gpu, scale, 40, -2.0 * scale as f64, &mut r).0;
+    // Straddling the edge: one physical pixel left of it. At scale 1 the 1 px
+    // cursor is hidden; at scale 2 the right one of its 2 px stays visible.
+    let straddle = check_hscroll(gpu, scale, 40, -1.0, &mut r).0;
+    // Exactly at the edge, and well inside the text area: fully visible.
+    let at_edge = check_hscroll(gpu, scale, 40, 0.0, &mut r).0;
+    let (inside, cw) = check_hscroll(gpu, scale, 40, 40.0 * scale as f64, &mut r);
+    r.note(format!(
+        "visible columns: behind {deep}/{near}, straddle {straddle}, at edge {at_edge}, inside {inside} (cursor width {cw})"
+    ));
+    if (deep, near, straddle, at_edge, inside) != (0, 0, cw - 1, cw, cw) {
+        r.fail(format!(
+            "visible columns {deep}/{near}/{straddle}/{at_edge}/{inside}, expected 0/0/{}/{cw}/{cw}",
+            cw - 1
+        ));
+    }
+    let name = format!("hscroll_gutter_{scale}x");
+    std::fs::write(out_dir().join(format!("{name}.txt")), &r.log).expect("write record");
+    println!("{}", r.log);
+    assert!(
+        r.failures.is_empty(),
+        "{name} failed:\n{}",
+        r.failures.join("\n")
+    );
+}
+
+#[test]
+fn hscroll_gutter_clips_cursor() {
+    run_hscroll(1.0);
+}
+#[test]
+fn hscroll_gutter_clips_cursor_2x() {
+    run_hscroll(2.0);
+}

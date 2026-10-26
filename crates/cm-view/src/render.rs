@@ -568,7 +568,10 @@ impl Renderer {
                 }
             }
         }
-        // Cursors are drawn above the text (`div.CodeMirror-cursors { z-index: 3 }`).
+        // Cursors are drawn above the text (`div.CodeMirror-cursors { z-index: 3 }`),
+        // but below the gutters, which also have z-index 3 and come later in the DOM
+        // (`d.scroller` = [sizer, heightForcer, gutters]). The gutter is filled before
+        // the text, so a cursor scrolled behind it is clipped to the text area here.
         let mut cursors: Vec<(Rect, Rgba)> = Vec::new();
         if frame.cursor_visible {
             for r in &sel.ranges {
@@ -585,10 +588,10 @@ impl Renderer {
                 } else {
                     (m.char_width as f32 / 8.0).max(1.0).round()
                 };
-                cursors.push((
-                    full(wx(c.left), wy(c.top), wx(c.left) + cw, wy(c.bottom)),
-                    theme.cursor,
-                ));
+                let (x0, x1) = (wx(c.left).max(gutter), (wx(c.left) + cw).max(gutter));
+                if x1 > x0 {
+                    cursors.push((full(x0, wy(c.top), x1, wy(c.bottom)), theme.cursor));
+                }
             }
         }
 
