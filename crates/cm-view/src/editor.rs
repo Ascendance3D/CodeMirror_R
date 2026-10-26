@@ -9,7 +9,7 @@
 //! Events are typed (`on_change`, `on_cursor_activity`, …; see [`crate::events`]).
 //!
 //! Not ported:
-//! * the `scroll`/`focus`/`blur`/`inputRead`/`electricInput`/`swapDoc`/`refresh`/
+//! * the `scroll`/`swapDoc`/`refresh`/
 //!   `optionChange`/`gutterClick`/DOM editor events.
 //! * `addOverlay`/`removeOverlay`, `getHelper`/`registerHelper`: `findWordAt` and
 //!   group motion use plain `isWordChar`, so javascript's `wordChars` helper
@@ -39,8 +39,8 @@ use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_m
 
 use crate::events::{
     ChangeHandler, ChangesHandler, Cx, DisplayEvent, EditorEvents, EditorHandler, EditorShared,
-    MarkerClearedHandler, MarkerHandler, NameHandler, OpRecord, Parked, ViewportHandler, WithSelf,
-    finish,
+    InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler, NameHandler,
+    OpRecord, Parked, ViewportHandler, WithSelf, finish,
 };
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
@@ -216,6 +216,8 @@ pub struct Editor {
     /// `cm.curOp.forceUpdate`, or a redraw an option change asked for: the next
     /// display phase redraws (and reports `update`).
     pub(crate) force_update: bool,
+    /// `state.focused`.
+    focused: bool,
     op: OpState,
     pub(crate) heights: Rc<RefCell<HeightCache>>,
     pub(crate) mouse: Option<MouseState>,
@@ -368,6 +370,7 @@ impl Editor {
             keymaps: KeyMaps::standard(options.mac),
             commands: crate::commands::builtin_commands(),
             force_update: false,
+            focused: false,
             op: OpState::default(),
             heights,
             mouse: None,
@@ -602,6 +605,67 @@ impl Editor {
         let f: Rc<MarkerClearedHandler> = Rc::new(f);
         self.shared.ls.borrow_mut().marker_cleared.on_rc(f)
     }
+    /// `on("inputRead", f)`: typed or pasted text was applied (delayed).
+    pub fn on_input_read(&self, f: impl Fn(&mut Cx, &InputChange) + 'static) -> ListenerId {
+        let f: Rc<InputReadHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().input_read.on_rc(f)
+    }
+    /// `on("electricInput", f)`: an electric character reindented line `n`
+    /// (delayed).
+    pub fn on_electric_input(&self, f: impl Fn(&mut Cx, i64) + 'static) -> ListenerId {
+        let f: Rc<LineHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().electric_input.on_rc(f)
+    }
+    /// `on("focus", f)` (immediate).
+    pub fn on_focus(&self, f: impl Fn(&mut Cx) + 'static) -> ListenerId {
+        let f: Rc<EditorHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().focus.on_rc(f)
+    }
+    /// `on("blur", f)` (immediate).
+    pub fn on_blur(&self, f: impl Fn(&mut Cx) + 'static) -> ListenerId {
+        let f: Rc<EditorHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().blur.on_rc(f)
+    }
+    /// `state.focused`.
+    pub fn has_focus(&self) -> bool {
+        self.focused
+    }
+    /// `onFocus`/`onBlur`: the host's window gained or lost focus. `focus`/`blur`
+    /// handlers run immediately, only when the state changes (a `"nocursor"`
+    /// read-only editor is not focused).
+    pub fn set_focused(&mut self, focused: bool) {
+        if focused == self.focused {
+            return;
+        }
+        self.focused = focused;
+        let snap = {
+            let ls = self.shared.ls.borrow();
+            if focused {
+                ls.focus.snapshot()
+            } else {
+                ls.blur.snapshot()
+            }
+        };
+        for e in snap.iter() {
+            (e.f)(&mut Cx {
+                editor: self,
+                others: &mut NoEditors,
+            });
+        }
+    }
+    /// The host's `setTimeout(fireOrphanDelayed, 0)` for an editor on its own:
+    /// deliver the work parked on this editor (it was due first), then the
+    /// callbacks queued outside any operation, then anything they parked. Hosts
+    /// with several editors use [`crate::EditorSet`].
+    pub fn fire_orphan_delayed(&mut self) {
+        self.flush_parked();
+        cm_core::operation_group::fire_orphan_delayed(&mut WithSelf {
+            me: self,
+            rest: &mut NoEditors,
+        });
+        self.flush_parked();
+    }
+
     /// `on("keyHandled", f)`: a key binding handled a key, with its name (delayed).
     pub fn on_key_handled(&self, f: impl Fn(&mut Cx, &str) + 'static) -> ListenerId {
         let f: Rc<NameHandler> = Rc::new(f);
@@ -1699,7 +1763,22 @@ impl Editor {
                     }
                 }
             };
-            self.doc.make_change_lines(from, to, text, Some(&origin));
+            self.doc
+                .make_change_lines(from, to, text.clone(), Some(&origin));
+            // `signalLater(cm, "inputRead", cm, changeEvent)`
+            let snap = self.shared.ls.borrow().input_read.snapshot();
+            if !snap.is_empty() {
+                let ev = Rc::new(InputChange {
+                    from,
+                    to,
+                    text,
+                    origin,
+                });
+                for e in snap.iter() {
+                    let (f, ev) = (e.f.clone(), ev.clone());
+                    self.shared.later(move |cx| f(cx, &ev));
+                }
+            }
         }
         if !inserted.is_empty() && !paste {
             self.trigger_electric(inserted);
@@ -1721,15 +1800,24 @@ impl Editor {
                 continue;
             }
             let mode = self.get_mode_at(range.head);
+            let mut indented = false;
             if let Some(ec) = mode.electric_chars() {
                 if ec.chars().any(|c| inserted.contains(c)) {
-                    self.indent_line_raw(range.head.line, Indent::Smart, false);
+                    indented = self.indent_line_raw(range.head.line, Indent::Smart, false);
                 }
             } else {
                 let line = self.line_text(range.head.line);
                 let upto = &line[..(range.head.ch.max(0) as usize).min(line.len())];
                 if mode.electric_input(upto) == Some(true) {
-                    self.indent_line_raw(range.head.line, Indent::Smart, false);
+                    indented = self.indent_line_raw(range.head.line, Indent::Smart, false);
+                }
+            }
+            if indented {
+                // `signalLater(cm, "electricInput", cm, range.head.line)`
+                let snap = self.shared.ls.borrow().electric_input.snapshot();
+                for e in snap.iter() {
+                    let (f, line) = (e.f.clone(), range.head.line);
+                    self.shared.later(move |cx| f(cx, line));
                 }
             }
         }

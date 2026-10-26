@@ -108,9 +108,11 @@ impl EditorSet {
         }
     }
 
-    /// The host's `setTimeout(fireOrphanDelayed, 0)`: deliver the orphan queue with
-    /// the set's editors reachable, then any parked work.
+    /// The host's `setTimeout(fireOrphanDelayed, 0)`: deliver parked work (it was
+    /// due first), then the orphan queue with the set's editors reachable, then
+    /// anything that parked.
     pub fn fire_orphan_delayed(&mut self) {
+        self.flush_parked();
         fire_orphan_delayed(self);
         self.flush_parked();
     }

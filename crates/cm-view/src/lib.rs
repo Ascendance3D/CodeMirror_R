@@ -32,7 +32,7 @@ pub mod window;
 
 pub use editor::{CoordSys, Editor, EditorOptions, Indent};
 pub use editor_set::EditorSet;
-pub use events::{Cx, EditorEvents, EditorListeners};
+pub use events::{Cx, EditorEvents, EditorListeners, InputChange};
 pub use keymap::KeyEvent;
 pub use measure::Metrics;
 pub use mouse::MouseEvent;

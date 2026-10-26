@@ -80,6 +80,18 @@ pub type ViewportHandler = dyn Fn(&mut Cx<'_>, i64, i64);
 pub type MarkerHandler = dyn Fn(&mut Cx<'_>, &TextMarker);
 pub type MarkerClearedHandler = dyn Fn(&mut Cx<'_>, &TextMarker, Option<i64>, Option<i64>);
 pub type NameHandler = dyn Fn(&mut Cx<'_>, &str);
+pub type LineHandler = dyn Fn(&mut Cx<'_>, i64);
+pub type InputReadHandler = dyn Fn(&mut Cx<'_>, &InputChange);
+
+/// The `inputRead` payload: the change typed or pasted text asked for (before
+/// `beforeChange` handlers saw it).
+#[derive(Clone, Debug, PartialEq)]
+pub struct InputChange {
+    pub from: cm_core::Pos,
+    pub to: cm_core::Pos,
+    pub text: Vec<String>,
+    pub origin: String,
+}
 pub type BeforeChangeHandler = dyn Fn(&Doc, EditorId, &mut BeforeChange);
 pub type BeforeSelHandler = dyn Fn(&Doc, EditorId, &mut BeforeSelectionChange);
 
@@ -104,6 +116,13 @@ pub struct EditorListeners {
     pub marker_cleared: Listeners<MarkerClearedHandler>,
     /// Delayed: a key binding handled a key (the binding's name).
     pub key_handled: Listeners<NameHandler>,
+    /// Delayed: typed or pasted text was applied.
+    pub input_read: Listeners<InputReadHandler>,
+    /// Delayed: an electric character reindented this line.
+    pub electric_input: Listeners<LineHandler>,
+    /// Immediate: the editor gained or lost focus.
+    pub focus: Listeners<EditorHandler>,
+    pub blur: Listeners<EditorHandler>,
 }
 
 impl EditorListeners {
@@ -119,6 +138,10 @@ impl EditorListeners {
             || self.marker_added.off(id)
             || self.marker_cleared.off(id)
             || self.key_handled.off(id)
+            || self.input_read.off(id)
+            || self.electric_input.off(id)
+            || self.focus.off(id)
+            || self.blur.off(id)
     }
 }
 

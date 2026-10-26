@@ -18,17 +18,8 @@ use cm_core::{Doc, MarkOptions, NoEditors, Pos, SelRange};
 use cm_modes::Spec;
 use cm_view::events::{BeforeChangeHandler, ChangeHandler, EditorHandler};
 use cm_view::{Editor, EditorOptions, Metrics};
+use common::events::watch;
 use common::*;
-
-type Log = Rc<RefCell<Vec<String>>>;
-
-fn push(l: &Log, s: impl Into<String>) {
-    l.borrow_mut().push(s.into());
-}
-
-fn take(l: &Log) -> Vec<String> {
-    std::mem::take(&mut *l.borrow_mut())
-}
 
 fn lines(n: usize) -> String {
     (0..n)
@@ -39,10 +30,6 @@ fn lines(n: usize) -> String {
 
 fn ps(p: Pos) -> String {
     format!("{}:{}", p.line, p.ch)
-}
-
-fn opt(v: Option<i64>) -> String {
-    v.map_or("null".into(), |v| v.to_string())
 }
 
 /// `CodeMirror(document.body, {value})` on the recording page: default options,
@@ -60,66 +47,6 @@ fn editor(value: &str) -> Editor {
 
 fn rr(cm: &mut Editor, text: &str, at: Pos) {
     cm.run_op(|cm| cm.doc.replace_range(text, at, None, None));
-}
-
-/// The recording's `watch(cm, tag, log, which)`.
-fn watch(cm: &Editor, tag: &str, log: &Log, which: &[&str]) {
-    for &t in which {
-        let (l, tag) = (log.clone(), tag.to_string());
-        match t {
-            "beforeChange" => {
-                cm.on_before_change(move |_, _, c| {
-                    push(
-                        &l,
-                        format!("{tag}:cm.beforeChange({},{:?})", ps(c.from), c.text),
-                    )
-                });
-            }
-            "beforeSelectionChange" => {
-                cm.on_before_selection_change(move |_, _, _| {
-                    push(&l, format!("{tag}:cm.beforeSelectionChange"))
-                });
-            }
-            "change" => {
-                cm.on_change(move |_, c| {
-                    push(&l, format!("{tag}:cm.change({},{:?})", ps(c.from), c.text))
-                });
-            }
-            "changes" => {
-                cm.on_changes(move |_, cs| push(&l, format!("{tag}:cm.changes({})", cs.len())));
-            }
-            "cursorActivity" => {
-                cm.on_cursor_activity(move |_| push(&l, format!("{tag}:cm.cursorActivity")));
-            }
-            "update" => {
-                cm.on_update(move |_| push(&l, format!("{tag}:cm.update")));
-            }
-            "viewportChange" => {
-                cm.on_viewport_change(move |_, a, b| {
-                    push(&l, format!("{tag}:cm.viewportChange({a},{b})"))
-                });
-            }
-            "markerCleared" => {
-                cm.on_marker_cleared(move |_, _, a, b| {
-                    push(&l, format!("{tag}:cm.markerCleared({},{})", opt(a), opt(b)))
-                });
-            }
-            "doc.beforeChange" => {
-                cm.doc.on_before_change(move |_, c| {
-                    push(&l, format!("{tag}:doc.beforeChange({})", ps(c.from)))
-                });
-            }
-            "doc.change" => {
-                cm.doc
-                    .on_change(move |_, c| push(&l, format!("{tag}:doc.change({})", ps(c.from))));
-            }
-            "doc.cursorActivity" => {
-                cm.doc
-                    .on_cursor_activity(move |_| push(&l, format!("{tag}:doc.cursorActivity")));
-            }
-            _ => unreachable!("{t}"),
-        }
-    }
 }
 
 /// s1: one `replaceRange` outside any operation. Immediate events first, then the
@@ -846,4 +773,33 @@ fn key_handled_is_delayed() {
     cm.on_cursor_activity(move |_| push(&l, "cursorActivity"));
     cm.key_down(&cm_view::KeyEvent::new("End"));
     assert_eq!(take(&log), ["keyHandled End", "cursorActivity"]);
+}
+
+/// Marker `hide`/`unhide` (`endOperation_finish`, mark_text.js:134-147): an edit that
+/// removes the last of a marker's text hides it at the end of the operation; the
+/// undo that brings it back unhides it. A marker that loses a line and gains one in
+/// the same operation is neither.
+#[test]
+fn marker_hide_and_unhide() {
+    let log: Log = Rc::default();
+    let mut cm = editor("abcdef\nghi");
+    let m = cm.run_op(|cm| {
+        cm.doc
+            .mark_text(p(0, 1), p(0, 3), MarkOptions::default())
+            .unwrap()
+            .text_marker()
+    });
+    let l = log.clone();
+    m.on_hide(move || push(&l, "hide"));
+    let l = log.clone();
+    m.on_unhide(move || push(&l, "unhide"));
+    let l = log.clone();
+    cm.on_changes(move |_, _| push(&l, "changes"));
+    cm.run_op(|cm| cm.doc.replace_range("X", p(0, 2), None, None));
+    assert_eq!(take(&log), ["changes"], "still has text");
+    cm.run_op(|cm| cm.doc.replace_range("", p(0, 0), Some(p(0, 5)), None));
+    assert_eq!(take(&log), ["hide", "changes"]);
+    cm.run_op(|cm| cm.doc.undo());
+    assert_eq!(take(&log), ["unhide", "changes"]);
+    assert!(m.find().is_some());
 }
