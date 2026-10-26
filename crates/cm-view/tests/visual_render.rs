@@ -1214,3 +1214,55 @@ fn golden_set_requires_exact_adapter_identity() {
             .is_empty()
     );
 }
+
+/// The vertical scrollbar (`.CodeMirror-vscrollbar`, z-index 6) is above the cursor
+/// layer (z-index 3): a cursor under the translucent thumb is seen through it. With
+/// a black cursor both stacking orders give black, so the cursor is red here.
+#[test]
+fn scrollbar_thumb_covers_cursor() {
+    let gpu = match gpu() {
+        Ok((g, _)) => g,
+        Err(e) => return cm_evidence::no_gpu(e),
+    };
+    let text: String = (0..60)
+        .map(|i| format!("{i:02} {}\n", "abcdefghij".repeat(20)))
+        .collect();
+    let mut s = Scene::new(gpu, &Case::new("thumb", &text, p(1, 80)));
+    let red = [1.0, 0.0, 0.0, 1.0];
+    s.renderer.theme.cursor = red;
+    // Cursor left edge at window x w - 5, inside the thumb's [w - 8, w - 2).
+    let left = s.editor.cursor_coords(p(1, 80), CoordSys::Div).left;
+    let target = s.w as f64 - 5.0;
+    s.editor
+        .scroll_to(Some(left + s.editor.gutter_width - target), None);
+    let c = s.editor.cursor_coords(p(1, 80), CoordSys::Div);
+    let x = s.wx(c.left);
+    assert!(
+        (x - target).abs() < 1e-6,
+        "cursor at window x {x}, wanted {target}"
+    );
+    let shown = s.frame(gpu, true);
+    let hidden = s.frame(gpu, false);
+    let (px, py) = (s.w - 5, s.wy(c.top + 2.0) as u32);
+    let thumb = s.renderer.theme.scrollbar;
+    // The thumb blended over the red cursor, in linear light (sRGB target).
+    let want: Vec<u8> = (0..3)
+        .map(|i| enc(thumb[3] as f64 * thumb[i] as f64 + (1.0 - thumb[3] as f64) * red[i] as f64))
+        .collect();
+    let got = shown.at(px, py);
+    let behind = hidden.at(px, py);
+    println!(
+        "cursor x {x:.3}; pixel ({px},{py}) shown {} hidden {} want {:?}",
+        hex(got),
+        hex(behind),
+        want
+    );
+    assert_ne!(got, behind, "the cursor is not drawn under the thumb");
+    for i in 0..3 {
+        assert!(
+            got[i].abs_diff(want[i]) <= CHANNEL_TOLERANCE,
+            "pixel {} is not the thumb over the cursor {want:?}",
+            hex(got)
+        );
+    }
+}

@@ -655,17 +655,20 @@ impl Renderer {
         }
         self.numbers = numbers_keep;
 
-        // Scrollbar thumb.
+        // Scrollbar thumb, above the text and the cursors
+        // (`.CodeMirror-vscrollbar { z-index: 6 }`).
+        let mut thumb: Option<(Rect, Rgba)> = None;
         let doc_h = editor.doc_height() as f32 + 2.0 * pad_top;
         if doc_h > h {
             let bar_h = (h * h / doc_h).max(20.0);
             let y = (st / (doc_h - h)) * (h - bar_h);
-            quads.push((full(w - 8.0, y, w - 2.0, y + bar_h), theme.scrollbar));
+            thumb = Some((full(w - 8.0, y, w - 2.0, y + bar_h), theme.scrollbar));
         }
 
         // Upload quads (NDC, linear color); the first `under` are drawn below the text.
         let under = (quads.len() * 6) as u32;
         quads.extend(cursors);
+        quads.extend(thumb);
         let mut verts: Vec<Vertex> = Vec::with_capacity(quads.len() * 6);
         for (r, c) in &quads {
             let (x0, y0, x1, y1) = (r.left as f32, r.top as f32, r.right as f32, r.bottom as f32);
