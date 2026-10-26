@@ -104,7 +104,8 @@ pub(crate) struct DocInner {
     pub change_listeners: Vec<ChangeHandler>,
     /// `cm.state.suppressEdits`: set while a key handler runs in a read-only editor.
     pub suppress_edits: bool,
-    /// Set by `setSelectionNoUndo` when it would call `ensureCursorVisible(doc.cm)`;
+    /// Set by `setSelectionNoUndo` and `replaceSelections` when they would call
+    /// `ensureCursorVisible(doc.cm)`;
     /// taken by the view ([`Doc::take_scroll_request`]).
     pub scroll_request: bool,
     /// `cm.display.shift` (see [`Doc::set_display_shift`]).
@@ -530,7 +531,8 @@ impl Doc {
     }
     /// Whether a selection change since the last call asked for the cursor to be
     /// scrolled into view (`setSelectionNoUndo`: `if (!(options && options.scroll ===
-    /// false) && doc.cm) ensureCursorVisible(doc.cm)`). Only with editor semantics.
+    /// false) && doc.cm) ensureCursorVisible(doc.cm)`; `replaceSelections` without a
+    /// replaced selection). Only with editor semantics.
     pub fn take_scroll_request(&self) -> bool {
         std::mem::take(&mut self.inner_mut().scroll_request)
     }
@@ -967,6 +969,10 @@ impl Doc {
             }
             if let Some(ns) = new_sel {
                 set_selection_replace_history(self, ns, None);
+            } else if self.inner().editor.is_some() {
+                // `else if (this.cm) ensureCursorVisible(this.cm)`, applied by the view
+                // like the request of `setSelectionNoUndo` (see `take_scroll_request`).
+                self.inner_mut().scroll_request = true;
             }
         })
     }
