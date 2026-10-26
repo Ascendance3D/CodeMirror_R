@@ -229,3 +229,66 @@ impl<'a> StringStream<'a> {
         self.line_oracle.and_then(|o| o.base_token(self.pos))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::text::to_u16;
+    use std::cell::RefCell;
+
+    /// `hideFirstChars(n, inner)` (`src/util/StringStream.js:75`; used by the pug and
+    /// soy modes, not ported): `lineStart` is raised by `n` while `inner` runs, which
+    /// moves `sol()`, `column()` and `indentation()`, then restored. Values confirmed
+    /// against the JS in node.
+    #[test]
+    fn hide_first_chars_matches_cm5() {
+        let s = to_u16("  \tfoo bar");
+        let mut st = StringStream::new(&s, Some(4), None);
+        st.pos = 3;
+        st.start = 3;
+        assert!(!st.sol());
+        assert_eq!((st.column(), st.indentation()), (4, 4));
+        let r = st.hide_first_chars(3, |st| {
+            let outer = (st.sol(), st.column(), st.indentation(), st.line_start);
+            let nested =
+                st.hide_first_chars(1, |st| (st.line_start, st.column(), st.indentation()));
+            (outer, nested)
+        });
+        assert_eq!(r, ((true, 0, 0, 3), (4, -1, -1)));
+        assert!(!st.sol());
+        assert_eq!((st.column(), st.indentation(), st.line_start), (4, 4, 0));
+
+        st.pos = 7;
+        st.start = 7;
+        let r = st.hide_first_chars(3, |st| (st.sol(), st.column(), st.indentation()));
+        assert_eq!(r, (false, 4, 0));
+        assert_eq!(st.line_start, 0);
+    }
+
+    struct Recorder(RefCell<Vec<usize>>);
+    impl LineOracle for Recorder {
+        fn look_ahead(&self, _n: i64) -> Option<Text> {
+            None
+        }
+        fn base_token(&self, pos: usize) -> Option<(Option<String>, i64)> {
+            self.0.borrow_mut().push(pos);
+            Some((Some("t".into()), 3 - pos as i64))
+        }
+    }
+
+    /// `baseToken()` (`src/util/StringStream.js:84`): `oracle && oracle.baseToken(this.pos)`.
+    /// Without an oracle the JS yields a falsy value (`None`); with one, the oracle
+    /// gets the stream's current `pos` and its result is returned as is.
+    #[test]
+    fn base_token_forwards_pos_to_oracle() {
+        let s = to_u16("abc");
+        let st = StringStream::new(&s, Some(4), None);
+        assert_eq!(st.base_token(), None);
+
+        let rec = Recorder(RefCell::new(Vec::new()));
+        let mut st = StringStream::new(&s, Some(4), Some(&rec));
+        st.pos = 2;
+        assert_eq!(st.base_token(), Some((Some("t".to_string()), 1)));
+        assert_eq!(*rec.0.borrow(), vec![2]);
+    }
+}

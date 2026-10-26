@@ -235,3 +235,46 @@ impl Selection {
         self.ranges[self.primary]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn r(a: (i64, i64), h: (i64, i64)) -> Range {
+        Range::new(PosRef::lc(a.0, a.1), PosRef::lc(h.0, h.1))
+    }
+    fn p(line: i64, ch: i64) -> Pos {
+        Pos::new(line, ch)
+    }
+
+    /// `Selection.contains(pos, end)` (`src/model/selection.js:40`): the index of the
+    /// first range with `end >= from && pos <= to` (both ends inclusive, `end`
+    /// defaulting to `pos`), else -1. Expected values confirmed against the JS in node.
+    #[test]
+    fn contains_matches_cm5() {
+        let sel = new_sel(
+            vec![r((0, 1), (0, 3)), r((1, 0), (1, 0)), r((2, 5), (2, 2))],
+            0,
+        );
+        let one = |a: Pos| sel.contains(&a, None);
+        assert_eq!(one(p(0, 2)), 0);
+        assert_eq!(one(p(0, 1)), 0);
+        assert_eq!(one(p(0, 3)), 0);
+        assert_eq!(one(p(0, 0)), -1);
+        assert_eq!(one(p(0, 4)), -1);
+        assert_eq!(one(p(1, 0)), 1);
+        assert_eq!(one(p(1, 1)), -1);
+        // An inverted range (anchor after head) is tested by from/to.
+        assert_eq!(one(p(2, 4)), 2);
+        assert_eq!(one(p(2, 2)), 2);
+        assert_eq!(one(p(3, 0)), -1);
+        let two = |a: Pos, b: Pos| sel.contains(&a, Some(&b));
+        assert_eq!(two(p(0, 4), p(1, 0)), 1);
+        // The first overlapping range wins.
+        assert_eq!(two(p(0, 0), p(2, 3)), 0);
+        assert_eq!(two(p(0, 4), p(0, 9)), -1);
+        assert_eq!(two(p(1, 1), p(2, 1)), -1);
+        assert_eq!(two(p(1, 1), p(2, 2)), 2);
+        assert_eq!(two(p(0, 0), p(0, 1)), 0);
+    }
+}
