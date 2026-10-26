@@ -44,6 +44,8 @@ pub enum CmError {
     CollapsedOverlap,
     /// A JS `TypeError` the original raises on a reachable path (message as in V8).
     TypeError(String),
+    /// `attachDoc`: "This document is already in use." (the document has an editor).
+    DocInUse,
 }
 
 impl std::fmt::Display for CmError {
@@ -57,6 +59,7 @@ impl std::fmt::Display for CmError {
                 )
             }
             CmError::TypeError(m) => write!(f, "{m}"),
+            CmError::DocInUse => write!(f, "This document is already in use."),
         }
     }
 }

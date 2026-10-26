@@ -141,3 +141,58 @@ fn event_state_stays_on_its_thread() {
         assert!(!other, "another thread has its own (empty) group state");
     });
 }
+
+/// A document has at most one editor: a second editor over it fails with
+/// `DocInUse` ("This document is already in use.") and the first keeps its
+/// events.
+#[test]
+fn a_document_in_use_cannot_get_a_second_editor() {
+    let doc = Doc::new(&text());
+    let mut a = editor_over(doc.clone());
+    let log = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    let l = log.clone();
+    a.on_change(move |_, _| l.borrow_mut().push("A:change".into()));
+    let r = Editor::try_with_doc(
+        doc.clone(),
+        Spec::Null,
+        EditorOptions::default(),
+        Metrics::oracle(),
+        Rc::new(Registry::with_all_modes()),
+    );
+    assert!(matches!(r, Err(cm_core::CmError::DocInUse)));
+    assert_eq!(doc.editor_id(), Some(a.id));
+    a.run_op(|cm| cm.doc.replace_range("X", p(0, 0), None, None));
+    assert_eq!(*log.borrow(), ["A:change"]);
+}
+
+/// D4 on the parked path: a panic in a parked callback skips the rest of that
+/// operation's callbacks, but the parked operation end (display update, `changes`,
+/// `update`) still runs before the panic reaches the caller.
+#[test]
+fn panic_in_a_parked_callback_still_ends_the_operation() {
+    let doc = Doc::new(&text());
+    let mut cm = editor_over(doc.clone());
+    let log = Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+    cm.on_change(|_, _| std::panic::panic_any("boom"));
+    let l = log.clone();
+    cm.on_change(move |_, _| l.borrow_mut().push("change h2".into()));
+    let l = log.clone();
+    cm.on_changes(move |_, _| l.borrow_mut().push("changes".into()));
+    let l = log.clone();
+    cm.on_update(move |_| l.borrow_mut().push("update".into()));
+    doc.replace_range("X", p(150, 0), None, None);
+    doc.set_cursor(p(150, 0), None);
+    assert_eq!(
+        cm.parked_len(),
+        4,
+        "two change calls and an end; the second end"
+    );
+    let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| cm.flush_parked()));
+    assert_eq!(r.unwrap_err().downcast_ref::<&str>(), Some(&"boom"));
+    assert_eq!(cm.parked_len(), 0);
+    assert_eq!(*log.borrow(), ["changes", "update"]);
+    assert_eq!(
+        cm.display.scroll_top, 5242.0,
+        "the second parked end ran too"
+    );
+}

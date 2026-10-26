@@ -253,11 +253,11 @@ fn s5a_remove_add_sync_and_later() {
         let (l, ev, h2, h3) = (log.clone(), ev.clone(), h2.clone(), h3.clone());
         cm.on_before_change(move |_, _, _| {
             push(&l, "bc:h1 off(h2) on(h3)");
-            ev.listeners().before_change.off_fn(&h2);
-            ev.listeners().before_change.on_rc(h3.clone());
+            ev.with_listeners(|ls| ls.before_change.off_fn(&h2));
+            ev.with_listeners(|ls| ls.before_change.on_rc(h3.clone()));
         });
     }
-    ev.listeners().before_change.on_rc(h2);
+    ev.with_listeners(|ls| ls.before_change.on_rc(h2));
     let l = log.clone();
     let c2: Rc<ChangeHandler> = Rc::new(move |_, _| push(&l, "ch:c2"));
     let l = log.clone();
@@ -267,11 +267,11 @@ fn s5a_remove_add_sync_and_later() {
         cm.on_change(move |cx, _| {
             push(&l, "ch:c1 off(c2) on(c3)");
             let ev = cx.events();
-            ev.listeners().change.off_fn(&c2);
-            ev.listeners().change.on_rc(c3.clone());
+            ev.with_listeners(|ls| ls.change.off_fn(&c2));
+            ev.with_listeners(|ls| ls.change.on_rc(c3.clone()));
         });
     }
-    ev.listeners().change.on_rc(c2);
+    ev.with_listeners(|ls| ls.change.on_rc(c2));
     rr(&mut cm, "1", p(0, 0));
     push(&log, "=== second change");
     rr(&mut cm, "2", p(0, 0));
@@ -313,18 +313,18 @@ fn s5b_remove_after_queue() {
     let ca2: Rc<EditorHandler> =
         Rc::new(move |_| push(&l, "ca2 (added in op after selection change)"));
     let ev = cm.events();
-    ev.listeners().cursor_activity.on_rc(ca1.clone());
+    ev.with_listeners(|ls| ls.cursor_activity.on_rc(ca1.clone()));
     let l = log.clone();
     cm.run_op(|cm| {
         cm.doc.set_cursor(p(1, 1), None);
-        ev.listeners().cursor_activity.off_fn(&ca1);
-        ev.listeners().cursor_activity.on_rc(ca2.clone());
+        ev.with_listeners(|ls| ls.cursor_activity.off_fn(&ca1));
+        ev.with_listeners(|ls| ls.cursor_activity.on_rc(ca2.clone()));
         push(&l, "body: off(ca1) on(ca2)");
     });
     push(&log, "=== op with off(ca2) before any selection change");
     cm.run_op(|cm| {
-        ev.listeners().cursor_activity.off_fn(&ca2);
-        ev.listeners().cursor_activity.on_rc(ca2.clone());
+        ev.with_listeners(|ls| ls.cursor_activity.off_fn(&ca2));
+        ev.with_listeners(|ls| ls.cursor_activity.on_rc(ca2.clone()));
         cm.doc.set_cursor(p(2, 1), None);
     });
     assert_eq!(
@@ -351,15 +351,14 @@ fn s5c_duplicate_function() {
     let dup_change: Rc<ChangeHandler> = Rc::new(move |_, _| push(&l, "dup:change"));
     let l = log.clone();
     let dup_ca: Rc<EditorHandler> = Rc::new(move |_| push(&l, "dup:cursorActivity"));
-    {
-        let mut ls = ev.listeners();
+    ev.with_listeners(|ls| {
         ls.change.on_rc(dup_change.clone());
         ls.change.on_rc(dup_change.clone());
         ls.cursor_activity.on_rc(dup_ca.clone());
         ls.cursor_activity.on_rc(dup_ca);
-    }
+    });
     rr(&mut cm, "q", p(0, 0));
-    ev.listeners().change.off_fn(&dup_change);
+    ev.with_listeners(|ls| ls.change.off_fn(&dup_change));
     push(&log, "=== after one off(change, dup)");
     rr(&mut cm, "r", p(0, 0));
     assert_eq!(
@@ -802,4 +801,41 @@ fn marker_hide_and_unhide() {
     cm.run_op(|cm| cm.doc.undo());
     assert_eq!(take(&log), ["unhide", "changes"]);
     assert!(m.find().is_some());
+}
+
+/// `update` follows `updateDisplayIfNeeded`'s bail-out: an edit or a styled marker
+/// outside the rendered lines dirties nothing (`regChange`/`regLineChange`), and an
+/// edit before them only shifts them, so no `update` is reported; an edit inside
+/// them is.
+#[test]
+fn update_only_for_changes_in_the_rendered_range() {
+    let log: Log = Rc::default();
+    let mut cm = editor(&lines(2000));
+    watch(&cm, "A", &log, &["update", "viewportChange"]);
+    let (from, to) = (cm.display.view_from, cm.display.view_to);
+    assert!(to < 1800, "({from},{to})");
+    rr(&mut cm, "X", p(1900, 0));
+    cm.run_op(|cm| {
+        cm.doc
+            .mark_text(
+                p(1800, 0),
+                p(1801, 0),
+                MarkOptions {
+                    class_name: Some("x".into()),
+                    ..Default::default()
+                },
+            )
+            .unwrap()
+    });
+    assert!(take(&log).is_empty(), "outside the rendered range");
+    cm.run_op(|cm| cm.scroll_to(None, Some(20_000.0)));
+    take(&log);
+    let (from, _) = (cm.display.view_from, cm.display.view_to);
+    assert!(from > 10, "scrolled ({from})");
+    // A one-line edit above the rendered lines shifts nothing; a line inserted
+    // above shifts the range, which still covers what is visible.
+    rr(&mut cm, "Y", p(0, 0));
+    assert!(take(&log).is_empty(), "before the rendered range");
+    rr(&mut cm, "Z", p(from, 0));
+    assert_eq!(take(&log).first().map(String::as_str), Some("A:cm.update"));
 }

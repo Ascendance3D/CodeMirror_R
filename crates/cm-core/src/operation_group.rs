@@ -172,15 +172,15 @@ pub trait EditorSink {
     /// `attachLine` gave an empty marker a line (`op.maybeUnhiddenMarkers`).
     fn marker_maybe_unhidden(&self, _marker: &TextMarker) {}
     /// `TextMarker.clear` on a document with this editor: `markerCleared(min, max)`
-    /// (both `None` for a marker that is not collapsed); `redraw` when lines of the
-    /// marker must be redrawn.
+    /// (both `None` for a marker that is not collapsed); `redraw` lists the line
+    /// ranges `from..to` to redraw (`regLineChange`/`regChange`).
     fn marker_cleared(
         &self,
         _doc: &Doc,
         _marker: &TextMarker,
         _min: Option<i64>,
         _max: Option<i64>,
-        _redraw: bool,
+        _redraw: &[(i64, i64)],
     ) {
     }
 }

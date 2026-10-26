@@ -45,6 +45,7 @@ Recorded baselines (strict, `CM_EVIDENCE` unset, GPU adapter of the reviewed gol
 | `eca4e29` | 387 | 0 | 0 | 0 |
 | the commit titled "README: test baseline of the corrected P0 head" | 392 | 0 | 0 | 0 |
 | the commit titled "P1.6: native host integration and event QA" | 454 | 0 | 0 | 0 |
+| the commit titled "P1: fixes from the independent review" | 457 | 0 | 0 | 0 |
 
 ## Events
 

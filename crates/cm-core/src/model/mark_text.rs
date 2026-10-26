@@ -412,9 +412,15 @@ impl TextMarker {
         }
         let sink = doc.and_then(|d| d.sink());
         let collapsed = self.data().collapsed;
-        let had_lines = !self.data().lines.is_empty();
         let (mut min, mut max) = (None, None);
+        // `regLineChange(cm, lineNo(line), "text")` for each line of a marker that is
+        // not collapsed.
+        let mut redraw = Vec::new();
         for line in self.live_lines() {
+            if sink.is_some() && !collapsed {
+                let n = self.line_no(&line);
+                redraw.push((n, n + 1));
+            }
             let spans = line.borrow().marked_spans.clone();
             if sink.is_some()
                 && collapsed
@@ -451,9 +457,11 @@ impl TextMarker {
         }
         // `if (cm) signalLater(cm, "markerCleared", cm, this, min, max)`
         if let (Some(s), Some(d)) = (&sink, &doc) {
-            // Non-collapsed: `regLineChange` for each line; collapsed: `regChange`.
-            let redraw = if collapsed { min.is_some() } else { had_lines };
-            s.marker_cleared(d, self, min, max, redraw);
+            // Collapsed: `if (min != null) regChange(cm, min, max + 1)`.
+            if let Some(a) = min {
+                redraw.push((a, max.unwrap_or(a) + 1));
+            }
+            s.marker_cleared(d, self, min, max, &redraw);
         }
     }
 }

@@ -535,12 +535,17 @@ impl Doc {
 
     /// Make the model behave as if the document were attached to an editor, with no
     /// view: operations, editor options, no editor events.
+    ///
+    /// # Panics
+    /// When the document already has an editor ([`CmError::DocInUse`]).
     pub fn attach_editor_semantics(&self, sem: EditorSemantics) {
-        self.attach_editor(Rc::new(HeadlessSink {
+        if let Err(e) = self.attach_editor(Rc::new(HeadlessSink {
             id: EditorId::next(),
             sem,
             op: Cell::new(None),
-        }));
+        })) {
+            panic!("{e}");
+        }
     }
     /// `attachDoc(cm, doc)`: attach the document to an editor (`doc.cm = cm`).
     ///
@@ -550,10 +555,21 @@ impl Doc {
     /// delivered when it returns. The editor's own events and its display update
     /// cannot run without the editor, so they are parked on it and delivered at
     /// its next entry (any editor method that runs an operation), or when the host
-    /// flushes it; nothing is dropped while the editor exists.
-    pub fn attach_editor(&self, sink: Rc<dyn EditorSink>) {
+    /// flushes it; nothing is dropped while the editor exists. Parked work runs in
+    /// the order it was parked, but it runs after the document changes that came
+    /// after it: a handler of parked work sees the document as it is when the work
+    /// is delivered, and an editor call it makes delivers the rest of the parked
+    /// work first.
+    ///
+    /// A document has at most one editor: attaching a second one fails with
+    /// [`CmError::DocInUse`] (`attachDoc` throws "This document is already in use.")
+    /// and leaves the first attached.
+    pub fn attach_editor(&self, sink: Rc<dyn EditorSink>) -> Result<(), CmError> {
         let undo_depth = sink.semantics().undo_depth;
         let mut i = self.inner_mut();
+        if i.sink.is_some() {
+            return Err(CmError::DocInUse);
+        }
         i.sink = Some(sink);
         // A request belongs to the editor it was made for (see `detach_editor`); a
         // new editor starts with none, even when the previous one was dropped
@@ -562,6 +578,7 @@ impl Doc {
         drop(i);
         // The `undoDepth` option handler runs when the editor is created.
         self.set_undo_depth(undo_depth);
+        Ok(())
     }
     /// `detachDoc`: the document has no editor afterwards.
     pub fn detach_editor(&self) {

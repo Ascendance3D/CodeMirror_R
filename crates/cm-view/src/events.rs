@@ -20,7 +20,7 @@
 //!   by function identity through [`EditorEvents::listeners`] (`off_fn`).
 
 use std::any::Any;
-use std::cell::{Cell, RefCell, RefMut};
+use std::cell::{Cell, RefCell};
 use std::ops::{Deref, DerefMut};
 use std::rc::{Rc, Weak};
 
@@ -29,7 +29,9 @@ use cm_core::operation_group::{
     BeforeChangeFn, BeforeSelectionChangeFn, Delayed, EdCall, EditorId, EditorSink, Editors,
     diagnostic, signal_later,
 };
-use cm_core::{BeforeChange, BeforeSelectionChange, ChangeObj, Doc, EditorSemantics, TextMarker};
+use cm_core::{
+    BeforeChange, BeforeSelectionChange, ChangeObj, Doc, EditorSemantics, MarkerFind, TextMarker,
+};
 
 use crate::editor::{Editor, HeightCache};
 use crate::highlight::{self, HighlightState};
@@ -161,8 +163,9 @@ pub(crate) struct OpRecord {
     /// `op.cursorActivityHandlers` and `op.cursorActivityCalled`.
     pub cursor_activity: Vec<Entry<EditorHandler>>,
     pub ca_called: usize,
-    /// `regChange`/`regLineChange` was called: the display must redraw.
-    pub view_changed: bool,
+    /// `regChange(from, to, lendiff)` / `regLineChange` calls (line ranges
+    /// `from..to`); the display phase checks them against the rendered range.
+    pub regs: Vec<(i64, i64, i64)>,
     pub selection_changed: bool,
     pub maybe_hidden: Vec<TextMarker>,
     pub maybe_unhidden: Vec<TextMarker>,
@@ -176,7 +179,7 @@ impl OpRecord {
             change_objs: Vec::new(),
             cursor_activity: Vec::new(),
             ca_called: 0,
-            view_changed: false,
+            regs: Vec::new(),
             selection_changed: false,
             maybe_hidden: Vec::new(),
             maybe_unhidden: Vec::new(),
@@ -422,8 +425,11 @@ impl EditorSink for EditorShared {
             let ls = self.ls.borrow();
             (ls.change.snapshot(), !ls.changes.is_empty())
         };
+        // `regChange(cm, from.line, to.line + 1, lendiff)` (`regLineChange` for a
+        // one-line edit is the same range with no length change).
+        let lendiff = c.text.len() as i64 - (c.to.line - c.from.line + 1);
         self.with_op(|op| {
-            op.view_changed = true;
+            op.regs.push((c.from.line, c.to.line + 1, lendiff));
             if has_changes {
                 op.change_objs.push(c.clone());
             }
@@ -459,7 +465,14 @@ impl EditorSink for EditorShared {
             || o.css.is_some()
             || o.title.is_some();
         if redraw {
-            self.with_op(|op| op.view_changed = true);
+            let lines = match marker.find() {
+                Some(MarkerFind::Range { from, to }) => Some((from.line, to.unwrap_or(from).line)),
+                Some(MarkerFind::Point(p)) => Some((p.line, p.line)),
+                None => None,
+            };
+            if let Some((a, b)) = lines {
+                self.with_op(|op| op.regs.push((a, b + 1, 0)));
+            }
         }
         let snap = self.ls.borrow().marker_added.snapshot();
         for e in snap.iter() {
@@ -483,11 +496,9 @@ impl EditorSink for EditorShared {
         marker: &TextMarker,
         min: Option<i64>,
         max: Option<i64>,
-        redraw: bool,
+        redraw: &[(i64, i64)],
     ) {
-        if redraw {
-            self.with_op(|op| op.view_changed = true);
-        }
+        self.with_op(|op| op.regs.extend(redraw.iter().map(|&(a, b)| (a, b, 0))));
         let snap = self.ls.borrow().marker_cleared.snapshot();
         for e in snap.iter() {
             let (f, m) = (e.f.clone(), marker.clone());
@@ -505,10 +516,11 @@ impl EditorEvents {
     pub fn id(&self) -> EditorId {
         self.0.id
     }
-    /// The listener tables, for `on_rc`/`off_fn` (function identity). Do not hold
-    /// the borrow while editor code runs.
-    pub fn listeners(&self) -> RefMut<'_, EditorListeners> {
-        self.0.ls.borrow_mut()
+    /// Run `f` on the listener tables, for `on_rc`/`off_fn` (function identity).
+    /// The tables are borrowed while `f` runs: `f` must not register or remove
+    /// this editor's handlers another way (that panics).
+    pub fn with_listeners<R>(&self, f: impl FnOnce(&mut EditorListeners) -> R) -> R {
+        f(&mut self.0.ls.borrow_mut())
     }
     /// Remove the handler registered as `id`, whatever its event.
     pub fn off(&self, id: ListenerId) -> bool {

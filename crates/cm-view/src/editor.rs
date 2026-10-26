@@ -32,8 +32,8 @@ use cm_core::pos::{Sticky, cmp};
 use cm_core::text::{Text, from_u16, is_js_space, split_lines_auto, to_u16};
 use cm_core::util::misc::count_column;
 use cm_core::{
-    Doc, DocOptions, EditorId, EditorSemantics, EditorSink, Editors, NoEditors, Pos, SelOptions,
-    SelRange,
+    CmError, Doc, DocOptions, EditorId, EditorSemantics, EditorSink, Editors, NoEditors, Pos,
+    SelOptions, SelRange,
 };
 use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_mode};
 
@@ -309,6 +309,10 @@ impl Editor {
     }
 
     /// An editor over an existing document (`CodeMirror(place, {value: doc})`).
+    ///
+    /// # Panics
+    /// When the document already has an editor ("This document is already in
+    /// use."); [`Editor::try_with_doc`] returns the error instead.
     pub fn with_doc(
         doc: Doc,
         mode: Spec,
@@ -316,6 +320,19 @@ impl Editor {
         metrics: Metrics,
         registry: Rc<Registry>,
     ) -> Editor {
+        Editor::try_with_doc(doc, mode, options, metrics, registry)
+            .unwrap_or_else(|e| panic!("{e}"))
+    }
+
+    /// [`Editor::with_doc`], or [`CmError::DocInUse`] when the document already has
+    /// an editor (which keeps it).
+    pub fn try_with_doc(
+        doc: Doc,
+        mode: Spec,
+        options: EditorOptions,
+        metrics: Metrics,
+        registry: Rc<Registry>,
+    ) -> Result<Editor, CmError> {
         let mode_opts = ModeOptions {
             indent_unit: options.indent_unit,
             tab_size: options.tab_size,
@@ -340,7 +357,7 @@ impl Editor {
             heights.clone(),
         );
         let id = shared.id;
-        doc.attach_editor(shared.clone());
+        doc.attach_editor(shared.clone())?;
         let mut ed = Editor {
             id,
             shared,
@@ -383,7 +400,7 @@ impl Editor {
         ed.render_view_styles();
         // The constructor's operation draws the display and reports its range.
         ed.display.reported_view = (ed.display.view_from, ed.display.view_to);
-        ed
+        Ok(ed)
     }
 
     // ------------------------------------------------------------------------------
@@ -506,27 +523,47 @@ impl Editor {
     }
 
     /// [`Editor::flush_parked`] with other editors reachable.
+    ///
+    /// Parked work keeps its order. A panic in a parked callback skips the
+    /// callbacks after it up to the operation end that follows (the rest of that
+    /// group's queue, as in `fireCallbacksForOps`), but every parked operation end
+    /// still runs; the first panic resumes when the parked work is done (D4).
     pub fn flush_parked_with(&mut self, rest: &mut dyn Editors) {
+        let mut panicked: Option<Box<dyn std::any::Any + Send>> = None;
         loop {
             let items = std::mem::take(&mut *self.shared.parked.borrow_mut());
             if items.is_empty() {
                 break;
             }
+            let mut skipping = false;
             for item in items {
-                match item {
-                    Parked::Call(call) => call(&mut *self, &mut *rest),
-                    Parked::End(mut rec) => {
-                        self.end_operation_display(&mut rec);
-                        finish(
-                            &mut Cx {
-                                editor: self,
-                                others: rest,
-                            },
-                            *rec,
-                        );
+                let r = match item {
+                    Parked::Call(_) if skipping => continue,
+                    Parked::Call(call) => {
+                        catch_unwind(AssertUnwindSafe(|| call(&mut *self, &mut *rest)))
                     }
+                    Parked::End(mut rec) => {
+                        skipping = false;
+                        catch_unwind(AssertUnwindSafe(|| {
+                            self.end_operation_display(&mut rec);
+                            finish(
+                                &mut Cx {
+                                    editor: &mut *self,
+                                    others: &mut *rest,
+                                },
+                                *rec,
+                            );
+                        }))
+                    }
+                };
+                if let Err(p) = r {
+                    skipping = true;
+                    panicked.get_or_insert(p);
                 }
             }
+        }
+        if let Some(p) = panicked {
+            resume_unwind(p);
         }
     }
 
@@ -700,11 +737,25 @@ impl Editor {
             self.update_gutter();
         }
         let (vis_from, vis_to) = self.visible_lines();
+        // `regChange` against the rendered range as it was during the operation: a
+        // change before it shifts it, one after it leaves it alone, an overlapping
+        // one dirties it (view_tracking.js:21).
+        let (mut vf, mut vt) = (old_from, old_to);
+        let mut dirty = false;
+        for &(from, to, lendiff) in &rec.regs {
+            if from >= vt {
+            } else if to <= vf {
+                vf += lendiff;
+                vt += lendiff;
+            } else {
+                dirty = true;
+            }
+        }
         let redrawn = std::mem::take(&mut self.force_update)
-            || rec.view_changed
+            || dirty
             || self.gutter_width != old_gutter
-            || vis_from < old_from
-            || vis_to > old_to;
+            || vis_from < vf
+            || vis_to > vt;
         self.update_view();
         self.render_view_styles();
         if redrawn {
