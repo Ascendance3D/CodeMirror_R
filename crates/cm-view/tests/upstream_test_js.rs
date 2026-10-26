@@ -864,7 +864,7 @@ fn hidden_lines_auto_unfold() {
         match &m {
             Marker::Text(t) => t.on_clear(move |_| c.set(c.get() + 1)),
             Marker::Shared(_) => unreachable!(),
-        }
+        };
         m
     };
     let _r = fold(&cm);

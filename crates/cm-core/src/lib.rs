@@ -14,11 +14,13 @@
 //! the boundary; `*_utf16` variants exist where lossless round trips matter.
 
 pub mod clock;
+pub mod events;
 pub mod model;
 pub mod pos;
 pub mod text;
 pub mod util;
 
+pub use events::{ListenerId, Listeners};
 pub use model::changes::{BeforeChange, BeforeSelectionChange};
 pub use model::doc::{ChangeInfo, Doc, DocOptions, EditorSemantics, LinkedDocOptions};
 pub use model::history::{HistoryChangeData, HistoryData, HistoryEventData, HistorySize};

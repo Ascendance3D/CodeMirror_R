@@ -40,6 +40,7 @@ use super::spans::{
 };
 use super::tree::Tree;
 use crate::CmError;
+use crate::events::{ListenerId, Listeners};
 use crate::pos::{CH_END, Pos, PosRef};
 use crate::text::{Text, from_u16, join, split_by, split_lines_auto, to_u16};
 use crate::util::bidi::Direction;
@@ -77,8 +78,8 @@ pub(crate) struct Link {
     pub shared_hist: bool,
 }
 
-type BeforeChangeHandler = Rc<dyn Fn(&Doc, &mut BeforeChange)>;
-type BeforeSelHandler = Rc<dyn Fn(&Doc, &mut BeforeSelectionChange)>;
+pub(crate) type BeforeChangeHandler = dyn Fn(&Doc, &mut BeforeChange);
+pub(crate) type BeforeSelHandler = dyn Fn(&Doc, &mut BeforeSelectionChange);
 
 pub(crate) struct DocInner {
     pub id: u32,
@@ -98,8 +99,8 @@ pub(crate) struct DocInner {
     /// `op.markedSpans`: span arrays created by `addMarkedSpan` in the current
     /// operation, which later additions in the same operation mutate in place.
     pub op_span_arrays: Vec<super::spans::SpanArr>,
-    pub before_change: Vec<BeforeChangeHandler>,
-    pub before_selection_change: Vec<BeforeSelHandler>,
+    pub before_change: Listeners<BeforeChangeHandler>,
+    pub before_selection_change: Listeners<BeforeSelHandler>,
     /// Editor `change` listeners (view bookkeeping; see [`Doc::on_change`]).
     pub change_listeners: Vec<ChangeHandler>,
     /// `cm.state.suppressEdits`: set while a key handler runs in a read-only editor.
@@ -214,12 +215,12 @@ impl Doc {
             editor: None,
             cur_op: None,
             op_span_arrays: Vec::new(),
-            before_change: Vec::new(),
+            before_change: Listeners::default(),
             change_listeners: Vec::new(),
             suppress_edits: false,
             display_shift: false,
             scroll_requests: Vec::new(),
-            before_selection_change: Vec::new(),
+            before_selection_change: Listeners::default(),
         };
         let doc = Doc(Rc::new(RefCell::new(inner)));
         let text = match lines {
@@ -516,8 +517,14 @@ impl Doc {
         self.in_op(f)
     }
     /// `on("beforeChange", f)`.
-    pub fn on_before_change<F: Fn(&Doc, &mut BeforeChange) + 'static>(&self, f: F) {
-        self.inner_mut().before_change.push(Rc::new(f));
+    pub fn on_before_change<F: Fn(&Doc, &mut BeforeChange) + 'static>(&self, f: F) -> ListenerId {
+        self.inner_mut().before_change.on_rc(Rc::new(f))
+    }
+    /// Remove the document handler registered as `id`, whatever its event.
+    /// `false` when no document handler has that id.
+    pub fn off(&self, id: ListenerId) -> bool {
+        let mut i = self.inner_mut();
+        i.before_change.off(id) || i.before_selection_change.off(id)
     }
     /// Editor-side `change` notification (`makeChangeSingleDocInEditor`), called
     /// after each change is applied to this document's lines and before the
@@ -619,8 +626,8 @@ impl Doc {
     pub fn on_before_selection_change<F: Fn(&Doc, &mut BeforeSelectionChange) + 'static>(
         &self,
         f: F,
-    ) {
-        self.inner_mut().before_selection_change.push(Rc::new(f));
+    ) -> ListenerId {
+        self.inner_mut().before_selection_change.on_rc(Rc::new(f))
     }
 
     // ----------------------------------------------------------------------------

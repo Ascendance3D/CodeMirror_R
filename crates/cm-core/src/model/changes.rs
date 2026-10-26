@@ -101,7 +101,7 @@ impl BeforeChange {
 /// `filterChange(doc, change, update)`: run `beforeChange` handlers. `None` when a
 /// handler cancelled the change. Note the result drops `full`, like the JS.
 fn filter_change(doc: &Doc, change: &Change, update: bool) -> Option<Change> {
-    let handlers = doc.inner().before_change.clone();
+    let handlers = doc.inner().before_change.snapshot();
     let mut obj = BeforeChange {
         from: change.from,
         to: change.to,
@@ -116,8 +116,8 @@ fn filter_change(doc: &Doc, change: &Change, update: bool) -> Option<Change> {
         pending: None,
     };
     let mut text_u16: Vec<Text> = change.text().clone();
-    for h in handlers {
-        h(doc, &mut obj);
+    for h in handlers.iter() {
+        (h.f)(doc, &mut obj);
         // Apply updates the way the JS closure does: immediately, with clipping.
         if let Some(p) = obj.pending.take() {
             if let Some(f) = p.from {

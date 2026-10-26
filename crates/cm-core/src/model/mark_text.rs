@@ -22,6 +22,7 @@ use super::spans::{
     remove_marked_span,
 };
 use crate::CmError;
+use crate::events::{ListenerId, Listeners};
 use crate::pos::{Pos, cmp};
 
 /// `nextMarkerId` — module-global in the JS.
@@ -63,7 +64,7 @@ pub struct MarkOptions {
     pub handle_mouse_events: bool,
 }
 
-type ClearHandler = Rc<dyn Fn(Option<(Pos, Option<Pos>)>)>;
+pub(crate) type ClearHandler = dyn Fn(Option<(Pos, Option<Pos>)>);
 
 pub(crate) struct MarkerData {
     pub id: u64,
@@ -75,7 +76,7 @@ pub(crate) struct MarkerData {
     pub collapsed: bool,
     pub explicitly_cleared: bool,
     pub parent: Option<SharedTextMarker>,
-    pub clear_handlers: Vec<ClearHandler>,
+    pub clear_handlers: Listeners<ClearHandler>,
 }
 
 /// A marker in one document (`TextMarker`). Clones share the marker.
@@ -147,8 +148,12 @@ impl TextMarker {
     /// `CodeMirror.on(marker, "clear", f)`. Called synchronously at the end of
     /// `clear()` with the range the marker covered (the JS defers it with
     /// `signalLater`).
-    pub fn on_clear<F: Fn(Option<(Pos, Option<Pos>)>) + 'static>(&self, f: F) {
-        self.data_mut().clear_handlers.push(Rc::new(f));
+    pub fn on_clear<F: Fn(Option<(Pos, Option<Pos>)>) + 'static>(&self, f: F) -> ListenerId {
+        self.data_mut().clear_handlers.on_rc(Rc::new(f))
+    }
+    /// Remove the marker handler registered as `id`.
+    pub fn off(&self, id: ListenerId) -> bool {
+        self.data_mut().clear_handlers.off(id)
     }
 
     /// Debug aid: line numbers of `marker.lines` (None for a detached line).
@@ -296,7 +301,7 @@ impl TextMarker {
             let mut d = self.data_mut();
             d.lines.clear();
             d.explicitly_cleared = true;
-            (d.atomic, d.parent.clone(), d.clear_handlers.clone())
+            (d.atomic, d.parent.clone(), d.clear_handlers.snapshot())
         };
         if atomic {
             if let Some(doc) = &doc {
@@ -308,8 +313,8 @@ impl TextMarker {
                 }
             }
         }
-        for h in handlers {
-            h(found);
+        for h in handlers.iter() {
+            (h.f)(found);
         }
         if let Some(p) = parent {
             p.clear();
@@ -333,7 +338,7 @@ pub(crate) struct SharedData {
     pub markers: Vec<TextMarker>,
     pub primary: TextMarker,
     pub explicitly_cleared: bool,
-    pub clear_handlers: Vec<Rc<dyn Fn()>>,
+    pub clear_handlers: Listeners<dyn Fn()>,
 }
 
 /// A marker spanning linked documents (`SharedTextMarker`).
@@ -350,8 +355,12 @@ impl SharedTextMarker {
     pub fn primary(&self) -> TextMarker {
         self.0.borrow().primary.clone()
     }
-    pub fn on_clear<F: Fn() + 'static>(&self, f: F) {
-        self.0.borrow_mut().clear_handlers.push(Rc::new(f));
+    pub fn on_clear<F: Fn() + 'static>(&self, f: F) -> ListenerId {
+        self.0.borrow_mut().clear_handlers.on_rc(Rc::new(f))
+    }
+    /// Remove the shared-marker handler registered as `id`.
+    pub fn off(&self, id: ListenerId) -> bool {
+        self.0.borrow_mut().clear_handlers.off(id)
     }
     pub fn clear(&self) {
         if self.0.borrow().explicitly_cleared {
@@ -362,9 +371,9 @@ impl SharedTextMarker {
         for m in markers {
             m.clear();
         }
-        let handlers = self.0.borrow().clear_handlers.clone();
-        for h in handlers {
-            h();
+        let handlers = self.0.borrow().clear_handlers.snapshot();
+        for h in handlers.iter() {
+            (h.f)();
         }
     }
     pub fn find(&self) -> Option<MarkerFind> {
@@ -453,7 +462,7 @@ pub(crate) fn mark_text_inner(
         atomic,
         explicitly_cleared: false,
         parent: None,
-        clear_handlers: Vec::new(),
+        clear_handlers: Listeners::default(),
     })));
     let diff = cmp(&from, &to);
     // Don't connect empty markers unless clearWhenEmpty is false.
@@ -567,7 +576,7 @@ fn mark_text_shared(
         markers: markers.clone(),
         primary,
         explicitly_cleared: false,
-        clear_handlers: Vec::new(),
+        clear_handlers: Listeners::default(),
     })));
     for m in &markers {
         m.data_mut().parent = Some(shared.clone());

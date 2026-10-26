@@ -110,7 +110,7 @@ pub(crate) fn set_simple_selection(
 
 /// `filterSelectionChange(doc, sel, options)`.
 fn filter_selection_change(doc: &Doc, sel: Sel, options: Option<&SelOptions>) -> Sel {
-    let handlers = doc.inner().before_selection_change.clone();
+    let handlers = doc.inner().before_selection_change.snapshot();
     let mut obj = BeforeSelectionChange::new(
         sel.ranges
             .iter()
@@ -122,8 +122,8 @@ fn filter_selection_change(doc: &Doc, sel: Sel, options: Option<&SelOptions>) ->
         options.and_then(|o| o.origin.clone()),
     );
     let mut updated: Option<Vec<Range>> = None;
-    for h in handlers {
-        h(doc, &mut obj);
+    for h in handlers.iter() {
+        (h.f)(doc, &mut obj);
         if let Some(rs) = obj.updated.take() {
             let clipped: Vec<Range> = rs
                 .iter()
