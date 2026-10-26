@@ -42,7 +42,8 @@ Recorded baselines (strict, `CM_EVIDENCE` unset, GPU adapter of the reviewed gol
 | --- | --- | --- | --- | --- |
 | `cab938c` | 335 | 0 | 0 | 0 |
 | `44ad822` (P0) | 381 | 0 | 0 | 0 |
-| the commit that last changed this table (`git log -1 -- README.md`) | 387 | 0 | 0 | 0 |
+| `eca4e29` | 387 | 0 | 0 | 0 |
+| the commit titled "README: test baseline of the corrected P0 head" | 392 | 0 | 0 | 0 |
 
 ## C0 suite
 
