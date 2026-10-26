@@ -483,13 +483,12 @@ impl Editor {
         self.op.scroll_top = Some(base + top);
     }
 
-    /// A selection change asked for `ensureCursorVisible(doc.cm)`
-    /// (src/model/selection_updates.js:setSelectionNoUndo); cm-core records it as a
-    /// flag, applied here in order with the other scroll requests.
+    /// cm-core asked for `ensureCursorVisible(doc.cm)` (`setSelectionNoUndo`,
+    /// `replaceSelections`); it records the cursor of each call, applied here in order
+    /// with the other scroll requests: each call resolves the previous target first.
     fn take_sel_scroll(&mut self) {
-        if self.doc.take_scroll_request() {
+        for cur in self.doc.take_scroll_requests() {
             self.resolve_scroll_to_pos_raw();
-            let cur = self.doc.get_cursor(None);
             self.op.scroll_to_pos = Some((cur, cur, self.options.cursor_scroll_margin));
         }
     }
