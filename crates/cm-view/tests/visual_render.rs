@@ -7,8 +7,20 @@
 //!   (`Editor::cursor_coords`, `height_at_line`, `doc_height`, `gutter_width`).
 //!   The cursor is the set of pixels that change when `cursor_visible` is toggled;
 //!   the selection is the set of pixels that change when the selection collapses.
-//! * **Appearance.** The frame is compared with a committed golden PNG in
-//!   `tests/visual/goldens/` under [`CHANNEL_TOLERANCE`] and [`MAX_DIFF_FRACTION`].
+//! * **Appearance.** The frame is compared with the golden PNG of the reviewed golden
+//!   set for the running adapter under [`CHANNEL_TOLERANCE`] and [`MAX_DIFF_FRACTION`].
+//!
+//! Golden sets. A golden set is `tests/visual/goldens/` or one of its immediate
+//! subdirectories that holds `ADAPTER.txt` (the adapter identity: name, backend,
+//! device type, vendor, device, driver, driver info, as [`gpu`] prints them) and
+//! `REVIEWED.txt` (who reviewed the images, when, and against what). The running
+//! adapter uses the one set whose identity matches all seven fields exactly; two
+//! matching sets fail the run. With no matching set (another GPU, another driver
+//! version, macOS Metal) the geometry and token checks still run, the pixel
+//! comparison is reported as unverified for that adapter, and the case ends with
+//! `cm_evidence::golden_unverified`: it fails under `CM_EVIDENCE=strict` and passes
+//! under `ci` only when `CM_EVIDENCE_ALLOW` names `golden-unverified`. Frames are
+//! never compared with another adapter's goldens.
 //!
 //! Fixed inputs: the bundled font `tests/visual/fonts/DejaVuSansMono.ttf` (SHA-256
 //! checked before any rendering; no system font is loaded), a logical viewport of
@@ -19,8 +31,11 @@
 //!
 //! Outputs go to `$CM_VISUAL_OUT` (default `<workspace>/target/cm-visual/`): every
 //! rendered frame as `<case>.png`, a `<case>.txt` record, `adapter.txt`, and on a
-//! golden mismatch `<case>.diff.png`. `CM_VISUAL_BLESS=1` rewrites the goldens from
-//! this run; nothing else ever writes them, and a missing golden fails.
+//! golden mismatch `<case>.diff.png`. `CM_VISUAL_BLESS=1` also writes each frame and
+//! the adapter identity to `<out>/candidates/` as an unreviewed candidate set; the
+//! test never writes `tests/visual/goldens/`. A candidate becomes a golden set only
+//! when a reviewer copies it there with a `REVIEWED.txt`. A missing golden in a
+//! reviewed set fails.
 //!
 //! No GPU adapter, or only a software (CPU) adapter: `cm_evidence::no_gpu`.
 #![cfg(feature = "gpu")]
@@ -115,6 +130,55 @@ fn golden_dir() -> PathBuf {
     crate_dir().join("tests/visual/goldens")
 }
 
+/// Where `CM_VISUAL_BLESS=1` writes unreviewed candidate goldens.
+fn candidate_dir() -> PathBuf {
+    out_dir().join("candidates")
+}
+
+/// The identity lines of an `ADAPTER.txt` (or of [`gpu`]'s description).
+fn identity(text: &str) -> Vec<&str> {
+    text.lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .collect()
+}
+
+/// The reviewed golden set whose `ADAPTER.txt` matches `desc` exactly, if any. A set
+/// without `REVIEWED.txt` is not a golden set. More than one match is an error.
+fn golden_set(desc: &str) -> Result<Option<PathBuf>, String> {
+    let root = golden_dir();
+    let mut dirs = vec![root.clone()];
+    if let Ok(rd) = std::fs::read_dir(&root) {
+        let mut sub: Vec<PathBuf> = rd
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| p.is_dir())
+            .collect();
+        sub.sort();
+        dirs.extend(sub);
+    }
+    let want = identity(desc);
+    let mut found: Vec<PathBuf> = Vec::new();
+    for dir in dirs {
+        let Ok(adapter) = std::fs::read_to_string(dir.join("ADAPTER.txt")) else {
+            continue;
+        };
+        let reviewed = std::fs::read_to_string(dir.join("REVIEWED.txt")).unwrap_or_default();
+        if reviewed.trim().is_empty() {
+            continue;
+        }
+        if identity(&adapter) == want {
+            found.push(dir);
+        }
+    }
+    match found.len() {
+        0 => Ok(None),
+        1 => Ok(found.pop()),
+        _ => Err(format!(
+            "more than one golden set matches this adapter: {found:?}"
+        )),
+    }
+}
+
 fn blessing() -> bool {
     std::env::var("CM_VISUAL_BLESS").as_deref() == Ok("1")
 }
@@ -145,11 +209,17 @@ fn gpu() -> &'static Result<(Gpu, String), String> {
             record,
             "viewport: {LOGICAL_W}x{LOGICAL_H} logical; tolerance: channel {CHANNEL_TOLERANCE}, fraction {MAX_DIFF_FRACTION}, geometry {GEOMETRY_TOLERANCE_PX}px"
         );
+        let set = match golden_set(&desc) {
+            Ok(Some(dir)) => format!("golden set: {}", dir.display()),
+            Ok(None) => "golden set: none for this adapter (pixel comparison unverified)".into(),
+            Err(e) => panic!("{e}"),
+        };
+        let _ = writeln!(record, "{set}");
         let _ = std::fs::write(out_dir().join("adapter.txt"), &record);
         eprint!("{record}");
         if blessing() {
-            std::fs::create_dir_all(golden_dir()).unwrap();
-            std::fs::write(golden_dir().join("ADAPTER.txt"), &desc).unwrap();
+            std::fs::create_dir_all(candidate_dir()).unwrap();
+            std::fs::write(candidate_dir().join("ADAPTER.txt"), &desc).unwrap();
         }
         Ok((gpu, desc))
     })
@@ -465,6 +535,8 @@ struct Report {
     log: String,
     failures: Vec<String>,
     max_geometry_delta: i64,
+    /// Why the pixel comparison could not be made, when it could not.
+    unverified: Option<String>,
 }
 
 impl Report {
@@ -759,19 +831,37 @@ fn check_tokens(c: &Case, s: &Scene, img: &Image, r: &mut Report) {
     }
 }
 
-/// Compare with the golden; writes a diff image on mismatch.
-fn check_golden(name: &str, img: &Image, r: &mut Report) {
-    let golden = golden_dir().join(format!("{name}.png"));
+/// Compare with the golden of the reviewed set for this adapter; writes a diff image
+/// on mismatch. With no reviewed set the comparison is recorded as unverified.
+fn check_golden(name: &str, desc: &str, img: &Image, r: &mut Report) {
     if blessing() {
-        write_png(&golden, img.w, img.h, &img.px).expect("write golden");
-        r.note(format!("BLESSED {}", golden.display()));
-        return;
+        let cand = candidate_dir().join(format!("{name}.png"));
+        write_png(&cand, img.w, img.h, &img.px).expect("write candidate");
+        r.note(format!("candidate (unreviewed) {}", cand.display()));
     }
+    let set = match golden_set(desc) {
+        Ok(Some(dir)) => dir,
+        Ok(None) => {
+            let why = format!(
+                "no reviewed golden set for adapter [{}]; pixel comparison of {name} UNVERIFIED",
+                identity(desc).join("; ")
+            );
+            r.note(&why);
+            r.unverified = Some(why);
+            return;
+        }
+        Err(e) => {
+            r.fail(e);
+            return;
+        }
+    };
+    let golden = set.join(format!("{name}.png"));
     let g = match Image::read(&golden) {
         Ok(g) => g,
         Err(e) => {
             r.fail(format!(
-                "golden {e}; regenerate explicitly with CM_VISUAL_BLESS=1"
+                "golden {e}; write candidates with CM_VISUAL_BLESS=1 and review them into {}",
+                set.display()
             ));
             return;
         }
@@ -812,7 +902,7 @@ fn check_golden(name: &str, img: &Image, r: &mut Report) {
             "{line}; actual {}, diff {}, golden adapter: {}",
             out_dir().join(format!("{name}.png")).display(),
             dp.display(),
-            std::fs::read_to_string(golden_dir().join("ADAPTER.txt"))
+            std::fs::read_to_string(set.join("ADAPTER.txt"))
                 .unwrap_or_default()
                 .replace('\n', "; ")
         ));
@@ -822,8 +912,8 @@ fn check_golden(name: &str, img: &Image, r: &mut Report) {
 }
 
 fn run(name: &str) {
-    let gpu = match gpu() {
-        Ok((g, _)) => g,
+    let (gpu, desc) = match gpu() {
+        Ok((g, d)) => (g, d),
         Err(e) => return cm_evidence::no_gpu(e),
     };
     let c = case(name);
@@ -854,7 +944,7 @@ fn run(name: &str) {
     if again.px != img.px {
         r.fail("a second render of the same scene differs");
     }
-    check_golden(name, &img, &mut r);
+    check_golden(name, desc, &img, &mut r);
     check_tokens(&c, &s, &img, &mut r);
     if c.line_numbers {
         check_gutter(&s, &img, &mut r);
@@ -867,10 +957,10 @@ fn run(name: &str) {
     } else {
         check_selection(gpu, &mut s, &img, &mut r);
     }
-    let verdict = if r.failures.is_empty() {
-        "PASS"
-    } else {
-        "FAIL"
+    let verdict = match (r.failures.is_empty(), &r.unverified) {
+        (false, _) => "FAIL",
+        (true, Some(_)) => "UNVERIFIED (geometry PASS)",
+        (true, None) => "PASS",
     };
     r.note(format!(
         "{verdict} {name} (max geometry delta {}px)",
@@ -883,6 +973,9 @@ fn run(name: &str) {
         "visual case {name} failed:\n{}",
         r.failures.join("\n")
     );
+    if let Some(why) = r.unverified {
+        cm_evidence::golden_unverified(why);
+    }
 }
 
 #[test]
@@ -1087,4 +1180,37 @@ fn hscroll_gutter_clips_cursor() {
 #[test]
 fn hscroll_gutter_clips_cursor_2x() {
     run_hscroll(2.0);
+}
+
+/// The golden-set rule needs no GPU: a set matches only the exact seven-field
+/// identity of its `ADAPTER.txt`, and a set without `REVIEWED.txt` is not a set.
+#[test]
+fn golden_set_requires_exact_adapter_identity() {
+    let recorded = std::fs::read_to_string(golden_dir().join("ADAPTER.txt")).unwrap();
+    assert_eq!(identity(&recorded).len(), 7, "ADAPTER.txt has seven fields");
+    assert_eq!(golden_set(&recorded), Ok(Some(golden_dir())));
+    for (i, line) in identity(&recorded).iter().enumerate() {
+        let changed: Vec<String> = identity(&recorded)
+            .iter()
+            .enumerate()
+            .map(|(j, l)| {
+                if j == i {
+                    format!("{l}-other")
+                } else {
+                    l.to_string()
+                }
+            })
+            .collect();
+        assert_eq!(
+            golden_set(&changed.join("\n")),
+            Ok(None),
+            "a different `{line}` must not match"
+        );
+    }
+    assert!(
+        !std::fs::read_to_string(golden_dir().join("REVIEWED.txt"))
+            .unwrap()
+            .trim()
+            .is_empty()
+    );
 }

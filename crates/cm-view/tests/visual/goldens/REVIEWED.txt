@@ -1,0 +1,13 @@
+Golden set: tests/visual/goldens/ (the 14 PNG files in this directory; identity in ADAPTER.txt)
+Recorded: 2026-10-26 at commit 44ad822 (CM_VISUAL_BLESS run on the adapter in ADAPTER.txt).
+Reviewed: P0 completion lane, 2026-10-26. Every frame was compared case by case with CM5's
+default theme and with the model geometry; 12 of 12 runs were bit-identical, direct and under
+`xvfb-run -a`. Record: .reports/codemirror-r/2026-10-26-p0-completion/renderer/RENDERER.md.
+Accepted: by owner direction, as part of P0's completed Linux acceptance scope (2026-10-26).
+Re-checked: 2026-10-26 P0 correction (M1); all 14 frames unchanged after the cursor clip.
+
+Policy: an image here is authoritative only for the adapter whose identity matches ADAPTER.txt
+in all seven fields. Other adapters (other Linux GPUs or drivers, macOS Metal) need their own
+reviewed set in a subdirectory: ADAPTER.txt, REVIEWED.txt and one PNG per case, copied from
+the candidates that CM_VISUAL_BLESS=1 writes to <out>/candidates/ after a person has reviewed
+them. Tolerances are not adapter-specific and must not be loosened.
