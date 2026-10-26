@@ -16,13 +16,14 @@
 pub mod clock;
 pub mod events;
 pub mod model;
+pub mod operation_group;
 pub mod pos;
 pub mod text;
 pub mod util;
 
 pub use events::{ListenerId, Listeners};
-pub use model::changes::{BeforeChange, BeforeSelectionChange};
-pub use model::doc::{ChangeInfo, Doc, DocOptions, EditorSemantics, LinkedDocOptions};
+pub use model::changes::{BeforeChange, BeforeSelectionChange, ChangeObj};
+pub use model::doc::{Doc, DocOptions, EditorSemantics, LinkedDocOptions};
 pub use model::history::{HistoryChangeData, HistoryData, HistoryEventData, HistorySize};
 pub use model::line::LineHandle;
 pub use model::mark_text::{
@@ -30,6 +31,7 @@ pub use model::mark_text::{
 };
 pub use model::selection::{SelRange, Selection};
 pub use model::selection_updates::SelOptions;
+pub use operation_group::{Delayed, EdCall, EditorId, EditorSink, Editors, NoEditors};
 pub use pos::{Pos, Sticky};
 pub use util::string_stream::StringStream;
 

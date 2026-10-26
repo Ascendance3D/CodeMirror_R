@@ -21,16 +21,22 @@
 //! * bidi in measurement, cursors, selection drawing and clicks (left to right only;
 //!   `moveVisually` and `endOfLine` do use the ported bidi ordering).
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::rc::Rc;
 
+use cm_core::operation_group::{end_group, group_open, start_operation};
 use cm_core::pos::{Sticky, cmp};
 use cm_core::text::{Text, from_u16, is_js_space, split_lines_auto, to_u16};
 use cm_core::util::misc::count_column;
-use cm_core::{ChangeInfo, Doc, DocOptions, EditorSemantics, Pos, SelOptions, SelRange};
+use cm_core::{
+    Doc, DocOptions, EditorId, EditorSemantics, EditorSink, Editors, NoEditors, Pos, SelOptions,
+    SelRange,
+};
 use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_mode};
 
+use crate::events::{EditorShared, Parked, WithSelf};
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
 use crate::measure::{LineLayout, Metrics, PosInfo, Rect, coords_char_inner};
@@ -63,6 +69,8 @@ pub struct EditorOptions {
     pub drag_drop: bool,
     pub undo_depth: f64,
     pub history_event_delay: f64,
+    /// `selectionsMayTouch`.
+    pub selections_may_touch: bool,
     pub max_highlight_length: usize,
     pub flatten_spans: bool,
     /// `lineSeparator`.
@@ -92,6 +100,7 @@ impl Default for EditorOptions {
             drag_drop: true,
             undo_depth: 200.0,
             history_event_delay: 1250.0,
+            selections_may_touch: false,
             max_highlight_length: 10000,
             flatten_spans: true,
             line_separator: None,
@@ -145,9 +154,10 @@ pub fn last_copied() -> Option<LastCopied> {
     LAST_COPIED.with(|l| l.borrow().clone())
 }
 
+/// The scroll requests of the current operation (`op.scrollToPos`, `op.scrollTop`,
+/// `op.scrollLeft`), applied by its display phase.
 #[derive(Default, Clone, Debug)]
 struct OpState {
-    depth: u32,
     scroll_to_pos: Option<(Pos, Pos, f64)>,
     scroll_top: Option<f64>,
     scroll_left: Option<f64>,
@@ -156,13 +166,13 @@ struct OpState {
 /// Heights of wrapped lines (`line.height` when `lineWrapping` is on).
 #[derive(Default, Debug)]
 pub(crate) struct HeightCache {
-    wrap_width: f64,
+    pub(crate) wrap_width: f64,
     /// Per line; NaN = needs layout.
-    heights: Vec<f64>,
+    pub(crate) heights: Vec<f64>,
     /// Prefix sums, `prefix[i]` = height of lines before i.
-    prefix: Option<Vec<f64>>,
+    pub(crate) prefix: Option<Vec<f64>>,
     /// Width of the widest line (`display.maxLine`), recomputed after changes.
-    max_width: Option<f64>,
+    pub(crate) max_width: Option<f64>,
 }
 
 pub(crate) struct MouseState {
@@ -171,6 +181,10 @@ pub(crate) struct MouseState {
 
 /// The editor.
 pub struct Editor {
+    /// Unique on the thread; names this editor in an [`crate::EditorSet`] and in
+    /// queued callbacks.
+    pub id: EditorId,
+    pub(crate) shared: Rc<EditorShared>,
     pub doc: Doc,
     pub options: EditorOptions,
     pub registry: Rc<Registry>,
@@ -201,6 +215,32 @@ pub struct Editor {
     pub(crate) clicks: crate::mouse::ClickTracker,
     /// Gutter width in px (line numbers), recomputed by [`Editor::update_gutter`].
     pub gutter_width: f64,
+}
+
+/// Dropping an editor destroys it (D5): its document is detached from it (as
+/// `swapDoc` detaches the old document), work parked on it is discarded, and so is
+/// work queued for it later, each with a diagnostic
+/// ([`cm_core::operation_group::take_diagnostics`]). The document and its markers
+/// keep working, and their own pending callbacks are still delivered.
+impl Drop for Editor {
+    fn drop(&mut self) {
+        self.shared.destroyed.set(true);
+        let parked = std::mem::take(&mut *self.shared.parked.borrow_mut());
+        if !parked.is_empty() {
+            cm_core::operation_group::diagnostic(format!(
+                "discarded {} parked deliveries of editor {}, which was dropped",
+                parked.len(),
+                self.id.get()
+            ));
+        }
+        if self
+            .doc
+            .sink()
+            .is_some_and(|s| std::ptr::addr_eq(Rc::as_ptr(&s), Rc::as_ptr(&self.shared)))
+        {
+            self.doc.detach_editor();
+        }
+    }
 }
 
 fn sel_opts(origin: Option<&str>, bias: Option<i64>, scroll: Option<bool>) -> SelOptions {
@@ -267,12 +307,6 @@ impl Editor {
         metrics: Metrics,
         registry: Rc<Registry>,
     ) -> Editor {
-        doc.attach_editor_semantics(EditorSemantics {
-            history_event_delay: options.history_event_delay,
-            whole_line_update_before: true,
-            selections_may_touch: false,
-            undo_depth: options.undo_depth,
-        });
         let mode_opts = ModeOptions {
             indent_unit: options.indent_unit,
             tab_size: options.tab_size,
@@ -286,29 +320,25 @@ impl Editor {
         hs.flatten_spans = options.flatten_spans;
         let hs = Rc::new(RefCell::new(hs));
         let heights = Rc::new(RefCell::new(HeightCache::default()));
-        {
-            let hs2 = hs.clone();
-            let h2 = heights.clone();
-            doc.on_change(move |d, info: &ChangeInfo| {
-                // makeChangeSingleDocInEditor: `retreatFrontier(doc, from.line)`.
-                highlight::retreat_frontier(d, &mut hs2.borrow_mut(), info.from.line);
-                let mut h = h2.borrow_mut();
-                if !h.heights.is_empty() {
-                    let first = d.first_line();
-                    let a = (info.from.line - first).max(0) as usize;
-                    let b = ((info.to.line - first + 1).max(0) as usize).min(h.heights.len());
-                    if a <= b {
-                        h.heights
-                            .splice(a..b, std::iter::repeat_n(f64::NAN, info.text_lines));
-                    } else {
-                        h.heights.clear();
-                    }
-                }
-                h.prefix = None;
-                h.max_width = None;
-            });
-        }
+        let id = EditorId::next();
+        let shared = Rc::new(EditorShared {
+            id,
+            sem: Cell::new(EditorSemantics {
+                history_event_delay: options.history_event_delay,
+                whole_line_update_before: true,
+                selections_may_touch: options.selections_may_touch,
+                undo_depth: options.undo_depth,
+            }),
+            op: RefCell::new(None),
+            parked: RefCell::new(Vec::new()),
+            destroyed: Cell::new(false),
+            hs: hs.clone(),
+            heights: heights.clone(),
+        });
+        doc.attach_editor(shared.clone());
         let mut ed = Editor {
+            id,
+            shared,
             doc,
             registry,
             mode_spec: mode,
@@ -416,23 +446,68 @@ impl Editor {
     // ------------------------------------------------------------------------------
     // Operations
 
-    /// `runInOp(cm, f)` / `methodOp`: run `f` inside one operation.
+    /// `runInOp(cm, f)` / `methodOp`: run `f` inside one operation, with no other
+    /// editor reachable (see [`Editor::run_op_with`]).
     pub fn run_op<R>(&mut self, f: impl FnOnce(&mut Editor) -> R) -> R {
-        let doc = self.doc.clone();
-        self.op.depth += 1;
-        // `extendSelection(s)` reads `doc.cm.display.shift` (src/model/selection_updates.js).
-        doc.set_display_shift(self.display.shift);
-        let r = doc.operation(|| f(self));
-        doc.set_display_shift(self.display.shift);
-        self.op.depth -= 1;
-        if self.op.depth == 0 {
-            self.end_operation();
-        }
-        r
+        self.run_op_with(&mut NoEditors, |ed, _| f(ed))
     }
 
-    /// `endOperation`: apply scroll requests and update the viewport.
-    fn end_operation(&mut self) {
+    /// `runInOp(cm, f)` with the other editors `rest` reaches: when this operation
+    /// ends the group, their callbacks and operation ends are delivered too. Work
+    /// parked on this editor is delivered first, when no group is open.
+    pub fn run_op_with<R>(
+        &mut self,
+        rest: &mut dyn Editors,
+        f: impl FnOnce(&mut Editor, &mut dyn Editors) -> R,
+    ) -> R {
+        if !group_open() && self.parked_len() > 0 {
+            self.flush_parked_with(rest);
+        }
+        let doc = self.doc.clone();
+        // `extendSelection(s)` reads `doc.cm.display.shift` (src/model/selection_updates.js).
+        doc.set_display_shift(self.display.shift);
+        let sink: Rc<dyn EditorSink> = self.shared.clone();
+        let started = start_operation(&sink);
+        let r = catch_unwind(AssertUnwindSafe(|| f(&mut *self, &mut *rest)));
+        doc.set_display_shift(self.display.shift);
+        if started == Some(true) {
+            end_group(&mut WithSelf { me: self, rest });
+        }
+        r.unwrap_or_else(|p| resume_unwind(p))
+    }
+
+    /// How many deliveries are parked on this editor (see [`Doc::attach_editor`]).
+    pub fn parked_len(&self) -> usize {
+        self.shared.parked.borrow().len()
+    }
+
+    /// Deliver the work parked on this editor now.
+    pub fn flush_parked(&mut self) {
+        self.flush_parked_with(&mut NoEditors);
+    }
+
+    /// [`Editor::flush_parked`] with other editors reachable.
+    pub fn flush_parked_with(&mut self, rest: &mut dyn Editors) {
+        loop {
+            let items = std::mem::take(&mut *self.shared.parked.borrow_mut());
+            if items.is_empty() {
+                break;
+            }
+            for item in items {
+                match item {
+                    Parked::Call(call) => call(&mut *self, &mut *rest),
+                    Parked::End(rec) => {
+                        self.end_operation_display();
+                        let sink = self.shared.clone();
+                        sink.end_finish(rec, &mut WithSelf { me: self, rest });
+                    }
+                }
+            }
+        }
+    }
+
+    /// `endOperation_R1` … `W2`: apply scroll requests and update the viewport.
+    pub(crate) fn end_operation_display(&mut self) {
         self.take_sel_scroll();
         if let Some(st) = self.op.scroll_top.take() {
             self.set_scroll_top(st);

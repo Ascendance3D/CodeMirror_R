@@ -33,6 +33,18 @@ impl Change {
     }
 }
 
+/// A change as `change`/`changes` handlers receive it (`{from, to, text, removed,
+/// origin}`), after it was applied: `to` is the end of the replaced range in the
+/// coordinates from before the change.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ChangeObj {
+    pub from: Pos,
+    pub to: Pos,
+    pub text: Vec<String>,
+    pub removed: Vec<String>,
+    pub origin: Option<String>,
+}
+
 /// The object `beforeChange` handlers receive.
 #[derive(Clone, Debug)]
 pub struct BeforeChange {
@@ -423,6 +435,16 @@ fn make_change_single_doc(
     sel_after: Option<Sel>,
     spans: Option<NewSpans>,
 ) {
+    // `if (doc.cm && !doc.cm.curOp) return operation(doc.cm, makeChangeSingleDoc)(…)`
+    doc.in_op(|| make_change_single_doc_in_op(doc, change, sel_after, spans))
+}
+
+fn make_change_single_doc_in_op(
+    doc: &Doc,
+    change: &Change,
+    sel_after: Option<Sel>,
+    spans: Option<NewSpans>,
+) {
     let text = change.text();
     if change.to.line < doc.first_line() {
         shift_doc(
@@ -458,19 +480,36 @@ fn make_change_single_doc(
             full: false,
         };
     }
-    // (`change.removed = getBetween(...)` only feeds change events, not ported.)
+    let obj = Rc::new(ChangeObj {
+        from: change.from,
+        to: change.to,
+        text: change
+            .text()
+            .iter()
+            .map(|t| crate::text::from_u16(t))
+            .collect(),
+        removed: doc
+            .get_between(change.from, change.to)
+            .iter()
+            .map(|t| crate::text::from_u16(t))
+            .collect(),
+        origin: change.origin.clone(),
+    });
     let sel_after = match sel_after {
         Some(s) => s,
         None => compute_sel_after_change(doc, &change),
     };
+    let sink = doc.sink();
+    // makeChangeSingleDocInEditor: `if (doc.sel.contains(change.from, change.to) > -1)
+    // signalCursorActivity(cm)`, with the selection from before the change.
+    if let Some(s) = &sink
+        && doc.inner().sel.contains(&change.from, Some(&change.to)) > -1
+    {
+        s.signal_cursor_activity();
+    }
     update_doc(doc, &change, spans);
-    if !doc.inner().change_listeners.is_empty() {
-        doc.fire_change(&super::doc::ChangeInfo {
-            from: change.from,
-            to: change.to,
-            text_lines: change.text().len(),
-            origin: change.origin.clone(),
-        });
+    if let Some(s) = &sink {
+        s.change_applied(doc, &obj);
     }
     set_selection_no_undo(
         doc,

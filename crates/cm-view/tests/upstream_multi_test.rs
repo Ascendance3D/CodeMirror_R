@@ -4,7 +4,6 @@
 mod common;
 use common::*;
 
-use cm_core::EditorSemantics;
 use cm_view::Indent;
 
 /// multi_test.js "getSelection"
@@ -362,11 +361,7 @@ fn multi_selection_history() {
 /// multi_test.js "selectionsMayTouch" (option `selectionsMayTouch: true`).
 #[test]
 fn multi_selections_may_touch() {
-    let mut cm = cm("1234");
-    cm.doc.attach_editor_semantics(EditorSemantics {
-        selections_may_touch: true,
-        ..Default::default()
-    });
+    let mut cm = cm_opts("1234", None, |o| o.selections_may_touch = true);
     select(&mut cm, &[S::C(p(0, 0)), S::C(p(0, 2))]);
     cm.doc.set_extending(true);
     cm.doc.extend_selections(&[p(0, 2), p(0, 4)], None);

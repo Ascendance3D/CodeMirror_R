@@ -94,20 +94,27 @@ pub(crate) fn remove_marked_span(spans: &SpanArr, marker: &TextMarker) -> Option
 /// array (`concat`).
 pub(crate) fn add_marked_span(doc: &Doc, line: &LineRef, span: MarkedSpan) {
     let marker = span.marker.clone();
-    let in_op = doc.op_id().is_some();
+    let op = doc.op_id();
     let existing = line.borrow().marked_spans.clone();
-    let reuse = in_op
-        && existing
-            .as_ref()
-            .is_some_and(|a| doc.inner().op_span_arrays.iter().any(|x| x.ptr_eq(a)));
+    let reuse = op.is_some_and(|op| {
+        let i = doc.inner();
+        i.op_span_arrays.0 == op
+            && existing
+                .as_ref()
+                .is_some_and(|a| i.op_span_arrays.1.iter().any(|x| x.ptr_eq(a)))
+    });
     if reuse {
         existing.unwrap().push(span);
     } else {
         let mut v = existing.map(|a| a.get()).unwrap_or_default();
         v.push(span);
         let arr = SpanArr::new(v);
-        if in_op {
-            doc.inner_mut().op_span_arrays.push(arr.clone());
+        if let Some(op) = op {
+            let mut i = doc.inner_mut();
+            if i.op_span_arrays.0 != op {
+                i.op_span_arrays = (op, Vec::new());
+            }
+            i.op_span_arrays.1.push(arr.clone());
         }
         line.borrow_mut().marked_spans = Some(arr);
     }

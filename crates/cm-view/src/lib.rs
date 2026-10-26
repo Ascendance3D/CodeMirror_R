@@ -17,6 +17,7 @@
 pub mod app;
 pub mod commands;
 pub mod editor;
+pub mod events;
 pub mod fileio;
 pub mod highlight;
 pub mod keymap;
