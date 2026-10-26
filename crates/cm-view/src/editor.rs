@@ -5,6 +5,21 @@
 //! There is no DOM. Measurement is the box model in [`crate::measure`]; the
 //! "display" is a scroll position, a size, and the viewport (`viewFrom`/`viewTo`)
 //! that decides which lines a renderer draws and which keep a saved mode state.
+//!
+//! Not ported:
+//! * events: no generic `on`/`off`/`signal`/`signalLater`; only the typed
+//!   [`cm_core::Doc`] hooks (`on_before_change`, `on_before_selection_change`, and
+//!   `on_change`, which runs synchronously) and marker `on_clear`. No `changes`/
+//!   `cursorActivity`/`keyHandled`/`scroll`/`focus`/... editor events.
+//! * `addOverlay`/`removeOverlay`, `getHelper`/`registerHelper`: `findWordAt` and
+//!   group motion use plain `isWordChar`, so javascript's `wordChars` helper
+//!   (`[\w$]`) is ignored and `$` is not a word character.
+//! * `addLineClass`, `setGutterMarker` and the `gutters` option; `addLineWidget`,
+//!   `addWidget`.
+//! * collapsed ranges in layout: line heights and the viewport count every line
+//!   (`visualLine` is used only by `lineStart`/`lineEnd`).
+//! * bidi in measurement, cursors, selection drawing and clicks (left to right only;
+//!   `moveVisually` and `endOfLine` do use the ported bidi ordering).
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -177,8 +192,8 @@ pub struct Editor {
     pub keymaps: KeyMaps,
     /// `CodeMirror.commands`, including user-defined ones (`save`, ...).
     pub commands: HashMap<String, CommandFn>,
-    /// `getHelper(pos, "wordChars")` per mode name (none of the ported modes
-    /// register one).
+    /// Names of the keys `dispatchKeyInner` handled, in order. It stands in for
+    /// `signalLater(cm, "keyHandled", cm, name, e)`; nothing here clears it.
     pub keyhandled: Vec<String>,
     op: OpState,
     pub(crate) heights: Rc<RefCell<HeightCache>>,

@@ -17,7 +17,10 @@
 //!
 //! Not supported (documented gaps): `parserConfig.wordCharacters` (a custom
 //! regexp), `parserConfig.localVars` and `parserConfig.globalVars` (objects). They
-//! behave as if absent.
+//! behave as if absent. The mode object has no `skipExpression` or
+//! `expressionAllowed` property (`expressionAllowed` is internal only). The
+//! `registerHelper("wordChars", "javascript", /[\w$]/)` call is not ported (there are
+//! no helpers).
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
