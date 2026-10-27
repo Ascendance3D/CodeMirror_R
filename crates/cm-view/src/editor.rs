@@ -521,6 +521,18 @@ impl Editor {
             cm.force_update = true;
         });
     }
+    /// New font metrics, then `refresh()` (src/edit/methods.js): `clearCaches`
+    /// (the host measured `charWidth`/`textHeight` again), `updateGutterSpace`, and
+    /// a full redraw. A browser host calls this once it has measured its font.
+    pub fn set_metrics(&mut self, metrics: Metrics) {
+        self.run_op(|cm| {
+            cm.metrics = metrics;
+            cm.update_gutter();
+            cm.clear_caches();
+            cm.invalidate_heights();
+            cm.force_update = true;
+        });
+    }
     /// `setOption("lineWrapping", v)`.
     pub fn set_line_wrapping(&mut self, v: bool) {
         self.run_op(|cm| {
@@ -2458,7 +2470,9 @@ impl Editor {
 
     /// `handleKeyBinding(cm, e)`.
     fn handle_key_binding(&mut self, e: &KeyEvent) -> bool {
-        let Some(name) = key_name(e, true, self.options.mac) else {
+        // `flipCtrlCmd` is `mac && (qtwebkit || presto < 12.11)`: false on every
+        // host this port runs on, so Cmd stays "Cmd-" on a Mac.
+        let Some(name) = key_name(e, true, false) else {
             return false;
         };
         if e.shift && self.key_seq.is_none() {

@@ -221,7 +221,9 @@ impl App {
         Ok(())
     }
 
-    fn flush_save(&mut self) {
+    /// Run a save that the `save` command (Ctrl-S/Cmd-S) requested, for hosts that
+    /// dispatch keys to the editor without [`App::handle`].
+    pub fn flush_save(&mut self) {
         if self.save_requested.replace(false) {
             if let Err(e) = self.save() {
                 self.status = format!("save failed: {e}");

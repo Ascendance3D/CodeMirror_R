@@ -12,6 +12,7 @@ This repository is private. It was extracted from `Ascendance3D/X_ITE_R` at `ffe
 | `cm-modes` | the mode API, the tokenization loop, and the js, xml, css, htmlmixed, clike, rust, toml and VRML modes |
 | `cm-view` | commands, keymaps, measurement, highlighting, input, and a native wgpu editor (`cm-edit`, `cm-render`) |
 | `cm-evidence` | the test evidence policy: a test that cannot run fails or skips by name |
+| `cm-web` | the browser adapter (`wasm32-unknown-unknown`, wasm-bindgen): DOM rendering, input, clipboard, scheduling and the `Date.now` clock around the shared engine. See `crates/cm-web/src/lib.rs` |
 
 ## Targets and host services
 
@@ -44,6 +45,14 @@ cargo test --workspace --no-fail-fast
 ```
 
 The default evidence mode is strict (`CM_EVIDENCE` unset). An absent tool or GPU adapter fails the test.
+
+`crates/cm-web/tests/wasm_runtime.rs` builds `cm-web` for `wasm32-unknown-unknown` and runs the L-B scenarios through its API in Node. It needs the rustup target, `wasm-bindgen` at the Cargo.lock version and `node`. The browser runs need Playwright and a CM5 build made in a disposable copy (as for the C0 suite):
+
+```
+CM5_PLAYWRIGHT_FROM=<dir with node_modules/playwright>/ tools/web-test.sh <out dir> [<built cm5 dir>] [browsers...]
+```
+
+The browsers are `chromium`, `firefox` and `webkit`, and the emulated profiles `chromium-mobile` (Pixel 7) and `webkit-mobile` (iPhone 15). Emulation is not a phone, and Playwright's WebKit is not Safari.
 
 CI runs `CM_EVIDENCE=ci` with `CM_EVIDENCE_ALLOW=no-gpu-adapter,tool-absent`. Each permitted skip is one line in `CM_EVIDENCE_LOG`, which `tools/evidence_summary.py` checks.
 
