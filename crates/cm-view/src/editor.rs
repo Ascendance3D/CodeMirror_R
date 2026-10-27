@@ -1101,10 +1101,7 @@ impl Editor {
     /// line wider than `sizerWidth` whose width in characters exceeds
     /// `maxLineLength` becomes the longest line.
     fn check_view_widths(&self, widths: &[(i64, f64)]) {
-        // `charWidth(display)` returns `width || 10` (position_measurement.js:614): a
-        // width of 0 or NaN, as measured in a hidden element, counts as 10.
-        let cw = self.metrics.char_width;
-        let char_width = if cw == 0.0 || cw.is_nan() { 10.0 } else { cw };
+        let char_width = self.char_width();
         let mut h = self.heights.borrow_mut();
         let ml = &mut h.max_line;
         for &(n, width) in widths {
@@ -1209,7 +1206,7 @@ impl Editor {
         let left = if self.options.line_wrapping {
             0.0
         } else {
-            self.metrics.char_width * pos.ch as f64
+            self.char_width() * pos.ch as f64
         };
         let top = self.height_at_line(pos.line) + self.metrics.padding_top;
         Rect {
@@ -1664,7 +1661,14 @@ impl Editor {
         self.metrics.text_height
     }
     pub fn default_char_width(&self) -> f64 {
-        self.metrics.char_width
+        self.char_width()
+    }
+    /// `charWidth(display)` (position_measurement.js:607-615) for its callers: the
+    /// host's `char_width`, except that a width of 0 or NaN, as measured in a hidden
+    /// element, counts as 10 (`width || 10`). Text layout uses the host value.
+    pub(crate) fn char_width(&self) -> f64 {
+        let cw = self.metrics.char_width;
+        if cw == 0.0 || cw.is_nan() { 10.0 } else { cw }
     }
     /// The page size `findPosV` uses.
     pub fn page_size(&self) -> f64 {
@@ -2788,5 +2792,43 @@ mod tests {
         assert_eq!((h.max_line.length, h.max_line.sizer_width), (7, Some(67.0)));
         drop(h);
         assert_eq!(cm.max_line(), Some((1, 7)));
+    }
+
+    /// R4b: new metrics (`refresh()`: `clearCaches` sets `maxLineChanged` without
+    /// wrapping) measure the longest line into `sizerWidth` again at the end of the
+    /// operation. CM5 recorded the same pattern for a hidden then shown editor:
+    /// `sizerWidth` 46, 3 hidden (no width), 46 shown, `maxLine` kept, the flag
+    /// false after each operation. Here hidden is `paddingH + 0 + 3`.
+    #[test]
+    fn new_metrics_measure_the_longest_line_again() {
+        let mut valid = Metrics::monospace(10.0, 13.0);
+        valid.wide_width = 20.0;
+        let mut hidden = Metrics::monospace(0.0, 13.0);
+        hidden.wide_width = 0.0;
+        let mut cm = Editor::new(
+            "ab\n\u{4e00}\u{4e00}\u{4e00}",
+            Spec::Null,
+            EditorOptions::default(),
+            valid.clone(),
+        );
+        let state = |cm: &Editor| {
+            let h = cm.heights.borrow();
+            (
+                h.max_line.length,
+                h.max_line.sizer_width,
+                h.max_line.changed,
+            )
+        };
+        assert_eq!(state(&cm), (7, Some(67.0), false));
+        for _ in 0..3 {
+            cm.run_op(|cm| {
+                cm.set_metrics(hidden.clone());
+                assert!(cm.heights.borrow().max_line.changed);
+            });
+            assert_eq!(state(&cm), (7, Some(7.0), false));
+            assert_eq!(cm.max_line(), Some((1, 7)));
+            cm.set_metrics(valid.clone());
+            assert_eq!(state(&cm), (7, Some(67.0), false));
+        }
     }
 }
