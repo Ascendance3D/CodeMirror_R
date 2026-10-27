@@ -1101,12 +1101,16 @@ impl Editor {
     /// line wider than `sizerWidth` whose width in characters exceeds
     /// `maxLineLength` becomes the longest line.
     fn check_view_widths(&self, widths: &[(i64, f64)]) {
+        // `charWidth(display)` returns `width || 10` (position_measurement.js:614): a
+        // width of 0 or NaN, as measured in a hidden element, counts as 10.
+        let cw = self.metrics.char_width;
+        let char_width = if cw == 0.0 || cw.is_nan() { 10.0 } else { cw };
         let mut h = self.heights.borrow_mut();
         let ml = &mut h.max_line;
         for &(n, width) in widths {
             // `width > null` is `width > 0`.
             if width > ml.sizer_width.unwrap_or(0.0) {
-                let ch = (width / self.metrics.char_width).ceil() as i64;
+                let ch = (width / char_width).ceil() as i64;
                 if ch > ml.length {
                     ml.length = ch;
                     ml.line = self.doc.get_line_handle(n);
@@ -2651,4 +2655,138 @@ pub fn spec_named(name: &str, opts: &[(&str, ConfigValue)]) -> Spec {
         s.options.insert(k.to_string(), v.clone());
     }
     Spec::Obj(s)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The longest-line state after one width check of `widths`, from an empty
+    /// `MaxLine` (`maxLineLength` 0, `sizerWidth` null).
+    fn checked(char_width: f64, widths: &[(i64, f64)]) -> (Option<i64>, i64, bool) {
+        checked_from(char_width, (None, 0, None), widths)
+    }
+
+    /// The same from a `maxLine`, `maxLineLength` and `sizerWidth`.
+    fn checked_from(
+        char_width: f64,
+        (line, length, sizer_width): (Option<i64>, i64, Option<f64>),
+        widths: &[(i64, f64)],
+    ) -> (Option<i64>, i64, bool) {
+        let mut cm = Editor::new(
+            "ab\ncdef\ng",
+            Spec::Null,
+            EditorOptions::default(),
+            Metrics::test_grid(),
+        );
+        cm.metrics.char_width = char_width;
+        cm.heights.borrow_mut().max_line = MaxLine {
+            line: line.and_then(|n| cm.doc.get_line_handle(n)),
+            length,
+            sizer_width,
+            ..MaxLine::default()
+        };
+        cm.check_view_widths(widths);
+        let h = cm.heights.borrow();
+        let ml = &h.max_line;
+        let n = ml.line.as_ref().and_then(|l| cm.doc.get_line_number(l));
+        (n, ml.length, ml.changed)
+    }
+
+    /// CM5 in headless Chromium 151, Firefox 153 and WebKit 26.5, with the
+    /// `charWidth` measurement span at `font-size: 0` (C-CHARWIDTH lane recording):
+    /// the measured line widths and the state before each width check give the
+    /// recorded `maxLine` and `maxLineLength`.
+    #[test]
+    fn width_check_matches_cm5_with_a_zero_char_width_measurement() {
+        let (a, b) = (18.75, 42.09375);
+        assert_eq!(
+            checked_from(0.0, (Some(1), 3, None), &[(0, a), (1, b)]),
+            (Some(1), 5, true)
+        );
+        let b = 68.09375;
+        assert_eq!(
+            checked_from(0.0, (Some(1), 5, Some(46.0)), &[(0, a), (1, b)]),
+            (Some(1), 7, true)
+        );
+        let w = [(0, a), (1, b), (2, 107.09375)];
+        assert_eq!(
+            checked_from(0.0, (Some(1), 7, Some(72.0)), &w),
+            (Some(2), 11, true)
+        );
+        // Firefox.
+        let w = [(0, 17.433334350585938), (1, 63.0), (2, 99.0)];
+        assert_eq!(
+            checked_from(0.0, (Some(1), 7, Some(67.0)), &w),
+            (Some(2), 10, true)
+        );
+        let w = [(0, 17.433334350585938), (1, 39.0)];
+        assert_eq!(
+            checked_from(0.0, (Some(1), 3, None), &w),
+            (Some(1), 4, true)
+        );
+    }
+
+    #[test]
+    fn width_check_counts_a_zero_or_nan_char_width_as_10() {
+        // `Math.ceil(63 / (width || 10))`.
+        for cw in [0.0, -0.0, f64::NAN] {
+            assert_eq!(
+                checked(cw, &[(0, 3.0), (1, 63.0)]),
+                (Some(1), 7, true),
+                "{cw}"
+            );
+        }
+    }
+
+    #[test]
+    fn width_check_divides_by_a_measured_char_width() {
+        assert_eq!(checked(10.0, &[(0, 3.0), (1, 63.0)]), (Some(1), 7, true));
+        assert_eq!(checked(19.265625, &[(1, 63.0)]), (Some(1), 4, true));
+        // Below `charWidth`'s cache threshold (`width > 2`) but not 0: no fallback.
+        assert_eq!(checked(0.5, &[(1, 63.0)]), (Some(1), 126, true));
+        assert_eq!(checked(1e-3, &[(1, 63.0)]), (Some(1), 63_000, true));
+        // A negative or infinite width is truthy in `width || 10`, and its
+        // `chWidth` (negative, 0) never exceeds `maxLineLength` 0.
+        assert_eq!(checked(-1.0, &[(1, 63.0)]), (None, 0, false));
+        assert_eq!(checked(f64::INFINITY, &[(1, 63.0)]), (None, 0, false));
+    }
+
+    #[test]
+    fn width_check_keeps_the_first_of_equal_lengths() {
+        assert_eq!(checked(0.0, &[(0, 63.0), (1, 63.0)]), (Some(0), 7, true));
+        // A line no wider than `sizerWidth` is not counted.
+        assert_eq!(checked(0.0, &[(0, 0.0), (1, -1.0)]), (None, 0, false));
+    }
+
+    /// Gap 12-3: the width check sets `maxLineChanged`, and the end of the operation
+    /// measures the new longest line into `sizerWidth` and clears the flag
+    /// (endOperation_R2, endOperation_W2), so CM5's recorded end-of-operation value
+    /// is false.
+    #[test]
+    fn width_check_sets_max_line_changed_and_the_measurement_clears_it() {
+        let mut m = Metrics::monospace(0.0, 13.0);
+        m.wide_width = 20.0;
+        let mut cm = Editor::new(
+            "ab\n\u{4e00}\u{4e00}\u{4e00}",
+            Spec::Null,
+            EditorOptions::default(),
+            m,
+        );
+        cm.heights.borrow_mut().max_line = MaxLine::default();
+        let widths = cm.view_widths();
+        assert_eq!(widths, [(0, 3.0), (1, 63.0)]);
+        cm.check_view_widths(&widths);
+        {
+            let h = cm.heights.borrow();
+            assert!(h.max_line.changed);
+            assert_eq!((h.max_line.length, h.max_line.sizer_width), (7, None));
+        }
+        cm.measure_max_line(true);
+        let h = cm.heights.borrow();
+        assert!(!h.max_line.changed);
+        assert_eq!((h.max_line.length, h.max_line.sizer_width), (7, Some(67.0)));
+        drop(h);
+        assert_eq!(cm.max_line(), Some((1, 7)));
+    }
 }
