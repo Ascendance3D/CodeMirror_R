@@ -54,6 +54,10 @@ CM5_PLAYWRIGHT_FROM=<dir with node_modules/playwright>/ tools/web-test.sh <out d
 
 The browsers are `chromium`, `firefox` and `webkit`, and the emulated profiles `chromium-mobile` (Pixel 7) and `webkit-mobile` (iPhone 15). Emulation is not a phone, and Playwright's WebKit is not Safari.
 
+Each browser ends `PASS`, `FAIL`, `BLOCKED` or `UNSUPPORTED` in `browser-run.json`, and the exit status is 0 only when all pass (1 for a failure, 2 for a missing tool or reference). Without the CM5 build, or with a directory that is not the pinned build, the browsers are `BLOCKED` and no comparison counts. A run passes only when all 60 required CM5 comparisons ran (`REQUIRED` in `browser-run.mjs`). Each browser is closed on every exit path, and a run that takes longer than `--browser-timeout` (300 s) fails. `crates/cm-web/tests/web/harness-selftest.mjs` checks these outcomes and the browser cleanup with broken references and injected faults.
+
+The Node run in `wasm_runtime.rs` has a 120 s deadline that the test enforces itself. It does not need a `timeout` program.
+
 CI runs `CM_EVIDENCE=ci` with `CM_EVIDENCE_ALLOW=no-gpu-adapter,tool-absent`. Each permitted skip is one line in `CM_EVIDENCE_LOG`, which `tools/evidence_summary.py` checks.
 
 Renderer goldens are exact only for the adapter of a reviewed golden set (`crates/cm-view/tests/visual/goldens/ADAPTER.txt`, `REVIEWED.txt`). On any other adapter the geometry checks still run and the pixel comparison ends as a named `golden-unverified` evidence skip, which fails in strict mode. See the `visual_render.rs` header.
