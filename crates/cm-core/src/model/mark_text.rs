@@ -425,6 +425,7 @@ impl TextMarker {
                 redraw.push((n, n + 1));
             }
             let spans = line.borrow().marked_spans.clone();
+            let mut continued = false;
             if sink.is_some()
                 && collapsed
                 && let Some(span) = get_marked_span_for(spans.as_ref(), self)
@@ -436,9 +437,19 @@ impl TextMarker {
                 if span.from.is_some() {
                     min = Some(n);
                 }
+                continued = span.from.is_none();
             }
             if let Some(spans) = spans {
                 line.borrow_mut().marked_spans = remove_marked_span(&spans, self);
+            }
+            // `if (span.from == null && this.collapsed && !lineIsHidden(this.doc, line)
+            // && cm) updateLineHeight(line, textHeight(cm.display))`, with the default
+            // height of a line here (as `updateLine` uses).
+            if continued
+                && let Some(d) = doc
+                && !line_is_hidden(d, &line)
+            {
+                d.inner_mut().tree.update_line_height(&line, 1.0);
             }
         }
         let doc = doc.cloned();

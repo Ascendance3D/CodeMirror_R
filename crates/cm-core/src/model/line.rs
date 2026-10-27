@@ -117,6 +117,11 @@ impl LineHandle {
     pub fn text_utf16(&self) -> Text {
         self.0.borrow().text.clone()
     }
+    /// `lineLength(line)`: the length in UTF-16 units, taking collapsed ranges into
+    /// account (0 for a hidden line).
+    pub fn line_length(&self) -> i64 {
+        super::spans::line_length(&self.0)
+    }
     pub fn height(&self) -> f64 {
         self.0.borrow().height
     }

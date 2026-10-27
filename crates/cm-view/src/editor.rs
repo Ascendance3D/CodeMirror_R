@@ -32,8 +32,8 @@ use cm_core::pos::{Sticky, cmp};
 use cm_core::text::{Text, from_u16, is_js_space, split_lines_auto, to_u16};
 use cm_core::util::misc::count_column;
 use cm_core::{
-    CmError, Doc, DocOptions, EditorId, EditorSemantics, EditorSink, Editors, NoEditors, Pos,
-    SelOptions, SelRange,
+    CmError, Doc, DocOptions, EditorId, EditorSemantics, EditorSink, Editors, LineHandle,
+    NoEditors, Pos, SelOptions, SelRange,
 };
 use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_mode};
 
@@ -204,6 +204,51 @@ pub(crate) struct HeightCache {
     pub(crate) prefix: Option<Vec<f64>>,
     /// Width of the widest line (`display.maxLine`), recomputed after changes.
     pub(crate) max_width: Option<f64>,
+    pub(crate) max_line: MaxLine,
+}
+
+/// The longest line: `display.maxLine`, `maxLineLength`, `maxLineChanged` and
+/// `sizerWidth`. `findMaxLine` and the change bookkeeping choose it; the end of an
+/// operation measures it when it changed (endOperation_R2), and that measurement
+/// highlights it when it is outside the rendered range.
+#[derive(Default)]
+pub(crate) struct MaxLine {
+    pub(crate) line: Option<LineHandle>,
+    pub(crate) length: i64,
+    pub(crate) changed: bool,
+    /// `display.sizerWidth`: the measured width of the line, plus 3 (`None` = null).
+    pub(crate) sizer_width: Option<f64>,
+    /// `cm.options.lineWrapping`, for the document hooks, which have no options.
+    pub(crate) wrapping: bool,
+}
+
+impl std::fmt::Debug for MaxLine {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MaxLine")
+            .field("length", &self.length)
+            .field("changed", &self.changed)
+            .field("sizer_width", &self.sizer_width)
+            .finish_non_exhaustive()
+    }
+}
+
+/// `findMaxLine(cm)` (src/line/spans.js:378): the first line of the greatest
+/// `lineLength`.
+pub(crate) fn find_max_line(doc: &Doc, ml: &mut MaxLine) {
+    let first = doc.first_line();
+    let mut line = doc.get_line_handle(first);
+    let mut length = line.as_ref().map_or(0, |l| l.line_length());
+    doc.each_line(first, first + doc.line_count() as i64, |l| {
+        let len = l.line_length();
+        if len > length {
+            length = len;
+            line = Some(l.clone());
+        }
+        false
+    });
+    ml.line = line;
+    ml.length = length;
+    ml.changed = true;
 }
 
 pub(crate) struct MouseState {
@@ -424,8 +469,17 @@ impl Editor {
             options,
         };
         ed.update_gutter();
+        {
+            // attachDoc (document_data.js:98): `if (!lineWrapping) findMaxLine(cm)`.
+            let mut h = ed.heights.borrow_mut();
+            h.max_line.wrapping = ed.options.line_wrapping;
+            if !ed.options.line_wrapping {
+                find_max_line(&ed.doc, &mut h.max_line);
+            }
+        }
         ed.update_view();
         ed.render_view_styles();
+        ed.measure_max_line(true);
         // The constructor's operation draws the display and reports its range.
         ed.display.reported_view = (ed.display.view_from, ed.display.view_to);
         Ok(ed)
@@ -454,6 +508,7 @@ impl Editor {
             cm.options.tab_size = n;
             cm.hs.borrow_mut().tab_size = n;
             highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.clear_caches();
             cm.invalidate_heights();
             cm.force_update = true;
         });
@@ -461,7 +516,22 @@ impl Editor {
     /// `setOption("lineWrapping", v)`.
     pub fn set_line_wrapping(&mut self, v: bool) {
         self.run_op(|cm| {
+            let changed = cm.options.line_wrapping != v;
             cm.options.line_wrapping = v;
+            if changed {
+                // wrappingChanged (options.js:180): `sizerWidth = null` when wrapping
+                // turns on, `findMaxLine` when it turns off, then `clearCaches`.
+                {
+                    let mut h = cm.heights.borrow_mut();
+                    h.max_line.wrapping = v;
+                    if v {
+                        h.max_line.sizer_width = None;
+                    } else {
+                        find_max_line(&cm.doc, &mut h.max_line);
+                    }
+                }
+                cm.clear_caches();
+            }
             cm.invalidate_heights();
             cm.force_update = true;
         });
@@ -781,6 +851,16 @@ impl Editor {
     /// `viewportChange` follows when the range differs from the one last reported.
     pub(crate) fn end_operation_display(&mut self, rec: &mut OpRecord) {
         let (old_from, old_to) = (self.display.view_from, self.display.view_to);
+        // endOperation_R1: `if (op.updateMaxLine) findMaxLine(cm)`; a changed
+        // maxLine forces the update when lines wrap.
+        let max_line_wraps = {
+            let mut h = self.heights.borrow_mut();
+            h.max_line.wrapping = self.options.line_wrapping;
+            if std::mem::take(&mut rec.update_max_line) {
+                find_max_line(&self.doc, &mut h.max_line);
+            }
+            h.max_line.changed && self.options.line_wrapping
+        };
         self.take_sel_scroll();
         if let Some(st) = self.op.scroll_top.take() {
             self.put_scroll_top(st);
@@ -865,7 +945,7 @@ impl Editor {
             }
         }
         self.set_view(vf, vt);
-        let force = std::mem::take(&mut self.force_update);
+        let force = std::mem::take(&mut self.force_update) || max_line_wraps;
         let numbers_ok = |n: Option<i64>, to: i64| n.is_none_or(|n| n >= to);
         let (vis_from, vis_to) = self.visible_lines_in(view_top, ensure);
         // updateDisplayIfNeeded (update_display.js:93): the first bail-out.
@@ -905,6 +985,7 @@ impl Editor {
             redrawn = true;
         }
         self.render_view_styles();
+        self.measure_max_line(redrawn);
         if redrawn {
             self.display.update_line_numbers = None;
             let ls = self.shared.ls.borrow();
@@ -937,6 +1018,95 @@ impl Editor {
         }
         for n in from..to {
             self.line_styles(n);
+        }
+    }
+
+    /// The longest-line work at the end of an operation that drew `updated` lines.
+    /// endOperation_R2 (operations.js:88-102): the width check of
+    /// `updateHeightsInViewport`, then, when `maxLineChanged` and lines do not wrap,
+    /// `measureChar(cm, display.maxLine, len)`. For a line outside the rendered range
+    /// that is `updateExternalMeasurement` -> `buildLineContent` -> `getLineStyles`
+    /// with no frontier update, so the line is highlighted only when its styles are
+    /// stale, saving states as `getContextBefore` does. endOperation_W2 clears
+    /// `maxLineChanged`; endOperation_finish -> `postUpdateDisplay` runs the width
+    /// check again.
+    pub(crate) fn measure_max_line(&mut self, updated: bool) {
+        if self.options.line_wrapping {
+            return;
+        }
+        // The rendered lines do not change between the two width checks.
+        let widths = if updated {
+            self.view_widths()
+        } else {
+            Vec::new()
+        };
+        self.check_view_widths(&widths);
+        let line = {
+            let h = self.heights.borrow();
+            h.max_line
+                .changed
+                .then(|| h.max_line.line.clone())
+                .flatten()
+        };
+        if let Some(n) = line.and_then(|l| self.doc.get_line_number(&l)) {
+            if n < self.display.view_from || n >= self.display.view_to {
+                let vis = self.doc.visual_line_no(n);
+                let mut hs = self.hs.borrow_mut();
+                highlight::get_line_styles(&self.doc, &self.mode, &mut hs, vis, None);
+            }
+            let w = self.text_width(n);
+            let mut h = self.heights.borrow_mut();
+            h.max_line.sizer_width = Some(self.metrics.padding_h + w + 3.0);
+            h.max_line.changed = false;
+        }
+        self.check_view_widths(&widths);
+    }
+
+    /// The rendered lines that are not hidden, with the width `updateHeightsInViewport`
+    /// reads for each: the line's text box from the line's left edge, less 1
+    /// (`firstChild.right - box.left - 1`).
+    fn view_widths(&self) -> Vec<(i64, f64)> {
+        let (from, to) = (self.display.view_from, self.display.view_to);
+        if !self.view_in_doc(from, to) {
+            return Vec::new();
+        }
+        (from..to)
+            .filter(|&n| !self.doc.line_is_hidden(n))
+            .map(|n| (n, self.metrics.padding_h + self.text_width(n) - 1.0))
+            .collect()
+    }
+
+    /// `updateHeightsInViewport` (update_lines.js:31-46) without wrapping: a rendered
+    /// line wider than `sizerWidth` whose width in characters exceeds
+    /// `maxLineLength` becomes the longest line.
+    fn check_view_widths(&self, widths: &[(i64, f64)]) {
+        let mut h = self.heights.borrow_mut();
+        let ml = &mut h.max_line;
+        for &(n, width) in widths {
+            // `width > null` is `width > 0`.
+            if width > ml.sizer_width.unwrap_or(0.0) {
+                let ch = (width / self.metrics.char_width).ceil() as i64;
+                if ch > ml.length {
+                    ml.length = ch;
+                    ml.line = self.doc.get_line_handle(n);
+                    ml.changed = true;
+                }
+            }
+        }
+    }
+
+    /// The unwrapped width of line `n`'s text, without the line's padding.
+    fn text_width(&self, n: i64) -> f64 {
+        let t = self.line_text(n);
+        LineLayout::new(&self.metrics, &t, self.options.tab_size, None).width
+            - 2.0 * self.metrics.padding_h
+    }
+
+    /// `clearCaches(cm)` (position_measurement.js:278): the longest line is measured
+    /// again at the end of the operation when lines do not wrap.
+    fn clear_caches(&self) {
+        if !self.options.line_wrapping {
+            self.heights.borrow_mut().max_line.changed = true;
         }
     }
 
@@ -1178,6 +1348,15 @@ impl Editor {
                 cm.set_scroll_left(x);
             }
         });
+    }
+
+    /// `display.maxLine` as a line number, with `maxLineLength`: the longest line
+    /// as CM5 tracks it (`None` while lines wrap and none was chosen).
+    pub fn max_line(&self) -> Option<(i64, i64)> {
+        let h = self.heights.borrow();
+        let ml = &h.max_line;
+        let n = self.doc.get_line_number(ml.line.as_ref()?)?;
+        Some((n, ml.length))
     }
 
     /// Widest line, for the horizontal scroll extent (`display.maxLine`).

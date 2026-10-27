@@ -193,6 +193,8 @@ pub(crate) struct OpRecord {
     pub maybe_hidden: Vec<TextMarker>,
     pub maybe_unhidden: Vec<TextMarker>,
     pub display: Vec<DisplayEvent>,
+    /// `op.updateMaxLine`: the longest line must be found again (endOperation_R1).
+    pub update_max_line: bool,
 }
 
 impl OpRecord {
@@ -207,6 +209,7 @@ impl OpRecord {
             maybe_hidden: Vec::new(),
             maybe_unhidden: Vec::new(),
             display: Vec::new(),
+            update_max_line: false,
         }
     }
 }
@@ -295,6 +298,42 @@ impl EditorShared {
     fn with_op(&self, f: impl FnOnce(&mut OpRecord)) {
         if let Some(op) = self.op.borrow_mut().as_mut() {
             f(op);
+        }
+    }
+
+    /// The `display.maxLine` bookkeeping of makeChangeSingleDocInEditor
+    /// (changes.js:214-241), after the change. CM5 checks before the change whether
+    /// the max line is among the lines `checkWidthStart..=to.line`; those lines
+    /// become `checkWidthStart..from.line + text.length`, so the same holds exactly
+    /// when the max line is now among those or was removed. A line longer than
+    /// `maxLineLength` becomes the max line; otherwise a touched max line is found
+    /// again at the end of the operation.
+    fn track_max_line(&self, doc: &Doc, c: &ChangeObj) {
+        let mut h = self.heights.borrow_mut();
+        let ml = &mut h.max_line;
+        if ml.wrapping {
+            return;
+        }
+        let start = doc.visual_line_no(c.from.line);
+        let end = c.from.line + c.text.len() as i64;
+        let mut recompute = match ml.line.as_ref().map(|l| doc.get_line_number(l)) {
+            Some(Some(n)) => n >= start && n < end,
+            Some(None) => true,
+            None => false,
+        };
+        doc.each_line(start, end, |l| {
+            let len = l.line_length();
+            if len > ml.length {
+                ml.line = Some(l.clone());
+                ml.length = len;
+                ml.changed = true;
+                recompute = false;
+            }
+            false
+        });
+        drop(h);
+        if recompute {
+            self.with_op(|op| op.update_max_line = true);
         }
     }
 }
@@ -457,6 +496,7 @@ impl EditorSink for EditorShared {
             h.prefix = None;
             h.max_width = None;
         }
+        self.track_max_line(doc, c);
         // `regChange`, then `signalLater(cm, "change", cm, obj)` and `changeObjs`.
         let (snap, has_changes) = {
             let ls = self.ls.borrow();
@@ -521,7 +561,7 @@ impl EditorSink for EditorShared {
         self.with_op(|op| op.selection_changed = true);
         self.signal_cursor_activity();
     }
-    fn marker_added(&self, _doc: &Doc, marker: &TextMarker) {
+    fn marker_added(&self, doc: &Doc, marker: &TextMarker) {
         let o = marker.options();
         // markText: `regChange` for a collapsed marker, `regLineChange` for each line
         // of one with a class or style.
@@ -538,7 +578,22 @@ impl EditorSink for EditorShared {
                 None => None,
             };
             if let Some((a, b)) = lines {
+                // markText (mark_text.js:183-211): a collapsed marker over the max
+                // line's visual line makes the end of the operation find it again.
+                // The marker is already in place, so this asks whether the max line
+                // is among the lines from `from.line`'s visual line to `to.line`.
+                let touches_max = marker.is_collapsed() && {
+                    let h = self.heights.borrow();
+                    let ml = &h.max_line;
+                    !ml.wrapping
+                        && ml
+                            .line
+                            .as_ref()
+                            .and_then(|l| doc.get_line_number(l))
+                            .is_some_and(|n| n >= doc.visual_line_no(a) && n <= b)
+                };
                 self.with_op(|op| {
+                    op.update_max_line |= touches_max;
                     if marker.is_collapsed() {
                         op.regs.push(ViewChange::Range {
                             from: a,
@@ -569,7 +624,7 @@ impl EditorSink for EditorShared {
     }
     fn marker_cleared(
         &self,
-        _doc: &Doc,
+        doc: &Doc,
         marker: &TextMarker,
         min: Option<i64>,
         max: Option<i64>,
@@ -578,6 +633,25 @@ impl EditorSink for EditorShared {
         // mark_text.js:56 and :74: `regLineChange` for each line of a marker that is
         // not collapsed, `regChange(cm, min, max + 1)` for a collapsed one.
         let collapsed = marker.is_collapsed();
+        // mark_text.js:63-71: each line of a cleared collapsed marker may make its
+        // visual line the longest.
+        if let (true, Some(a), Some(b)) = (collapsed, min, max) {
+            let mut h = self.heights.borrow_mut();
+            let ml = &mut h.max_line;
+            if !ml.wrapping {
+                for n in a..=b {
+                    let Some(visual) = doc.get_line_handle(doc.visual_line_no(n)) else {
+                        continue;
+                    };
+                    let len = visual.line_length();
+                    if len > ml.length {
+                        ml.line = Some(visual);
+                        ml.length = len;
+                        ml.changed = true;
+                    }
+                }
+            }
+        }
         self.with_op(|op| {
             op.regs.extend(redraw.iter().map(|&(a, b)| {
                 if collapsed {

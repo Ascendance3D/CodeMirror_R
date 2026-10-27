@@ -6,7 +6,9 @@
 //!
 //! `indentLine(n, "smart")` starts from a saved state when `findStartLine` finds one
 //! within 100 lines, else from the least indented line with a fresh state, so the
-//! result depends on which lines the constructor rendered. The recorder writes CM5's
+//! result depends on which lines the constructor rendered, and on the longest line,
+//! which the constructor measures and, outside that range, highlights
+//! (`tests/maxline_state.rs`). The recorder writes CM5's
 //! rendered range (`view`); [`sized_editor`] picks a line height that renders the
 //! same range and checks it.
 
@@ -61,38 +63,9 @@ fn sized(value: &str, mode: &str, h: f64) -> Editor {
     )
 }
 
-/// `indentLine(n, "smart")` results that differ, `(doc, line)`, all from one cm-view
-/// gap: CM5's constructor measures `display.maxLine` (`endOperation_R2`,
-/// `measureChar` -> `updateExternalMeasurement` -> `getLineStyles`), which
-/// highlights the longest line and saves states there and on the line before it.
-/// cm-view computes the width without highlighting, so `findStartLine` finds no saved
-/// state near those lines and starts at the least indented line instead. In
-/// `scala-page-flat` every line has indentation 0, so the start is the line just
-/// before `n` with a fresh state. The test checks that highlighting the longest line
-/// first, as CM5's measurement does, gives CM5's result for each of these lines.
-const MAX_LINE_GAP: &[(&str, i64)] = &[
-    ("scala-page-flat", 685),
-    ("scala-page-flat", 686),
-    ("scala-page-flat", 687),
-    ("scala-page-flat", 721),
-];
-
-/// `findMaxLine`: the first line of the greatest length.
-fn longest_line(value: &str) -> i64 {
-    let mut best = (0, 0);
-    for (i, l) in value.split('\n').enumerate() {
-        let n = l.encode_utf16().count();
-        if n > best.1 {
-            best = (i, n);
-        }
-    }
-    best.0 as i64
-}
-
 #[test]
 fn clike_editor_documents_match_cm5() {
     let d = data();
-    let mut gaps = Vec::new();
     for doc in d["docs"].as_array().unwrap() {
         let name = doc["name"].as_str().unwrap();
         let value = doc["value"].as_str().unwrap();
@@ -126,20 +99,11 @@ fn clike_editor_documents_match_cm5() {
         for (i, w) in doc["each"].as_array().unwrap().iter().enumerate() {
             let mut cm = editor(value, mode);
             cm.indent_line(i as i64, Some(Indent::Smart), false);
-            let got = from_u16(&cm.line_text(i as i64));
-            if got != w.as_str().unwrap() {
-                println!("{name} indentLine({i}, smart): js {w} rust {got:?}");
-                gaps.push((name.to_string(), i as i64));
-                // With the maxLine measurement's highlighting, cm-view agrees.
-                let mut cm = editor(value, mode);
-                cm.line_styles(longest_line(value));
-                cm.indent_line(i as i64, Some(Indent::Smart), false);
-                assert_eq!(
-                    from_u16(&cm.line_text(i as i64)),
-                    w.as_str().unwrap(),
-                    "{name} indentLine({i}, smart) after highlighting the longest line"
-                );
-            }
+            assert_eq!(
+                from_u16(&cm.line_text(i as i64)),
+                w.as_str().unwrap(),
+                "{name} indentLine({i}, smart)"
+            );
         }
         let mut cm = editor(value, mode);
         for i in 0..cm.doc.line_count() {
@@ -147,14 +111,6 @@ fn clike_editor_documents_match_cm5() {
         }
         assert_eq!(cm.get_value(), doc["all"].as_str().unwrap(), "{name} all");
     }
-    let known: Vec<(String, i64)> = MAX_LINE_GAP
-        .iter()
-        .map(|&(n, l)| (n.to_string(), l))
-        .collect();
-    assert_eq!(
-        gaps, known,
-        "indentLine differences other than the maxLine gap"
-    );
 }
 
 #[test]
