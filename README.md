@@ -63,6 +63,8 @@ The rust mode (`mode/rust/rust.js`, a simple mode) is checked by `crates/cm-mode
 
 The clike mode (`mode/clike/clike.js`: C, C++, Java, C#, Scala, Kotlin, GLSL shaders, nesC, Objective-C, Objective-C++, Squirrel and Ceylon, 16 MIME types) is checked by `crates/cm-modes/tests/clike_oracle.rs` (every `def` configuration and its `hintWords`, mode properties, resolution, per-line state, indent and tokens, restarts from saved states, `runMode`) and `crates/cm-view/tests/clike_mode_editor.rs` (editor tokens, smart indent, `getHelpers`, typed electric input). Record them again with `node oracle/cm5-clike-mode.mjs <copy>/oracle/cm5-build` and `CM5_BUILD_DIR=<copy>/oracle/cm5-build node oracle/cm5-clike-editor.mjs`.
 
+The longest line (`display.maxLine`) and the parser states its measurement leaves (`findMaxLine`, the change and collapsed-marker bookkeeping, the `endOperation_R2` measurement and the `updateHeightsInViewport` width check) are checked by `crates/cm-view/tests/maxline_state.rs` against `tests/data/cm5-maxline-state.json`. Record it again with `CM5_BUILD_DIR=<copy>/oracle/cm5-build node oracle/cm5-maxline-state.mjs`.
+
 ## C0 suite
 
 The upstream CM5 browser test suite (1483 tests) runs headless against a rollup build of the vendored tree. Build it in a **disposable copy**, so the reference tree stays unbuilt:
