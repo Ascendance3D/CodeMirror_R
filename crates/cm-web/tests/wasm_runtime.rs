@@ -391,27 +391,32 @@ const names = ["probe_read", "probe_read_missing", "probe_write", "probe_app_ope
 console.log(JSON.stringify(Object.fromEntries(names.map(n => [n, e[n]()]))));
 "#;
 
-#[test]
-fn std_fs_is_unsupported_on_wasm32_in_node() {
+/// Build `src` as a cdylib over cm-view for wasm32, run `run` on it in Node and return
+/// its trimmed stdout, or `None` after a `tool-absent` skip.
+fn run_cm_view_probe(name: &str, src_rs: &str, run: &str) -> Option<String> {
     if let Err(why) = preflight(None) {
-        return cm_evidence::tool_absent(why);
+        cm_evidence::tool_absent(why);
+        return None;
     }
-    let out = out_dir().join("stdfs-probe");
+    let out = out_dir().join(format!("{name}-probe"));
     let src = out.join("crate");
     std::fs::create_dir_all(src.join("src")).unwrap();
     let cm_view = Path::new(env!("CARGO_MANIFEST_DIR")).join("../cm-view");
     std::fs::write(
         src.join("Cargo.toml"),
         format!(
-            "[package]\nname = \"cm-stdfs-probe\"\nversion = \"0.0.0\"\nedition = \"2024\"\n\
+            "[package]\nname = \"cm-{name}-probe\"\nversion = \"0.0.0\"\nedition = \"2024\"\n\
              [lib]\ncrate-type = [\"cdylib\"]\n\
              [dependencies]\ncm-view = {{ path = {:?}, default-features = false }}\n\
+             cm-core = {{ path = {:?} }}\ncm-modes = {{ path = {:?} }}\n\
              [workspace]\n",
-            cm_view.canonicalize().unwrap()
+            cm_view.canonicalize().unwrap(),
+            cm_view.join("../cm-core").canonicalize().unwrap(),
+            cm_view.join("../cm-modes").canonicalize().unwrap()
         ),
     )
     .unwrap();
-    std::fs::write(src.join("src/lib.rs"), STDFS_PROBE).unwrap();
+    std::fs::write(src.join("src/lib.rs"), src_rs).unwrap();
     // The workspace's resolved versions, so the offline build needs nothing new.
     std::fs::copy(
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../Cargo.lock"),
@@ -427,16 +432,17 @@ fn std_fs_is_unsupported_on_wasm32_in_node() {
         .status()
         .expect("cargo");
     assert!(status.success(), "probe build for wasm32 failed: {status}");
-    let wasm = target.join("wasm32-unknown-unknown/debug/cm_stdfs_probe.wasm");
+    let wasm = target.join(format!("wasm32-unknown-unknown/debug/cm_{name}_probe.wasm"));
     let script = out.join("run.mjs");
-    std::fs::write(&script, STDFS_RUN).unwrap();
+    std::fs::write(&script, run).unwrap();
     let mut node = Command::new("node");
     node.arg(&script).arg(&wasm);
     let out = match run_with_deadline(&mut node, NODE_LIMIT) {
         Ok(Run::Exited(out)) => out,
         Ok(other) => panic!("node run timed out: {other:?}"),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            return cm_evidence::tool_absent(format!("node: {e}"));
+            cm_evidence::tool_absent(format!("node: {e}"));
+            return None;
         }
         Err(e) => panic!("run node: {e}"),
     };
@@ -445,8 +451,121 @@ fn std_fs_is_unsupported_on_wasm32_in_node() {
         "{}",
         String::from_utf8_lossy(&out.stderr)
     );
+    Some(String::from_utf8_lossy(&out.stdout).trim().to_string())
+}
+
+#[test]
+fn std_fs_is_unsupported_on_wasm32_in_node() {
+    let Some(out) = run_cm_view_probe("stdfs", STDFS_PROBE, STDFS_RUN) else {
+        return;
+    };
     assert_eq!(
-        String::from_utf8_lossy(&out.stdout).trim(),
+        out,
         r#"{"probe_read":2,"probe_read_missing":2,"probe_write":2,"probe_app_open":2}"#
+    );
+}
+
+// The cut stamp on wasm32-unknown-unknown (C-CLOCK-STAMP, R5), where the time is
+// unknown (no system clock, no host clock): a read-only cut changes nothing and
+// leaves no stamp, so the next typing is `+input`; a successful cut keeps `cut`.
+
+const CUT_PROBE: &str = r#"
+use std::cell::RefCell;
+use std::rc::Rc;
+use cm_core::{Pos, clock};
+use cm_view::{Editor, EditorOptions, Metrics};
+fn editor() -> (Editor, Rc<RefCell<Vec<String>>>) {
+    let ed = Editor::new("abc\ndef", cm_modes::Spec::Null, EditorOptions::default(), Metrics::test_grid());
+    let log = Rc::new(RefCell::new(Vec::new()));
+    let l = log.clone();
+    ed.on_change(move |_, c| l.borrow_mut().push(c.origin.clone().unwrap_or_default()));
+    (ed, log)
+}
+fn select(ed: &mut Editor) {
+    ed.run_op(|cm| cm.doc.set_selection(Pos::new(0, 0), Some(Pos::new(0, 2)), None));
+}
+/// Encodes origins: 1 `+input`, 2 `cut`, 3 `paste`, 9 another.
+fn code(log: &Rc<RefCell<Vec<String>>>) -> i32 {
+    log.borrow().iter().fold(0, |n, o| n * 10 + match o.as_str() {
+        "+input" => 1,
+        "cut" => 2,
+        "paste" => 3,
+        _ => 9,
+    })
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn clock_unavailable() -> i32 {
+    (clock::status() == clock::ClockStatus::Unavailable && clock::now().is_nan()) as i32
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn blocked_cut_changes_nothing() -> i32 {
+    let (mut ed, log) = editor();
+    ed.options.read_only = true;
+    select(&mut ed);
+    let ok = ed.cut().as_deref() == Some("ab")
+        && ed.get_value() == "abc\ndef"
+        && ed.cut_incoming == -1.0
+        && ed.doc.history_size().undo == 0
+        && log.borrow().is_empty();
+    ok as i32
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn blocked_cut_then_type() -> i32 {
+    let (mut ed, log) = editor();
+    ed.options.read_only = true;
+    select(&mut ed);
+    ed.cut();
+    ed.options.read_only = false;
+    ed.run_op(|cm| cm.doc.set_cursor(Pos::new(1, 3), None));
+    ed.type_text("z");
+    let origins = code(&log);
+    if ed.get_value() != "abc\ndefz" || !ed.exec_command("undo") || ed.get_value() != "abc\ndef" {
+        return -1;
+    }
+    origins
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn blocked_cut_then_paste() -> i32 {
+    let (mut ed, log) = editor();
+    ed.options.read_only = true;
+    select(&mut ed);
+    ed.cut();
+    ed.options.read_only = false;
+    ed.paste("P");
+    code(&log)
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn cut_then_type() -> i32 {
+    let (mut ed, log) = editor();
+    select(&mut ed);
+    ed.cut();
+    ed.type_text("z");
+    if ed.doc.history_size().undo != 2 {
+        return -1;
+    }
+    code(&log)
+}
+"#;
+
+const CUT_RUN: &str = r#"
+import { readFileSync } from "node:fs";
+const m = await WebAssembly.compile(readFileSync(process.argv[2]));
+const imports = {};
+for (const i of WebAssembly.Module.imports(m)) {
+  (imports[i.module] ??= {})[i.name] = () => { throw new Error(`import ${i.module}.${i.name}`); };
+}
+const { exports: e } = await WebAssembly.instantiate(m, imports);
+const names = ["clock_unavailable", "blocked_cut_changes_nothing", "blocked_cut_then_type", "blocked_cut_then_paste", "cut_then_type"];
+console.log(JSON.stringify(Object.fromEntries(names.map(n => [n, e[n]()]))));
+"#;
+
+#[test]
+fn blocked_cut_leaves_no_stamp_on_wasm32_in_node() {
+    let Some(out) = run_cm_view_probe("cut", CUT_PROBE, CUT_RUN) else {
+        return;
+    };
+    assert_eq!(
+        out,
+        r#"{"clock_unavailable":1,"blocked_cut_changes_nothing":1,"blocked_cut_then_type":1,"blocked_cut_then_paste":3,"cut_then_type":21}"#
     );
 }
