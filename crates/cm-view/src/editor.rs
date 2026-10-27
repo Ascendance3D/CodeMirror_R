@@ -1362,14 +1362,21 @@ impl Editor {
     /// `scrollTo(x, y)` (a `methodOp`: the display, `update` and `viewportChange`
     /// follow at the end of the operation).
     pub fn scroll_to(&mut self, x: Option<f64>, y: Option<f64>) {
-        self.run_op(|cm| {
-            if let Some(y) = y {
-                cm.put_scroll_top(y);
-            }
-            if let Some(x) = x {
-                cm.set_scroll_left(x);
-            }
-        });
+        self.run_op(|cm| cm.scroll_to_coords(x, y));
+    }
+    /// `scrollToCoords(cm, x, y)` (src/display/scrolling.js:125): a queued
+    /// `op.scrollToPos` is resolved from its estimate first, then the given axes
+    /// replace `op.scrollLeft` / `op.scrollTop`, applied when the operation ends.
+    fn scroll_to_coords(&mut self, x: Option<f64>, y: Option<f64>) {
+        if x.is_some() || y.is_some() {
+            self.resolve_scroll_to_pos();
+        }
+        if let Some(x) = x {
+            self.op.scroll_left = Some(x);
+        }
+        if let Some(y) = y {
+            self.op.scroll_top = Some(y);
+        }
     }
 
     /// `display.maxLine` as a line number, with `maxLineLength`: the longest line
