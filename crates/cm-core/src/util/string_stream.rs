@@ -232,7 +232,9 @@ impl<'a> StringStream<'a> {
     /// match spans are relative to `pos` (the sliced string). A match that does not
     /// start at `pos` is no match. With `g`, JS `String.prototype.match` returns
     /// every match and no `index`, so the first match is taken wherever it starts
-    /// and its length consumed; only its group 0 is kept.
+    /// and its length consumed. The returned `Match` is that first match with all
+    /// its capture groups: `group(1)` is capture 1, where the JS array's `[1]` is
+    /// the second whole match.
     pub fn match_regexp(&mut self, re: &RegExp, consume: bool) -> Option<Match> {
         let rest = &self.string[self.pos.min(self.string.len())..];
         let m = re.exec(rest)?;
@@ -276,6 +278,34 @@ mod tests {
     use super::*;
     use crate::text::to_u16;
     use std::cell::RefCell;
+
+    /// `match(regexp)`: without `g` only a match at `pos` counts and a failed match
+    /// consumes nothing; with `g` the first match counts wherever it starts, its
+    /// length is consumed, and `group(1)` is its capture 1 (JS gives `["k-"]`, whose
+    /// `[1]` would be a second whole match; see `match_regexp`). Values from CM5
+    /// `StringStream.match` in node.
+    #[test]
+    fn match_regexp_consumption() {
+        use crate::util::regexp::RegExp;
+        let s = to_u16("k--k-");
+        let mut st = StringStream::new(&s, Some(4), None);
+        let re = RegExp::new("([K])(-)", "iu").unwrap();
+        let m = st.match_regexp(&re, true).unwrap();
+        assert_eq!(
+            (m.index(), m.len(), m.group(1), st.pos),
+            (0, 2, Some((0, 1)), 2)
+        );
+        assert!(st.match_regexp(&re, true).is_none());
+        assert_eq!(st.pos, 2);
+        let m = st.match_regexp(&re, false).map(|m| m.len());
+        assert_eq!((m, st.pos), (None, 2));
+        let re = RegExp::new("([K])-", "giu").unwrap();
+        let m = st.match_regexp(&re, true).unwrap();
+        assert_eq!(
+            (m.index(), m.len(), m.group(1), st.pos),
+            (1, 2, Some((1, 2)), 4)
+        );
+    }
 
     /// `hideFirstChars(n, inner)` (`src/util/StringStream.js:75`; used by the pug and
     /// soy modes, not ported): `lineStart` is raised by `n` while `inner` runs, which
