@@ -4,6 +4,11 @@
 //!
 //! The cached values live on cm-core's line objects ([`LineHandle::state_after`],
 //! [`LineHandle::styles`]), which `updateLine` clears exactly like the JS.
+//!
+//! Not ported: overlays (`addOverlay`, `cm.state.overlays`, `baseToken`), so
+//! `highlightLine` runs the mode alone. Mode line classes (`line-*` /
+//! `line-background-*` tokens) are collected into `Styles::classes`, but the renderer
+//! does not draw them.
 
 use std::any::Any;
 use std::cell::Cell;

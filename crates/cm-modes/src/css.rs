@@ -15,6 +15,11 @@
 //!   override them the way `createObj(found, spec)` does.
 //! * JS regexps are hand-coded over UTF-16 code units; `\w`, `\d` and `/i` are
 //!   ASCII-only as in non-unicode JS regexps.
+//!
+//! Gaps: keyword tables and `tokenHooks` are read only from a [`CssConfig`]. A spec
+//! with plain-object tables (`propertyKeywords: {...}`, `valueKeywords`, ...) falls
+//! back to `text/css`, and separate table keys are ignored. The
+//! `registerHelper("hintWords", "css", allWords)` call is not ported.
 
 use std::cell::RefCell;
 use std::rc::Rc;

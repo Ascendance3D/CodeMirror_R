@@ -1,5 +1,6 @@
-//! The model half of `src/line/line_data.js`: `Line`, `updateLine`, `cleanUpLine`.
-//! (Rendering — `buildLineContent` and friends — belongs to the view and is not here.)
+//! The model half of `src/line/line_data.js`: `Line` and `cleanUpLine`. `updateLine`
+//! is in `document_data.rs`. (Rendering — `buildLineContent` and friends — belongs to
+//! the view and is not here.)
 
 use std::any::Any;
 use std::cell::RefCell;

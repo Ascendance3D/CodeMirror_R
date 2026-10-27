@@ -19,6 +19,10 @@
 //! Mono at 32px: 19.265625px), Chromium's layout produces exactly these positions,
 //! which is what lets `oracle/cm5-cmd-ops.mjs` compare command results that go through
 //! `coordsChar`/`cursorCoords` (vertical motion, page motion, goLineLeft/Right).
+//!
+//! Gaps: left-to-right only. `cursorCoords` and `coordsCharInner` ignore `getOrder`
+//! (no `coordsBidiPart`/`coordsBidiPartWrapped`, no `other` cursor). A line is laid
+//! out from its whole text: collapsed ranges and widgets take no part.
 
 use cm_core::pos::Sticky;
 use cm_core::util::misc::{find_first, is_extending_char, skip_extending_chars};

@@ -702,3 +702,139 @@ pub(crate) fn line_length(line: &LineRef) -> i64 {
     }
     len
 }
+
+#[cfg(test)]
+mod tests {
+    //! `collapsedSpanAround`, `visualLineEnd` and `visualLineContinued`
+    //! (`src/line/spans.js:229`, `:269`, `:278`) have no caller in the ported code. The
+    //! expected values come from the JS and were confirmed by running those functions
+    //! on an upstream `Doc` in node.
+    use super::*;
+    use crate::model::mark_text::{MarkOptions, Marker};
+
+    fn fold(doc: &Doc, from: (i64, i64), to: (i64, i64)) -> Marker {
+        doc.mark_text(
+            Pos::new(from.0, from.1),
+            Pos::new(to.0, to.1),
+            MarkOptions {
+                collapsed: true,
+                ..Default::default()
+            },
+        )
+        .unwrap()
+    }
+
+    fn no(doc: &Doc, line: &LineRef) -> i64 {
+        doc.line_no(line).unwrap()
+    }
+
+    /// `sp.from < ch && sp.to > ch`, `null` meaning unbounded; non-collapsed markers
+    /// are skipped.
+    #[test]
+    fn collapsed_span_around_is_strictly_inside() {
+        let doc = Doc::new("abcdef\nghij\nklmn\nopq");
+        let m = fold(&doc, (0, 3), (2, 2)).text_marker();
+        doc.mark_text(
+            Pos::new(0, 0),
+            Pos::new(3, 3),
+            MarkOptions {
+                class_name: Some("x".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let around = |l: i64, ch: i64| collapsed_span_around(&doc.get_line_ref(l), ch);
+        // line 0: span {from: 3, to: null}
+        assert_eq!(around(0, 3), None);
+        assert_eq!(around(0, 4).as_ref(), Some(&m));
+        assert_eq!(around(0, 6).as_ref(), Some(&m));
+        // line 1: span {from: null, to: null}
+        assert_eq!(around(1, 0).as_ref(), Some(&m));
+        assert_eq!(around(1, 4).as_ref(), Some(&m));
+        // line 2: span {from: null, to: 2}
+        assert_eq!(around(2, 1).as_ref(), Some(&m));
+        assert_eq!(around(2, 2), None);
+        assert_eq!(around(3, 0), None);
+    }
+
+    /// Of several collapsed spans around `ch`, the one `compareCollapsedMarkers` ranks
+    /// highest wins: the enclosing marker.
+    #[test]
+    fn collapsed_span_around_prefers_outer_marker() {
+        let doc = Doc::new("abcdefgh");
+        let _inner = fold(&doc, (0, 2), (0, 4));
+        let outer = fold(&doc, (0, 1), (0, 6)).text_marker();
+        let around = |ch: i64| collapsed_span_around(&doc.get_line_ref(0), ch);
+        assert_eq!(around(0), None);
+        assert_eq!(around(1), None);
+        for ch in 2..=5 {
+            assert_eq!(around(ch).as_ref(), Some(&outer), "ch {ch}");
+        }
+        assert_eq!(around(6), None);
+
+        // More lines wins first (`a.lines.length - b.lines.length`).
+        let doc = Doc::new("abcdef\nghij\nklmn");
+        let _one = fold(&doc, (1, 1), (1, 3));
+        let big = fold(&doc, (0, 2), (2, 1)).text_marker();
+        for ch in [0, 2, 4] {
+            assert_eq!(
+                collapsed_span_around(&doc.get_line_ref(1), ch).as_ref(),
+                Some(&big),
+                "ch {ch}"
+            );
+        }
+    }
+
+    /// `visualLineEnd` follows collapsed spans at the end of the line to the line
+    /// the marker ends on; `visualLineContinued` lists those lines, or is
+    /// `undefined` (`None`) when there are none. Intermediate lines fully inside one
+    /// marker are not listed.
+    #[test]
+    fn visual_line_end_and_continued_single_fold() {
+        let doc = Doc::new("abcdef\nghij\nklmn\nopq");
+        fold(&doc, (0, 3), (2, 2));
+        let end = |l: i64| no(&doc, &visual_line_end(doc.get_line_ref(l)));
+        let cont = |l: i64| {
+            visual_line_continued(doc.get_line_ref(l))
+                .map(|v| v.iter().map(|x| no(&doc, x)).collect::<Vec<_>>())
+        };
+        assert_eq!([end(0), end(1), end(2), end(3)], [2, 2, 2, 3]);
+        assert_eq!(cont(0), Some(vec![2]));
+        assert_eq!(cont(1), Some(vec![2]));
+        assert_eq!(cont(2), None);
+        assert_eq!(cont(3), None);
+    }
+
+    #[test]
+    fn visual_line_end_and_continued_chained_folds() {
+        let doc = Doc::new("abcdef\nghij\nklmn\nopq");
+        fold(&doc, (0, 3), (1, 2));
+        fold(&doc, (1, 3), (2, 1));
+        let end = |l: i64| no(&doc, &visual_line_end(doc.get_line_ref(l)));
+        let cont = |l: i64| {
+            visual_line_continued(doc.get_line_ref(l))
+                .map(|v| v.iter().map(|x| no(&doc, x)).collect::<Vec<_>>())
+        };
+        assert_eq!([end(0), end(1), end(2), end(3)], [2, 2, 2, 3]);
+        assert_eq!(cont(0), Some(vec![1, 2]));
+        assert_eq!(cont(1), Some(vec![2]));
+        assert_eq!(cont(2), None);
+        assert_eq!(cont(3), None);
+
+        // Two folds meeting at (1, 2): line 1 is reached through the first and left
+        // through the second.
+        let doc = Doc::new("abcdef\nghij\nklmn\nopq");
+        fold(&doc, (0, 3), (1, 2));
+        fold(&doc, (1, 2), (3, 1));
+        let end = |l: i64| no(&doc, &visual_line_end(doc.get_line_ref(l)));
+        let cont = |l: i64| {
+            visual_line_continued(doc.get_line_ref(l))
+                .map(|v| v.iter().map(|x| no(&doc, x)).collect::<Vec<_>>())
+        };
+        assert_eq!([end(0), end(1), end(2), end(3)], [3, 3, 3, 3]);
+        assert_eq!(cont(0), Some(vec![1, 3]));
+        assert_eq!(cont(1), Some(vec![3]));
+        assert_eq!(cont(2), Some(vec![3]));
+        assert_eq!(cont(3), None);
+    }
+}

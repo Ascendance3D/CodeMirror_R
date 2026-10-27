@@ -1,9 +1,12 @@
 //! `src/model/mark_text.js`: `TextMarker`, `SharedTextMarker`, `markText`, and the
 //! shared-marker plumbing for linked documents.
 //!
-//! Not ported (view-only): `replacedWith`/widget nodes, `changed()`, CSS/attribute
-//! rendering. Marker display options (`className`, `css`, …) are stored so a view can
-//! use them later.
+//! Not ported: `replacedWith`/widget nodes, `changed()`, the `attributes` option, and
+//! the editor events `markerAdded`/`markerCleared`/`markerChanged`. `className`,
+//! `startStyle`, `endStyle`, `css` and `title` are stored but nothing draws them.
+//! The marker `clear` handlers (`on_clear`) run synchronously at the end of
+//! `clear()`; the JS defers them with `signalLater`. There are no user
+//! `beforeCursorEnter`/`hide`/`unhide` listeners (only `clearOnEnter` is honored).
 
 use std::cell::{Ref, RefCell, RefMut};
 use std::rc::{Rc, Weak};

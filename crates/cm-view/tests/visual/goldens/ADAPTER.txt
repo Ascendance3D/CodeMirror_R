@@ -1,0 +1,7 @@
+adapter: NVIDIA GeForce RTX 3060 Ti
+backend: Vulkan
+device_type: DiscreteGpu
+vendor: 0x10de
+device: 0x2414
+driver: NVIDIA
+driver_info: 595.99.02

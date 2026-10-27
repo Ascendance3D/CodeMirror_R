@@ -104,9 +104,10 @@ pub(crate) struct DocInner {
     pub change_listeners: Vec<ChangeHandler>,
     /// `cm.state.suppressEdits`: set while a key handler runs in a read-only editor.
     pub suppress_edits: bool,
-    /// Set by `setSelectionNoUndo` when it would call `ensureCursorVisible(doc.cm)`;
-    /// taken by the view ([`Doc::take_scroll_request`]).
-    pub scroll_request: bool,
+    /// The cursor at each `ensureCursorVisible(doc.cm)` call of `setSelectionNoUndo`
+    /// and `replaceSelections`, in order; taken by the view
+    /// ([`Doc::take_scroll_requests`]).
+    pub scroll_requests: Vec<Pos>,
     /// `cm.display.shift` (see [`Doc::set_display_shift`]).
     pub display_shift: bool,
 }
@@ -217,7 +218,7 @@ impl Doc {
             change_listeners: Vec::new(),
             suppress_edits: false,
             display_shift: false,
-            scroll_request: false,
+            scroll_requests: Vec::new(),
             before_selection_change: Vec::new(),
         };
         let doc = Doc(Rc::new(RefCell::new(inner)));
@@ -492,7 +493,13 @@ impl Doc {
 
     /// Make the model behave as if the document were attached to an editor.
     pub fn attach_editor_semantics(&self, sem: EditorSemantics) {
-        self.inner_mut().editor = Some(sem);
+        let mut i = self.inner_mut();
+        i.editor = Some(sem);
+        // A request belongs to the editor it was made for (see
+        // `detach_editor_semantics`); a new editor starts with none, even when the
+        // previous one was dropped without detaching.
+        i.scroll_requests.clear();
+        drop(i);
         // The `undoDepth` option handler runs when the editor is created.
         self.set_undo_depth(sem.undo_depth);
     }
@@ -500,6 +507,8 @@ impl Doc {
         let mut i = self.inner_mut();
         i.editor = None;
         i.cur_op = None;
+        // CM5 writes each request into the old editor's `curOp`; none outlives it.
+        i.scroll_requests.clear();
     }
     /// `cm.operation(f)`: group calls into one operation (only meaningful with
     /// editor semantics).
@@ -528,11 +537,18 @@ impl Doc {
     pub fn set_suppress_edits(&self, v: bool) {
         self.inner_mut().suppress_edits = v;
     }
-    /// Whether a selection change since the last call asked for the cursor to be
-    /// scrolled into view (`setSelectionNoUndo`: `if (!(options && options.scroll ===
-    /// false) && doc.cm) ensureCursorVisible(doc.cm)`). Only with editor semantics.
-    pub fn take_scroll_request(&self) -> bool {
-        std::mem::take(&mut self.inner_mut().scroll_request)
+    /// The cursor positions that asked to be scrolled into view since the last call,
+    /// oldest first (`setSelectionNoUndo`: `if (!(options && options.scroll === false)
+    /// && doc.cm) ensureCursorVisible(doc.cm)`; `replaceSelections` without a replaced
+    /// selection). `ensureCursorVisible` reads the cursor when it is called, so each
+    /// request keeps its own position. Only with editor semantics.
+    pub fn take_scroll_requests(&self) -> Vec<Pos> {
+        std::mem::take(&mut self.inner_mut().scroll_requests)
+    }
+    /// `ensureCursorVisible(doc.cm)`: record the cursor for the view.
+    pub(crate) fn request_cursor_visible(&self) {
+        let cur = self.get_cursor(None);
+        self.inner_mut().scroll_requests.push(cur);
     }
     pub fn suppress_edits(&self) -> bool {
         let i = self.inner();
@@ -967,6 +983,10 @@ impl Doc {
             }
             if let Some(ns) = new_sel {
                 set_selection_replace_history(self, ns, None);
+            } else if self.inner().editor.is_some() {
+                // `else if (this.cm) ensureCursorVisible(this.cm)`, applied by the view
+                // like the request of `setSelectionNoUndo` (see `take_scroll_requests`).
+                self.request_cursor_visible();
             }
         })
     }

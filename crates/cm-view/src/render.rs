@@ -6,6 +6,12 @@
 //! ([`crate::measure`]), one glyphon buffer per run of same-styled cells, so what is
 //! drawn and what `coordsChar`/`cursorCoords` compute always agree. Colors follow
 //! the CM5 default theme (`lib/codemirror.css`, `.cm-s-default`).
+//!
+//! Not drawn: mode line classes (`Styles::classes`), marked-text styling
+//! (`className`, `css`, `startStyle`/`endStyle`, `title`), `addLineClass` and gutter
+//! markers (no API; the only gutter is line numbers), line/inline widgets and
+//! `addWidget` (no API). Collapsed ranges are drawn as ordinary text. Text,
+//! selections and cursors are laid out left to right (no bidi reordering).
 
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -223,12 +229,59 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    /// `font_size` and `line_height` in physical pixels.
+    /// `font_size` and `line_height` in physical pixels. Fonts come from the system
+    /// font database, plus the system DejaVu Sans Mono file when it exists.
     pub fn new(
         gpu: &Gpu,
         format: wgpu::TextureFormat,
         font_size: f32,
         line_height: f32,
+    ) -> Renderer {
+        let mut font_system = FontSystem::new();
+        let mono = std::path::Path::new("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
+        if mono.exists() {
+            let _ = font_system.db_mut().load_font_file(mono);
+        }
+        Renderer::with_font_system(gpu, format, font_size, line_height, font_system)
+    }
+
+    /// A renderer whose only font is `data` (one TrueType/OpenType file), for
+    /// reproducible output: no system fonts are loaded and the locale is fixed to
+    /// `en-US`. The file's family must be [`MONO_FAMILY`].
+    pub fn with_font_data(
+        gpu: &Gpu,
+        format: wgpu::TextureFormat,
+        font_size: f32,
+        line_height: f32,
+        data: Vec<u8>,
+    ) -> Result<Renderer, String> {
+        let mut db = glyphon::cosmic_text::fontdb::Database::new();
+        db.load_font_data(data);
+        let families: Vec<String> = db
+            .faces()
+            .flat_map(|f| f.families.iter().map(|(name, _)| name.clone()))
+            .collect();
+        if !families.iter().any(|f| f == MONO_FAMILY) {
+            return Err(format!(
+                "font data has families {families:?}, expected {MONO_FAMILY:?}"
+            ));
+        }
+        let font_system = FontSystem::new_with_locale_and_db("en-US".into(), db);
+        Ok(Renderer::with_font_system(
+            gpu,
+            format,
+            font_size,
+            line_height,
+            font_system,
+        ))
+    }
+
+    fn with_font_system(
+        gpu: &Gpu,
+        format: wgpu::TextureFormat,
+        font_size: f32,
+        line_height: f32,
+        font_system: FontSystem,
     ) -> Renderer {
         let device = &gpu.device;
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -265,11 +318,6 @@ impl Renderer {
             cache: None,
             multiview_mask: None,
         });
-        let mut font_system = FontSystem::new();
-        let mono = std::path::Path::new("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
-        if mono.exists() {
-            let _ = font_system.db_mut().load_font_file(mono);
-        }
         let swash = SwashCache::new();
         let cache = Cache::new(device);
         let viewport = Viewport::new(device, &cache);
@@ -520,6 +568,11 @@ impl Renderer {
                 }
             }
         }
+        // Cursors are drawn above the text (`div.CodeMirror-cursors { z-index: 3 }`),
+        // but below the gutters, which also have z-index 3 and come later in the DOM
+        // (`d.scroller` = [sizer, heightForcer, gutters]). The gutter is filled before
+        // the text, so a cursor scrolled behind it is clipped to the text area here.
+        let mut cursors: Vec<(Rect, Rgba)> = Vec::new();
         if frame.cursor_visible {
             for r in &sel.ranges {
                 // `showCursorWhenSelecting` is false by default: cursors for empty ranges.
@@ -535,10 +588,10 @@ impl Renderer {
                 } else {
                     (m.char_width as f32 / 8.0).max(1.0).round()
                 };
-                quads.push((
-                    full(wx(c.left), wy(c.top), wx(c.left) + cw, wy(c.bottom)),
-                    theme.cursor,
-                ));
+                let (x0, x1) = (wx(c.left).max(gutter), (wx(c.left) + cw).max(gutter));
+                if x1 > x0 {
+                    cursors.push((full(x0, wy(c.top), x1, wy(c.bottom)), theme.cursor));
+                }
             }
         }
 
@@ -602,15 +655,20 @@ impl Renderer {
         }
         self.numbers = numbers_keep;
 
-        // Scrollbar thumb.
+        // Scrollbar thumb, above the text and the cursors
+        // (`.CodeMirror-vscrollbar { z-index: 6 }`).
+        let mut thumb: Option<(Rect, Rgba)> = None;
         let doc_h = editor.doc_height() as f32 + 2.0 * pad_top;
         if doc_h > h {
             let bar_h = (h * h / doc_h).max(20.0);
             let y = (st / (doc_h - h)) * (h - bar_h);
-            quads.push((full(w - 8.0, y, w - 2.0, y + bar_h), theme.scrollbar));
+            thumb = Some((full(w - 8.0, y, w - 2.0, y + bar_h), theme.scrollbar));
         }
 
-        // Upload quads (NDC, linear color).
+        // Upload quads (NDC, linear color); the first `under` are drawn below the text.
+        let under = (quads.len() * 6) as u32;
+        quads.extend(cursors);
+        quads.extend(thumb);
         let mut verts: Vec<Vertex> = Vec::with_capacity(quads.len() * 6);
         for (r, c) in &quads {
             let (x0, y0, x1, y1) = (r.left as f32, r.top as f32, r.right as f32, r.bottom as f32);
@@ -723,11 +781,16 @@ impl Renderer {
             if let Some(vb) = &vbuf {
                 pass.set_pipeline(&self.rect_pipeline);
                 pass.set_vertex_buffer(0, vb.slice(..));
-                pass.draw(0..verts.len() as u32, 0..1);
+                pass.draw(0..under, 0..1);
             }
             self.text
                 .render(&self.atlas, &self.viewport, &mut pass)
                 .expect("glyphon render");
+            if let Some(vb) = vbuf.as_ref().filter(|_| verts.len() as u32 > under) {
+                pass.set_pipeline(&self.rect_pipeline);
+                pass.set_vertex_buffer(0, vb.slice(..));
+                pass.draw(under..verts.len() as u32, 0..1);
+            }
         }
         queue.submit(Some(encoder.finish()));
         self.atlas.trim();

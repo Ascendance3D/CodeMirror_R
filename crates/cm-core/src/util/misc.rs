@@ -189,3 +189,38 @@ pub fn find_first<F: FnMut(i64) -> bool>(mut pred: F, mut from: i64, mut to: i64
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `insertSorted(array, value, score)` (`src/util/misc.js:104`; CM5 calls it from
+    /// `addOverlay`): insert after every element whose score is `<=` the new one, so
+    /// equal scores keep insertion order. `NaN` compares false both ways. Sequence
+    /// confirmed against the JS in node.
+    #[test]
+    fn insert_sorted_matches_cm5() {
+        let score = |x: &(f64, char)| x.0;
+        let mut a = vec![(1.0, 'a'), (2.0, 'b'), (2.0, 'c'), (3.0, 'd')];
+        let names = |a: &Vec<(f64, char)>| a.iter().map(|x| x.1).collect::<String>();
+        insert_sorted(&mut a, (2.0, 'e'), score);
+        assert_eq!(names(&a), "abced");
+        insert_sorted(&mut a, (0.0, 'f'), score);
+        assert_eq!(names(&a), "fabced");
+        insert_sorted(&mut a, (3.0, 'g'), score);
+        assert_eq!(names(&a), "fabcedg");
+        insert_sorted(&mut a, (9.0, 'h'), score);
+        assert_eq!(names(&a), "fabcedgh");
+        insert_sorted(&mut a, (f64::NAN, 'i'), score);
+        assert_eq!(names(&a), "ifabcedgh");
+
+        let mut e = Vec::new();
+        insert_sorted(&mut e, (5.0, 'z'), score);
+        assert_eq!(names(&e), "z");
+
+        // A NaN already in the array stops the scan.
+        let mut n = vec![(f64::NAN, 'a'), (1.0, 'b')];
+        insert_sorted(&mut n, (2.0, 'c'), score);
+        assert_eq!(names(&n), "cab");
+    }
+}

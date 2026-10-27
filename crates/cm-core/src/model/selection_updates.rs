@@ -202,7 +202,7 @@ pub(crate) fn set_selection_no_undo(doc: &Doc, sel: Sel, options: Option<&SelOpt
     set_selection_inner(doc, skipped);
     // `if (!(options && options.scroll === false) && doc.cm) ensureCursorVisible(doc.cm)`
     if options.and_then(|o| o.scroll) != Some(false) && doc.inner().editor.is_some() {
-        doc.inner_mut().scroll_request = true;
+        doc.request_cursor_visible();
     }
 }
 

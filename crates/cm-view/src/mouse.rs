@@ -1,4 +1,11 @@
-//! `src/edit/mouse_events.js` and the text-drop half of `src/edit/drop_events.js`.
+//! `src/edit/mouse_events.js`, including the internal drag of a selection
+//! (`leftButtonStartDrag`); its drop is the `draggingText` branch of `onDrop`
+//! (`src/edit/drop_events.js`), done on mouse-up.
+//!
+//! Not ported: `handleMappedButton` (`LeftClick`-style key bindings), `bidiSimplify`,
+//! `gutterClick` events, the context menu; from `drop_events.js`, drops from outside
+//! the editor (text or files, `allowDropFileTypes`), `onDragStart`/`onDragOver` and
+//! the drag cursor.
 //!
 //! Mouse coordinates are "div" coordinates of the text area (x includes the line
 //! padding, y is document y without the top padding); the renderer converts window

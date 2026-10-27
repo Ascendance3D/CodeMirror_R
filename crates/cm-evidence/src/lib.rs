@@ -5,11 +5,11 @@
 //! X_ITE answer-key resolver did not. See `PROVENANCE.md`.
 //!
 //! A test that cannot find its evidence must fail or skip by name; it never passes in silence.
-//! [`no_gpu`] and [`tool_absent`] own that decision:
+//! [`no_gpu`], [`tool_absent`] and [`golden_unverified`] own that decision:
 //!
 //! - `CM_EVIDENCE=strict` (the default): every skip fails the test.
 //! - `CM_EVIDENCE=ci`: a skip passes only when `CM_EVIDENCE_ALLOW` (comma list) names its reason
-//!   (`no-gpu-adapter`, `tool-absent`). Each permitted skip appends one line to `CM_EVIDENCE_LOG`
+//!   (`no-gpu-adapter`, `tool-absent`, `golden-unverified`). Each permitted skip appends one line to `CM_EVIDENCE_LOG`
 //!   (default `target/evidence-skips.tsv`): test, reason, key, caller, detail. Cargo hides the stderr
 //!   of a passing test, so the log is the record.
 
@@ -124,6 +124,14 @@ pub fn tool_absent(detail: impl fmt::Display) {
     skip("tool-absent", detail)
 }
 
+/// The checks ran, but no reviewed reference exists for this environment (for example
+/// no golden set for the GPU adapter), so an exact comparison was not made: fails in
+/// strict mode, or records a `golden-unverified` skip.
+#[track_caller]
+pub fn golden_unverified(detail: impl fmt::Display) {
+    skip("golden-unverified", detail)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -150,10 +158,11 @@ mod tests {
 
     #[test]
     fn strict_allows_no_skip() {
-        let p = policy(Mode::Strict, "no-gpu-adapter,tool-absent");
+        let p = policy(Mode::Strict, "no-gpu-adapter,tool-absent,golden-unverified");
 
         assert!(!p.allows("no-gpu-adapter"));
         assert!(!p.allows("tool-absent"));
+        assert!(!p.allows("golden-unverified"));
     }
 
     #[test]
@@ -162,6 +171,7 @@ mod tests {
 
         assert!(p.allows("no-gpu-adapter"));
         assert!(!p.allows("tool-absent"));
+        assert!(!p.allows("golden-unverified"));
     }
 
     /// The old silent forms (`eprintln!` and return) must not come back in a workspace test.
