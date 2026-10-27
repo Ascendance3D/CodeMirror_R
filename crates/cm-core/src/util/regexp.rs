@@ -11,9 +11,11 @@
 //! - lookahead `(?=)` / `(?!)` (quantifiable without `u`, Annex B) and lookbehind
 //!   `(?<=)` / `(?<!)`;
 //! - `^ $ \b \B`, `.`, classes with ranges and `\d \w \s` (and negations);
-//! - flags `g i m s u y`. `i` uses the spec's `Canonicalize` (`toUpperCase` of one
-//!   code unit, never mapping non-ASCII to ASCII); with `u` it uses simple lowercase
-//!   mapping, an approximation of Unicode simple case folding.
+//! - flags `g i m s u y`. `i` uses the spec's `Canonicalize`: `toUpperCase` of one
+//!   code unit, never mapping non-ASCII to ASCII, or with `u` Unicode simple case
+//!   folding. A class matches when one of its members canonicalizes as the input
+//!   character does, and with `i` and `u` `\w`, `\W` and `\b` count ſ (U+017F) and
+//!   K (U+212A) as word characters, as the spec's `WordCharacters` does.
 //! - Annex B leniency without `u`: a lone `{`, `}` or `]` is literal, `\8` / `\9`
 //!   and unknown escapes are identity escapes, a `\N` above the group count is a
 //!   legacy octal escape, `\c` without a letter is a literal backslash.
@@ -25,6 +27,8 @@
 //! greediness. Each quantified iteration of a complex atom recurses, so a group
 //! repeated tens of thousands of times on one line can exhaust the stack; single
 //! characters, `.` and classes repeat without recursion.
+
+use std::sync::OnceLock;
 
 use crate::text::{is_js_space, is_js_word};
 
@@ -213,7 +217,7 @@ fn hex_val(c: u32) -> Option<u32> {
 }
 
 /// The spec's `Canonicalize(rer, ch)` for an `i` regexp: upper case without `u`,
-/// (approximately) case-folded, so lower case, with `u`.
+/// simple case folding ([`simple_fold`]) with `u`.
 fn canonicalize(c: u32, unicode: bool) -> u32 {
     if c < 0x80 {
         return match (unicode, c) {
@@ -222,16 +226,12 @@ fn canonicalize(c: u32, unicode: bool) -> u32 {
             _ => c,
         };
     }
+    if unicode {
+        return simple_fold(c);
+    }
     let Some(ch) = char::from_u32(c) else {
         return c; // a lone surrogate
     };
-    if unicode {
-        let mut l = ch.to_lowercase();
-        return match (l.next(), l.next()) {
-            (Some(x), None) => x as u32,
-            _ => c,
-        };
-    }
     let mut u = ch.to_uppercase();
     match (u.next(), u.next()) {
         (Some(x), None) if (x as u32) <= 0xffff => {
@@ -245,16 +245,70 @@ fn canonicalize(c: u32, unicode: bool) -> u32 {
     }
 }
 
-fn lower_one(c: u32) -> u32 {
-    char::from_u32(c)
-        .map(|ch| {
-            let mut l = ch.to_lowercase();
-            match (l.next(), l.next()) {
-                (Some(x), None) => x as u32,
-                _ => c,
-            }
-        })
-        .unwrap_or(c)
+/// Unicode simple case folding, `scf` (`CaseFolding.txt` statuses C and S), from the
+/// std case tables: the lowercase mapping when it is one character, else the
+/// lowercase of the uppercase mapping (ſ → s, ς → σ, µ → μ, ϐ → β). The match arms
+/// are where `CaseFolding.txt` departs from that.
+fn simple_fold(c: u32) -> u32 {
+    match c {
+        // İ and ı fold only under the full (F) and Turkic (T) statuses.
+        0x130 | 0x131 => return c,
+        // Cherokee folds to upper case, the older encoding.
+        0x13a0..=0x13f5 => return c,
+        0x13f8..=0x13fd => return c - 8,
+        0xab70..=0xabbf => return c - 0xab70 + 0x13a0,
+        // Canonical equivalents without a simple case mapping.
+        0x1fd3 => return 0x390,
+        0x1fe3 => return 0x3b0,
+        0xfb05 => return 0xfb06,
+        _ => {}
+    }
+    fn one(mut it: impl Iterator<Item = char>) -> Option<char> {
+        match (it.next(), it.next()) {
+            (Some(x), None) => Some(x),
+            _ => None,
+        }
+    }
+    let Some(ch) = char::from_u32(c) else {
+        return c; // a lone surrogate
+    };
+    match one(ch.to_lowercase()) {
+        Some(l) if l != ch => l as u32,
+        _ => match one(ch.to_uppercase()) {
+            Some(u) if u != ch => one(u.to_lowercase()).map_or(c, |l| l as u32),
+            _ => c,
+        },
+    }
+}
+
+/// No code point from here up has a case mapping or folding (the last is Adlam
+/// U+1E943); the unit tests check it.
+const CASED_END: u32 = 0x1_f000;
+
+/// The characters other than `cc` that canonicalize to `cc`, as `(cc, c)` pairs:
+/// the class members that match an input character canonicalizing to `cc`.
+fn case_variants(cc: u32, unicode: bool) -> &'static [(u32, u32)] {
+    static TABLES: [OnceLock<Vec<(u32, u32)>>; 2] = [OnceLock::new(), OnceLock::new()];
+    let t = TABLES[unicode as usize].get_or_init(|| {
+        let end = if unicode { CASED_END } else { 0x10000 };
+        let mut t: Vec<(u32, u32)> = (0..end)
+            .filter_map(|c| {
+                let k = canonicalize(c, unicode);
+                (k != c).then_some((k, c))
+            })
+            .collect();
+        t.sort_unstable();
+        t
+    });
+    let lo = t.partition_point(|&(k, _)| k < cc);
+    let n = t[lo..].partition_point(|&(k, _)| k == cc);
+    &t[lo..lo + n]
+}
+
+/// The code points of `s`; a lone surrogate stands for itself.
+fn code_points(s: &[u16]) -> impl Iterator<Item = u32> + '_ {
+    char::decode_utf16(s.iter().copied())
+        .map(|r| r.map_or_else(|e| e.unpaired_surrogate() as u32, |c| c as u32))
 }
 
 // --------------------------------------------------------------------------------
@@ -998,7 +1052,7 @@ impl Matcher<'_> {
         items.iter().any(|it| match *it {
             ClassItem::Range(a, b) => (a..=b).contains(&c),
             ClassItem::Digit(n) => is_digit(c) != n,
-            ClassItem::Word(n) => is_word_cp(c) != n,
+            ClassItem::Word(n) => self.is_word(c) != n,
             ClassItem::Space(n) => is_space_cp(c) != n,
         })
     }
@@ -1007,11 +1061,26 @@ impl Matcher<'_> {
         if !self.re.flags.ignore_case {
             return self.class_has(items, c);
         }
+        // CharacterSetMatcher: some member canonicalizes to `Canonicalize(c)`;
+        // `c` itself and `cc`, which canonicalizes to itself, are the likely ones.
+        if self.class_has(items, c) {
+            return true;
+        }
         let u = self.re.flags.unicode;
         let cc = canonicalize(c, u);
-        [c, cc, lower_one(c), lower_one(cc)]
-            .into_iter()
-            .any(|x| canonicalize(x, u) == cc && self.class_has(items, x))
+        self.class_has(items, cc)
+            || case_variants(cc, u)
+                .iter()
+                .any(|&(_, x)| self.class_has(items, x))
+    }
+
+    /// `WordCharacters(rer)`: with `i` and `u` also the characters that
+    /// canonicalize to a basic word character, ſ (U+017F) and K (U+212A).
+    fn is_word(&self, c: u32) -> bool {
+        is_word_cp(c)
+            || (self.re.flags.ignore_case
+                && self.re.flags.unicode
+                && is_word_cp(canonicalize(c, true)))
     }
 
     /// Matches one character with a single-character node; the position after it.
@@ -1033,7 +1102,7 @@ impl Matcher<'_> {
     }
 
     fn is_word_at(&self, pos: usize) -> bool {
-        self.s.get(pos).is_some_and(|&c| is_js_word(c))
+        self.s.get(pos).is_some_and(|&c| self.is_word(c as u32))
     }
 
     fn m(&self, node: &Node, pos: usize, caps: &mut Caps, k: &mut Cont<'_>) -> bool {
@@ -1108,12 +1177,19 @@ impl Matcher<'_> {
                 if pos + len > self.s.len() {
                     return false;
                 }
-                let ic = self.re.flags.ignore_case;
-                let u = self.re.flags.unicode;
-                let same = (0..len).all(|j| {
-                    let (x, y) = (self.s[a + j] as u32, self.s[pos + j] as u32);
-                    x == y || (ic && canonicalize(x, u) == canonicalize(y, u))
-                });
+                let (x, y) = (&self.s[a..b], &self.s[pos..pos + len]);
+                let same = if !self.re.flags.ignore_case {
+                    x == y
+                } else if self.re.flags.unicode {
+                    // Character by character is code point by code point with `u`.
+                    code_points(x)
+                        .map(|c| canonicalize(c, true))
+                        .eq(code_points(y).map(|c| canonicalize(c, true)))
+                } else {
+                    x.iter().zip(y).all(|(&p, &q)| {
+                        canonicalize(p as u32, false) == canonicalize(q as u32, false)
+                    })
+                };
                 same && k(pos + len, caps)
             }
             Node::Seq(nodes) => self.seq(nodes, pos, caps, k),
@@ -1331,6 +1407,79 @@ mod tests {
         ] {
             assert!(RegExp::new(re, fl).is_err(), "{re} /{fl}");
         }
+    }
+
+    /// The case classes of the matcher (a character, what it canonicalizes to and
+    /// the other characters that do) are V8's, `orbits` in
+    /// `oracle/regexp-v8-baseline.json`: every code point with `u`, every code unit
+    /// without.
+    #[test]
+    fn case_classes_match_v8() {
+        let p = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../oracle/regexp-v8-baseline.json"
+        );
+        let b: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(p).unwrap()).unwrap();
+        for (key, unicode, end) in [("u", true, 0x11_0000u32), ("i", false, 0x1_0000)] {
+            let mut want = std::collections::HashMap::new();
+            for class in b["orbits"][key]["classes"].as_array().unwrap() {
+                let mut cps: Vec<u32> = class
+                    .as_str()
+                    .unwrap()
+                    .split(' ')
+                    .map(|h| u32::from_str_radix(h, 16).unwrap())
+                    .collect();
+                cps.sort_unstable();
+                for &c in &cps {
+                    want.insert(c, cps.clone());
+                }
+            }
+            let mut bad = Vec::new();
+            for c in 0..end {
+                let cc = canonicalize(c, unicode);
+                assert_eq!(canonicalize(cc, unicode), cc, "/{key} U+{c:04X}");
+                assert!(c < CASED_END || cc == c, "/{key} U+{c:04X}");
+                let mut got: Vec<u32> = std::iter::once(cc)
+                    .chain(case_variants(cc, unicode).iter().map(|&(_, x)| x))
+                    .collect();
+                got.sort_unstable();
+                if want.get(&c).map_or(got.len() > 1, |w| *w != got) {
+                    bad.push(format!("U+{c:04X}: {got:x?}"));
+                }
+            }
+            assert!(
+                bad.is_empty(),
+                "/{key}: {} differ: {:?}",
+                bad.len(),
+                &bad[..bad.len().min(20)]
+            );
+        }
+    }
+
+    #[test]
+    fn ignore_case_unicode_classes() {
+        // A class member that canonicalizes as the input does, not the input's
+        // own case variants: /[A-Z]/iu has `a`, /[ſ]/i has neither `s` nor `S`.
+        assert_eq!(ex("[A-Z]", "iu", "a"), g(&[Some("a")]));
+        assert_eq!(ex("[^A-Z]", "iu", "a"), None);
+        assert_eq!(ex("[K]", "iu", "\u{212a}"), g(&[Some("\u{212a}")]));
+        assert_eq!(ex("[\\u017f]", "iu", "S"), g(&[Some("S")]));
+        assert_eq!(ex("[\\u017f]", "i", "s"), None);
+        assert_eq!(ex("[\\u03c2]", "i", "\u{3a3}"), g(&[Some("\u{3a3}")]));
+        assert_eq!(ex("[\\uab70]", "iu", "\u{13a0}"), g(&[Some("\u{13a0}")]));
+        assert_eq!(ex("[\\u0131]", "iu", "i"), None);
+        // `WordCharacters` gains ſ and K with `iu` only.
+        assert_eq!(ex("\\W", "iu", "\u{17f}"), None);
+        assert_eq!(ex("\\W", "u", "\u{17f}"), g(&[Some("\u{17f}")]));
+        assert_eq!(ex("a\\b", "iu", "a\u{17f}"), None);
+        assert_eq!(ex("a\\b", "i", "a\u{17f}"), g(&[Some("a")]));
+        // A backreference compares code points with `u`.
+        assert_eq!(
+            ex("(\\ud801\\udc00)\\1", "iu", "\u{10400}\u{10428}"),
+            g(&[Some("\u{10400}\u{10428}"), Some("\u{10400}")])
+        );
+        assert_eq!(ex("(\\ud801\\udc00)\\1", "i", "\u{10400}\u{10428}"), None);
     }
 
     #[test]
