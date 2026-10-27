@@ -342,3 +342,111 @@ fn preflight_names_the_missing_tool() {
     }
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+// `cm_view::fileio::StdFs` on wasm32-unknown-unknown (C-HOST-FILE): every call is an
+// `Unsupported` error, never a missing file, and `App::open` returns it. cm-web never
+// uses `StdFs`, so a small cdylib over cm-view is generated here, built for wasm32 and
+// run in Node with plain `WebAssembly.instantiate` (no bindings).
+
+const STDFS_PROBE: &str = r#"
+use std::path::Path;
+use cm_view::app::{App, AppOptions, MemClipboard};
+use cm_view::fileio::{FileHost, StdFs};
+/// 0 `Ok(None)`, 1 `Ok(Some)`, 2 `Err(Unsupported)`, 3 another error.
+fn code<T>(r: std::io::Result<Option<T>>) -> i32 {
+    match r {
+        Ok(None) => 0,
+        Ok(Some(_)) => 1,
+        Err(e) if e.kind() == std::io::ErrorKind::Unsupported => 2,
+        Err(_) => 3,
+    }
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn probe_read() -> i32 { code(StdFs.read(Path::new("/etc/hostname"))) }
+#[unsafe(no_mangle)]
+pub extern "C" fn probe_read_missing() -> i32 { code(StdFs.read(Path::new("/no/such/file.wrl"))) }
+#[unsafe(no_mangle)]
+pub extern "C" fn probe_write() -> i32 { code(StdFs.write(Path::new("/tmp/x.wrl"), b"x").map(Some)) }
+#[unsafe(no_mangle)]
+pub extern "C" fn probe_app_open() -> i32 {
+    let r = App::open(
+        Path::new("/no/such/file.wrl"),
+        cm_view::Metrics::test_grid(),
+        &AppOptions::default(),
+        Box::new(MemClipboard::default()),
+    );
+    code(r.map(|_| None::<()>))
+}
+"#;
+
+const STDFS_RUN: &str = r#"
+import { readFileSync } from "node:fs";
+const m = await WebAssembly.compile(readFileSync(process.argv[2]));
+const imports = {};
+for (const i of WebAssembly.Module.imports(m)) {
+  (imports[i.module] ??= {})[i.name] = () => { throw new Error(`import ${i.module}.${i.name}`); };
+}
+const { exports: e } = await WebAssembly.instantiate(m, imports);
+const names = ["probe_read", "probe_read_missing", "probe_write", "probe_app_open"];
+console.log(JSON.stringify(Object.fromEntries(names.map(n => [n, e[n]()]))));
+"#;
+
+#[test]
+fn std_fs_is_unsupported_on_wasm32_in_node() {
+    if let Err(why) = preflight(None) {
+        return cm_evidence::tool_absent(why);
+    }
+    let out = out_dir().join("stdfs-probe");
+    let src = out.join("crate");
+    std::fs::create_dir_all(src.join("src")).unwrap();
+    let cm_view = Path::new(env!("CARGO_MANIFEST_DIR")).join("../cm-view");
+    std::fs::write(
+        src.join("Cargo.toml"),
+        format!(
+            "[package]\nname = \"cm-stdfs-probe\"\nversion = \"0.0.0\"\nedition = \"2024\"\n\
+             [lib]\ncrate-type = [\"cdylib\"]\n\
+             [dependencies]\ncm-view = {{ path = {:?}, default-features = false }}\n\
+             [workspace]\n",
+            cm_view.canonicalize().unwrap()
+        ),
+    )
+    .unwrap();
+    std::fs::write(src.join("src/lib.rs"), STDFS_PROBE).unwrap();
+    // The workspace's resolved versions, so the offline build needs nothing new.
+    std::fs::copy(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../Cargo.lock"),
+        src.join("Cargo.lock"),
+    )
+    .unwrap();
+    let target = out.join("target");
+    let status = Command::new(env!("CARGO"))
+        .current_dir(&src)
+        .env("CARGO_TARGET_DIR", &target)
+        .env("CARGO_BUILD_BUILD_DIR", out.join("build"))
+        .args(["build", "--offline", "--target", "wasm32-unknown-unknown"])
+        .status()
+        .expect("cargo");
+    assert!(status.success(), "probe build for wasm32 failed: {status}");
+    let wasm = target.join("wasm32-unknown-unknown/debug/cm_stdfs_probe.wasm");
+    let script = out.join("run.mjs");
+    std::fs::write(&script, STDFS_RUN).unwrap();
+    let mut node = Command::new("node");
+    node.arg(&script).arg(&wasm);
+    let out = match run_with_deadline(&mut node, NODE_LIMIT) {
+        Ok(Run::Exited(out)) => out,
+        Ok(other) => panic!("node run timed out: {other:?}"),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return cm_evidence::tool_absent(format!("node: {e}"));
+        }
+        Err(e) => panic!("run node: {e}"),
+    };
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&out.stdout).trim(),
+        r#"{"probe_read":2,"probe_read_missing":2,"probe_write":2,"probe_app_open":2}"#
+    );
+}
