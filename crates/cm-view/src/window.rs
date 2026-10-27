@@ -13,8 +13,9 @@ use winit::keyboard::{Key, ModifiersState, NamedKey};
 use winit::platform::modifier_supplement::KeyEventExtModifierSupplement;
 use winit::window::{Window, WindowId};
 
-use crate::app::{App, AppOptions, Clipboard, Input, MemClipboard, Step};
+use crate::app::{App, AppOptions, Clipboard, Input, Step};
 use crate::keymap::KeyEvent;
+use crate::native_clipboard::SystemClipboard;
 use crate::render::{FrameState, Gpu, Renderer};
 
 /// `keyNames` for a winit key (the key without modifiers, as CM5 uses `keyCode`).
@@ -91,25 +92,6 @@ pub fn key_event(key_without_mods: &Key, mods: ModifiersState) -> Option<KeyEven
         meta: mods.super_key(),
         alt_graph: false,
     })
-}
-
-struct SystemClipboard(Option<arboard::Clipboard>, MemClipboard);
-
-impl Clipboard for SystemClipboard {
-    fn get(&mut self) -> Option<String> {
-        match &mut self.0 {
-            Some(c) => c.get_text().ok(),
-            None => self.1.get(),
-        }
-    }
-    fn set(&mut self, text: &str) {
-        match &mut self.0 {
-            Some(c) => {
-                let _ = c.set_text(text.to_string());
-            }
-            None => self.1.set(text),
-        }
-    }
 }
 
 struct WinState {
@@ -321,14 +303,11 @@ impl ApplicationHandler for EditorWindow {
         let line_height = (font_size * 1.35).round();
         let mut renderer = Renderer::new(&gpu, format, font_size, line_height);
         let metrics = renderer.metrics();
-        let clipboard: Box<dyn Clipboard> = Box::new(SystemClipboard(
-            if self.script.is_some() {
-                None
-            } else {
-                arboard::Clipboard::new().ok()
-            },
-            MemClipboard::default(),
-        ));
+        let clipboard: Box<dyn Clipboard> = Box::new(if self.script.is_some() {
+            SystemClipboard::in_memory()
+        } else {
+            SystemClipboard::new()
+        });
         match App::open(&self.path, metrics, &self.opts, clipboard) {
             Ok(mut app) => {
                 app.editor

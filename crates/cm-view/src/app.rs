@@ -10,7 +10,7 @@ use std::rc::Rc;
 use cm_modes::Spec;
 
 use crate::editor::{Editor, EditorOptions, mode_for_path};
-use crate::fileio::{self, FileInfo};
+use crate::fileio::{self, FileHost, FileInfo, StdFs};
 use crate::keymap::KeyEvent;
 use crate::measure::Metrics;
 use crate::mouse::MouseEvent;
@@ -88,6 +88,8 @@ pub struct App {
     pub editor: Editor,
     pub file: Option<FileInfo>,
     pub clipboard: Box<dyn Clipboard>,
+    /// Where [`App::save`] writes (the local filesystem unless the host replaces it).
+    pub files: Box<dyn FileHost>,
     /// Status line text (last error or message).
     pub status: String,
     save_requested: Rc<Cell<bool>>,
@@ -135,20 +137,33 @@ impl App {
             editor,
             file,
             clipboard,
+            files: Box::new(StdFs),
             status,
             save_requested,
         }
     }
 
-    /// Open a file (a missing file opens empty and is created on save).
+    /// Open a file from the local filesystem (a missing file opens empty and is
+    /// created on save).
     pub fn open(
         path: &Path,
         metrics: Metrics,
         opts: &AppOptions,
         clipboard: Box<dyn Clipboard>,
     ) -> std::io::Result<App> {
-        let (text, info) = if path.exists() {
-            fileio::load(path)?
+        App::open_with(Box::new(StdFs), path, metrics, opts, clipboard)
+    }
+
+    /// Open a file through `files`, which [`App::save`] then writes to.
+    pub fn open_with(
+        mut files: Box<dyn FileHost>,
+        path: &Path,
+        metrics: Metrics,
+        opts: &AppOptions,
+        clipboard: Box<dyn Clipboard>,
+    ) -> std::io::Result<App> {
+        let (text, info) = if let Some(bytes) = files.read(path)? {
+            fileio::decode(path, &bytes)?
         } else {
             (
                 String::new(),
@@ -161,7 +176,9 @@ impl App {
                 },
             )
         };
-        Ok(App::new(&text, Some(info), metrics, opts, clipboard))
+        let mut app = App::new(&text, Some(info), metrics, opts, clipboard);
+        app.files = files;
+        Ok(app)
     }
 
     pub fn path(&self) -> Option<&PathBuf> {
@@ -197,7 +214,8 @@ impl App {
             return Err(std::io::Error::other("read-only"));
         }
         let text = self.editor.get_value();
-        fileio::save(&info.path, &text, &info)?;
+        let bytes = fileio::encode(&text, &info)?;
+        self.files.write(&info.path, &bytes)?;
         self.editor.doc.mark_clean();
         self.status = format!("saved {}", info.path.display());
         Ok(())

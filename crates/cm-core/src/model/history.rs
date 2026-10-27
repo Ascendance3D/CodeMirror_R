@@ -176,6 +176,7 @@ pub(crate) fn add_change_to_history(
 ) {
     let hist_rc = doc.history_rc();
     let delay = doc.history_event_delay();
+    // NaN when the time is unknown: every time comparison below is then false.
     let time = clock::now();
     let (merge_into, force) = {
         let mut hist = hist_rc.borrow_mut();
