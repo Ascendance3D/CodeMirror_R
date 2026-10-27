@@ -319,6 +319,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cm-web"
+version = "0.1.0"
+dependencies = [
+ "cm-core",
+ "cm-evidence",
+ "cm-modes",
+ "cm-view",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "codespan-reporting"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

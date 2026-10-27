@@ -324,6 +324,89 @@ pub fn lookup_key(
     None
 }
 
+/// `keyNames[keyCode]` (src/input/keynames.js): the base key name of a DOM
+/// `KeyboardEvent.keyCode`, or `None` for codes without a name.
+pub fn key_names(code: u32) -> Option<String> {
+    let s = match code {
+        3 | 19 => "Pause",
+        8 => "Backspace",
+        9 => "Tab",
+        13 => "Enter",
+        16 => "Shift",
+        17 => "Ctrl",
+        18 => "Alt",
+        20 => "CapsLock",
+        27 => "Esc",
+        32 => "Space",
+        33 | 63276 => "PageUp",
+        34 | 63277 => "PageDown",
+        35 | 63275 => "End",
+        36 | 63273 => "Home",
+        37 | 63234 => "Left",
+        38 | 63232 => "Up",
+        39 | 63235 => "Right",
+        40 | 63233 => "Down",
+        44 => "PrintScrn",
+        45 | 63302 => "Insert",
+        46 | 63272 => "Delete",
+        59 | 186 => ";",
+        61 | 107 | 187 => "=",
+        91 | 92 | 93 | 224 => "Mod",
+        106 => "*",
+        109 | 173 | 189 => "-",
+        110 | 190 => ".",
+        111 | 191 => "/",
+        145 => "ScrollLock",
+        188 => ",",
+        192 => "`",
+        219 => "[",
+        220 => "\\",
+        221 => "]",
+        222 => "'",
+        // Number keys.
+        48..=57 => return Some((code - 48).to_string()),
+        96..=105 => return Some((code - 96).to_string()),
+        // Alphabetic keys.
+        65..=90 => return char::from_u32(code).map(|c| c.to_string()),
+        // Function keys.
+        112..=123 => return Some(format!("F{}", code - 111)),
+        63236..=63247 => return Some(format!("F{}", code - 63235)),
+        _ => return None,
+    };
+    Some(s.to_string())
+}
+
+/// The DOM half of `keyName(event)`: a [`KeyEvent`] from `keyCode`, `code` and the
+/// modifier flags `[shift, ctrl, alt, meta]` of a `KeyboardEvent`, or `None` where
+/// `keyName` returns false (no name for the code, or `altGraphKey`). Ctrl-ScrollLock
+/// has keyCode 3, like Ctrl-Pause, so code 3 takes its name from `event.code` when
+/// there is one.
+pub fn key_event_from_dom(
+    key_code: u32,
+    code: Option<&str>,
+    mods: [bool; 4],
+    alt_graph: bool,
+) -> Option<KeyEvent> {
+    let mut key = key_names(key_code)?;
+    if alt_graph {
+        return None;
+    }
+    if key_code == 3
+        && let Some(c) = code.filter(|c| !c.is_empty())
+    {
+        key = c.to_string();
+    }
+    let [shift, ctrl, alt, meta] = mods;
+    Some(KeyEvent {
+        key,
+        shift,
+        ctrl,
+        alt,
+        meta,
+        alt_graph,
+    })
+}
+
 /// `isModifierKey(value)`.
 pub fn is_modifier_key(name: &str) -> bool {
     matches!(name, "Ctrl" | "Alt" | "Shift" | "Mod")
@@ -418,5 +501,90 @@ mod tests {
         assert_eq!(normalize_key_name("Ctrl--").unwrap(), "Ctrl--");
         assert_eq!(normalize_key_name("-").unwrap(), "-");
         assert!(normalize_key_name("Hyper-X").is_err());
+    }
+
+    #[test]
+    fn dom_key_names() {
+        // Every entry of src/input/keynames.js, including the loops.
+        let table: &[(u32, &str)] = &[
+            (3, "Pause"),
+            (8, "Backspace"),
+            (9, "Tab"),
+            (13, "Enter"),
+            (16, "Shift"),
+            (17, "Ctrl"),
+            (18, "Alt"),
+            (19, "Pause"),
+            (20, "CapsLock"),
+            (27, "Esc"),
+            (32, "Space"),
+            (33, "PageUp"),
+            (34, "PageDown"),
+            (35, "End"),
+            (36, "Home"),
+            (37, "Left"),
+            (38, "Up"),
+            (39, "Right"),
+            (40, "Down"),
+            (44, "PrintScrn"),
+            (45, "Insert"),
+            (46, "Delete"),
+            (59, ";"),
+            (61, "="),
+            (91, "Mod"),
+            (92, "Mod"),
+            (93, "Mod"),
+            (106, "*"),
+            (107, "="),
+            (109, "-"),
+            (110, "."),
+            (111, "/"),
+            (145, "ScrollLock"),
+            (173, "-"),
+            (186, ";"),
+            (187, "="),
+            (188, ","),
+            (189, "-"),
+            (190, "."),
+            (191, "/"),
+            (192, "`"),
+            (219, "["),
+            (220, "\\"),
+            (221, "]"),
+            (222, "'"),
+            (224, "Mod"),
+            (63232, "Up"),
+            (63233, "Down"),
+            (63234, "Left"),
+            (63235, "Right"),
+            (63272, "Delete"),
+            (63273, "Home"),
+            (63275, "End"),
+            (63276, "PageUp"),
+            (63277, "PageDown"),
+            (63302, "Insert"),
+        ];
+        let mut want: HashMap<u32, String> =
+            table.iter().map(|(c, n)| (*c, n.to_string())).collect();
+        for i in 0..10 {
+            want.insert(i + 48, i.to_string());
+            want.insert(i + 96, i.to_string());
+        }
+        for i in 65..=90 {
+            want.insert(i, char::from_u32(i).unwrap().to_string());
+        }
+        for i in 1..=12 {
+            want.insert(i + 111, format!("F{i}"));
+            want.insert(i + 63235, format!("F{i}"));
+        }
+        for code in 0..70000 {
+            assert_eq!(key_names(code), want.get(&code).cloned(), "keyCode {code}");
+        }
+        let e = key_event_from_dom(3, Some("ScrollLock"), [false, true, false, false], false);
+        assert_eq!(e.unwrap().key, "ScrollLock");
+        let e = key_event_from_dom(65, Some("KeyA"), [true, true, false, false], false).unwrap();
+        assert_eq!(key_name(&e, false, false).as_deref(), Some("Shift-Ctrl-A"));
+        assert_eq!(key_event_from_dom(65, None, [false; 4], true), None);
+        assert_eq!(key_event_from_dom(229, None, [false; 4], false), None);
     }
 }

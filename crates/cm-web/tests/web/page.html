@@ -1,0 +1,15 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cm-web browser tests</title>
+<style>
+  body { margin: 0; font-family: sans-serif; }
+  .host { position: absolute; left: 20px; width: 600px; height: 300px; }
+  #host { top: 20px; }
+  #outside { position: absolute; left: 700px; top: 20px; width: 100px; height: 40px; }
+  /* The same font for cm-web and CM5. */
+  .CodeMirror { font-family: "DejaVu Sans Mono", monospace; font-size: 16px; height: 100%; }
+</style>
+<div id="host" class="host"></div>
+<button id="outside">outside</button>
+<script type="module" src="./page.mjs"></script>

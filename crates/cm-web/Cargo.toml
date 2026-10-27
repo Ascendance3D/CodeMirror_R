@@ -1,0 +1,48 @@
+[package]
+name = "cm-web"
+version = "0.1.0"
+description = "Browser (wasm32-unknown-unknown) adapter for the CodeMirror_R editor engine: DOM input, rendering, clock, clipboard and file hosts"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cm-core = { path = "../cm-core" }
+cm-modes = { path = "../cm-modes" }
+cm-view = { path = "../cm-view", default-features = false }
+wasm-bindgen = "0.2.129"
+js-sys = "0.3.106"
+web-sys = { version = "0.3.106", features = [
+    "AddEventListenerOptions",
+    "ClipboardEvent",
+    "CompositionEvent",
+    "CssStyleDeclaration",
+    "DataTransfer",
+    "Document",
+    "DomRect",
+    "Element",
+    "Event",
+    "EventTarget",
+    "FocusEvent",
+    "HtmlElement",
+    "HtmlHeadElement",
+    "HtmlTextAreaElement",
+    "InputEvent",
+    "KeyboardEvent",
+    "MouseEvent",
+    "Navigator",
+    "Node",
+    "ResizeObserver",
+    "Touch",
+    "TouchEvent",
+    "TouchList",
+    "WheelEvent",
+    "Text",
+    "Window",
+] }
+
+[dev-dependencies]
+cm-evidence = { path = "../cm-evidence" }
