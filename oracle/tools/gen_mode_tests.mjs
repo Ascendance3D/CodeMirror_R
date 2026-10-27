@@ -15,11 +15,13 @@ const HERE    = normalize (join (fileURLToPath (import.meta.url), "..", ".."));
 const ROOT    = normalize (join (HERE, ".."));
 const require = createRequire (import.meta.url);
 const CM      = require (join (HERE, "cm5-build", "addon", "runmode", "runmode.node.js"));
-for (const m of ["xml/xml.js", "javascript/javascript.js", "css/css.js", "htmlmixed/htmlmixed.js"])
+require (join (HERE, "cm5-build", "addon", "mode", "simple.js"));
+for (const m of ["xml/xml.js", "javascript/javascript.js", "css/css.js", "htmlmixed/htmlmixed.js", "rust/rust.js"])
    require (join (HERE, "cm5-build", "mode", m));
 
 const FILES = ["mode/xml/test.js", "mode/javascript/test.js", "mode/css/test.js",
-               "mode/css/gss_test.js", "mode/css/scss_test.js", "mode/css/less_test.js"];
+               "mode/css/gss_test.js", "mode/css/scss_test.js", "mode/css/less_test.js",
+               "mode/rust/test.js"];
 
 const tests = [];
 for (const file of FILES)

@@ -355,8 +355,9 @@ mod tests {
     fn metadata_is_not_an_implementation() {
         let r = Registry::with_all_modes();
         let l = ModeInfoList::upstream();
-        let rust = l.find_mode_by_name("Rust").unwrap();
-        assert!(!rust.is_available(&r));
+        let python = l.find_mode_by_name("Python").unwrap();
+        assert!(!python.is_available(&r));
+        assert!(l.find_mode_by_name("Rust").unwrap().is_available(&r));
         assert!(l.find_mode_by_name("JavaScript").unwrap().is_available(&r));
     }
 }
