@@ -7,7 +7,7 @@
 //!
 //! * [`WebEditor`] — create an editor (headless, or [`WebEditor::attach`]ed to an
 //!   element), load and read text and selections, select a mode, feed input,
-//!   render, destroy.
+//!   render, refresh, destroy.
 //! * [`install_clock`] / [`remove_clock`] — the host clock (`Date.now()`) behind
 //!   `cm_core::clock::set_host_clock`. Attaching an editor installs `Date.now()`
 //!   when no host clock is installed.
@@ -86,12 +86,25 @@ impl Inner {
     }
 
     pub(crate) fn render(&mut self) {
+        self.update_metrics();
         let focused = self.session.app.editor.has_focus();
         let f = frame::build(&self.session.app.editor, focused);
         let tab = self.session.app.editor.options.tab_size;
         let pre = self.session.preedit().map(str::to_string);
         if let Some(d) = self.dom.as_mut() {
             let _ = d.apply(&f, tab, pre.as_deref());
+        }
+    }
+
+    /// Measure the font when the cache lacks a value (a hidden element measured 0,
+    /// or a window resize cleared it), and give a changed result to the editor
+    /// through `set_metrics`, the `refresh()` port.
+    fn update_metrics(&mut self) {
+        let Some(m) = self.dom.as_mut().and_then(|d| d.measure_uncached()) else {
+            return;
+        };
+        if m != self.session.app.editor.metrics {
+            self.editor().set_metrics(m);
         }
     }
 
@@ -525,6 +538,21 @@ impl WebEditor {
             d.start_worker(100);
         }
         Ok(())
+    }
+
+    /// `refresh()` (src/edit/methods.js:411-421): measure the font again
+    /// (`clearCaches`) and redraw everything. Call it after changing the font, or
+    /// after showing an editor that was hidden when it last measured.
+    pub fn refresh(&self) -> Result<(), JsValue> {
+        self.with(|i| {
+            let measured = i.dom.as_mut().and_then(|d| {
+                d.clear_metric_cache();
+                d.measure_uncached()
+            });
+            let m = measured.unwrap_or_else(|| i.session.app.editor.metrics.clone());
+            i.editor().set_metrics(m);
+            i.resized();
+        })
     }
 
     /// Remove the editor's elements, handlers and timers, and drop the editor.

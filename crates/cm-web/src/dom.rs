@@ -125,6 +125,7 @@ pub struct Dom {
     cache: HashMap<usize, CachedLine>,
     order: Vec<usize>,
     numbers_key: Vec<(String, i64)>,
+    metric_cache: MetricCache,
     listeners: Vec<Listener>,
     observer: Option<Observer>,
     raf: Option<i32>,
@@ -156,10 +157,63 @@ fn px(v: f64) -> String {
     format!("{v}px")
 }
 
+/// One font measurement, as the DOM reports it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct Measured {
+    pub char_width: f64,
+    pub text_height: f64,
+    pub wide: f64,
+    pub astral: f64,
+}
+
+/// CM5's `cachedCharWidth` and `cachedTextHeight` (src/display/Display.js:92). Only a
+/// width over 2 and a height over 3 are kept (position_measurement.js:601, 613);
+/// anything else, such as the 0 of a hidden element, is measured again at the next
+/// frame, as `charWidth`/`textHeight` measure an uncached value on each call.
+/// `refresh()` and a window resize clear it (`clearCaches`, `onResize`).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(crate) struct MetricCache {
+    pub char_width: Option<f64>,
+    pub text_height: Option<f64>,
+}
+
+impl MetricCache {
+    /// Whether both values are cached, so no measurement is needed.
+    pub fn complete(&self) -> bool {
+        self.char_width.is_some() && self.text_height.is_some()
+    }
+
+    /// The editor's metrics for a measurement `m`: a cached value wins, otherwise
+    /// the measured one, cached when it passes CM5's test. The character width is
+    /// the measured glyph width as is: `cm-view` applies `charWidth`'s `width || 10`
+    /// for its callers. A text height of 3 or less is 15, as before: `cm-view` has
+    /// no `textHeight` fallback (CM5 returns `height || 1`) and divides by it.
+    pub fn metrics(&mut self, m: &Measured) -> Metrics {
+        let char_width = match self.char_width {
+            Some(w) => w,
+            None if m.char_width > 2.0 => *self.char_width.insert(m.char_width),
+            None => m.char_width,
+        };
+        let text_height = match self.text_height {
+            Some(h) => h,
+            None if m.text_height > 3.0 => *self.text_height.insert(m.text_height),
+            None => 15.0,
+        };
+        let mut metrics = Metrics::monospace(char_width, text_height);
+        if m.wide > 0.0 {
+            metrics.wide_width = m.wide;
+        }
+        if m.astral > 0.0 {
+            metrics.astral_width = m.astral;
+        }
+        metrics
+    }
+}
+
 /// Measure the font of `lines` the way `charWidth`/`textHeight` do
 /// (src/measurement/position_measurement.js), plus one wide (CJK) and one astral
 /// character for the box model.
-fn measure(document: &Document, lines: &HtmlElement) -> Result<Metrics, JsValue> {
+fn measure(document: &Document, lines: &HtmlElement) -> Result<Measured, JsValue> {
     let m = el(document, "div", "cm-web-measure")?;
     lines.append_child(&m)?;
     let width_of = |text: &str| -> Result<f64, JsValue> {
@@ -184,17 +238,12 @@ fn measure(document: &Document, lines: &HtmlElement) -> Result<Metrics, JsValue>
     m.append_child(&pre)?;
     let text_height = pre.get_bounding_client_rect().height() / 50.0;
     m.remove();
-    let mut metrics = Metrics::monospace(
-        if char_width > 2.0 { char_width } else { 10.0 },
-        if text_height > 3.0 { text_height } else { 15.0 },
-    );
-    if wide > 0.0 {
-        metrics.wide_width = wide;
-    }
-    if astral > 0.0 {
-        metrics.astral_width = astral;
-    }
-    Ok(metrics)
+    Ok(Measured {
+        char_width,
+        text_height,
+        wide,
+        astral,
+    })
 }
 
 impl Dom {
@@ -249,7 +298,8 @@ impl Dom {
         root.append_child(&field_wrap)?;
         root.append_child(&scroller)?;
         parent.append_child(&root)?;
-        let metrics = measure(&document, &lines_div)?;
+        let mut metric_cache = MetricCache::default();
+        let metrics = metric_cache.metrics(&measure(&document, &lines_div)?);
         let dom = Dom {
             window,
             document,
@@ -267,6 +317,7 @@ impl Dom {
             cache: HashMap::new(),
             order: Vec::new(),
             numbers_key: Vec::new(),
+            metric_cache,
             listeners: Vec::new(),
             observer: None,
             raf: None,
@@ -290,6 +341,21 @@ impl Dom {
             self.scroller.client_width() as f64,
             self.scroller.client_height() as f64,
         )
+    }
+
+    /// The font metrics to use now when the cache lacks a value (a new measurement),
+    /// `None` when it holds both (no DOM work).
+    pub fn measure_uncached(&mut self) -> Option<Metrics> {
+        if self.metric_cache.complete() {
+            return None;
+        }
+        let m = measure(&self.document, &self.lines_div).ok()?;
+        Some(self.metric_cache.metrics(&m))
+    }
+
+    /// Forget the cached width and height (`clearCaches`, `onResize`).
+    pub fn clear_metric_cache(&mut self) {
+        self.metric_cache = MetricCache::default();
     }
 
     /// Register the event handlers and timers' callbacks. They hold only a weak
@@ -317,6 +383,7 @@ impl Dom {
         self.listen::<TouchEvent>(&scroller, "touchend", Some(false), weak, on_touch_end)?;
         self.listen::<MouseEvent>(&window, "mousemove", None, weak, on_mouse_move)?;
         self.listen::<MouseEvent>(&window, "mouseup", None, weak, on_mouse_up)?;
+        self.listen::<Event>(&window, "resize", None, weak, on_window_resize)?;
 
         let w = weak.clone();
         self.raf_cb = Some(Closure::new(move || {
@@ -939,6 +1006,17 @@ fn on_wheel(inner: &mut Inner, e: &WheelEvent) -> Post {
     Post::default()
 }
 
+/// `onResize` (src/edit/global_events.js:38-44): a window resize may be a text
+/// scaling, so the next frame measures the font again. CM5 waits 100 ms for the
+/// resizes to stop; the frame request coalesces them here.
+fn on_window_resize(inner: &mut Inner, _e: &Event) -> Post {
+    if let Some(d) = inner.dom.as_mut() {
+        d.clear_metric_cache();
+        d.schedule_frame();
+    }
+    Post::default()
+}
+
 fn on_scroll(inner: &mut Inner, _e: &Event) -> Post {
     let Some(d) = inner.dom.as_ref() else {
         return Post::default();
@@ -1021,4 +1099,177 @@ fn on_touch_end(inner: &mut Inner, e: &TouchEvent) -> Post {
     inner.session.handle(Input::MouseUp { x, y });
     inner.after_input(400);
     Post { focus: true }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cm_core::Pos;
+    use cm_modes::Spec;
+    use cm_view::{CoordSys, Editor, EditorOptions};
+
+    fn measured(char_width: f64, text_height: f64) -> Measured {
+        Measured {
+            char_width,
+            text_height,
+            wide: 2.0 * char_width,
+            astral: 2.0 * char_width,
+        }
+    }
+
+    /// `charWidth` (position_measurement.js:607-615) for one measurement: the
+    /// adapter's width, whether it is cached, and what `cm-view`'s callers use.
+    #[test]
+    fn char_width_follows_the_cm5_cache_rule() {
+        // (measured, cached, defaultCharWidth = width || 10)
+        let cases: [(f64, bool, f64); 9] = [
+            (0.0, false, 10.0),
+            (-0.0, false, 10.0),
+            (0.5, false, 0.5),
+            (1.2046875, false, 1.2046875),
+            (2.0, false, 2.0),
+            (2.5, true, 2.5),
+            (9.6328125, true, 9.6328125),
+            (-1.0, false, -1.0),
+            (f64::INFINITY, true, f64::INFINITY),
+        ];
+        for (w, cached, default) in cases {
+            let mut c = MetricCache::default();
+            let m = c.metrics(&measured(w, 19.0));
+            assert_eq!(m.char_width.to_bits(), w.to_bits(), "{w}");
+            assert_eq!(c.char_width.is_some(), cached, "{w}");
+            let cm = Editor::new("x", Spec::Null, EditorOptions::default(), m);
+            assert_eq!(cm.default_char_width(), default, "{w}");
+        }
+        let mut c = MetricCache::default();
+        let m = c.metrics(&measured(f64::NAN, 19.0));
+        assert!(m.char_width.is_nan() && c.char_width.is_none());
+        let cm = Editor::new("x", Spec::Null, EditorOptions::default(), m);
+        assert_eq!(cm.default_char_width(), 10.0);
+    }
+
+    /// `textHeight` caches a height over 3 (position_measurement.js:601); the adapter
+    /// keeps its 15 for a smaller one, since `cm-view` divides by it.
+    #[test]
+    fn text_height_is_cached_over_3_and_15_otherwise() {
+        for (h, cached, used) in [
+            (0.0, false, 15.0),
+            (3.0, false, 15.0),
+            (2.5, false, 15.0),
+            (3.5, true, 3.5),
+            (19.0, true, 19.0),
+        ] {
+            let mut c = MetricCache::default();
+            assert_eq!(c.metrics(&measured(9.0, h)).text_height, used, "{h}");
+            assert_eq!(c.text_height.is_some(), cached, "{h}");
+        }
+    }
+
+    /// A cached value is used until the cache is cleared; an uncached one is replaced
+    /// by the next measurement (hidden, then shown).
+    #[test]
+    fn cache_lifecycle() {
+        let mut c = MetricCache::default();
+        let hidden = c.metrics(&measured(0.0, 0.0));
+        assert_eq!((hidden.char_width, hidden.text_height), (0.0, 15.0));
+        assert!(!c.complete());
+        let shown = c.metrics(&measured(9.6328125, 19.0));
+        assert_eq!((shown.char_width, shown.text_height), (9.6328125, 19.0));
+        assert!(c.complete());
+        // A font change is not seen while cached (CM5 without refresh()).
+        let stale = c.metrics(&measured(7.225, 14.0));
+        assert_eq!((stale.char_width, stale.text_height), (9.6328125, 19.0));
+        c = MetricCache::default();
+        let fresh = c.metrics(&measured(7.225, 14.0));
+        assert_eq!((fresh.char_width, fresh.text_height), (7.225, 14.0));
+        // Wide and astral widths come from the measurement; 0 keeps monospace's 2 cells.
+        let mut c = MetricCache::default();
+        let m = c.metrics(&Measured {
+            char_width: 8.0,
+            text_height: 19.0,
+            wide: 0.0,
+            astral: 15.0,
+        });
+        assert_eq!((m.wide_width, m.astral_width), (16.0, 15.0));
+    }
+
+    type Snapshot = (Vec<(f64, f64, f64)>, Option<i64>, f64, (f64, f64), f64);
+
+    fn layout(cm: &Editor) -> Snapshot {
+        let coords = [(0, 0), (0, 10), (1, 3), (2, 80), (3, 2)]
+            .iter()
+            .map(|&(l, c)| {
+                let r = cm.cursor_coords(Pos::new(l, c), CoordSys::Local);
+                (r.left, r.top, r.bottom)
+            })
+            .collect();
+        (
+            coords,
+            cm.max_line().map(|(line, _)| line),
+            cm.max_line_width(),
+            cm.max_scroll(),
+            cm.doc_height(),
+        )
+    }
+
+    /// The measured width reaches `cm-view` as is: 0, small positive and (synthetic)
+    /// negative widths give finite layout, wrapping, cursor, selection, scrolling and
+    /// longest-line state, and a later valid measurement gives exactly the layout of an
+    /// editor that measured it first. `maxLineLength` itself is CM5's heuristic
+    /// `ceil(width / charWidth)` (update_lines.js:40), which a small width raises and
+    /// which only grows, in CM5 as here; the longest line and its width recover.
+    #[test]
+    fn raw_small_widths_are_safe_and_recover() {
+        let text = format!("abcdefghij klmnop\nshort\n{}\nend", "x".repeat(90));
+        let valid = || MetricCache::default().metrics(&measured(9.6328125, 19.0));
+        for wrap in [false, true] {
+            let options = || EditorOptions {
+                line_wrapping: wrap,
+                ..EditorOptions::default()
+            };
+            let mut want = Editor::new(&text, Spec::Null, options(), valid());
+            want.set_size(600.0, 200.0);
+            for w in [0.0, -0.0, 0.5, 1.2046875, 2.0, -1.0] {
+                let raw = MetricCache::default().metrics(&measured(w, 0.0));
+                let mut cm = Editor::new(&text, Spec::Null, options(), raw);
+                cm.set_size(600.0, 200.0);
+                cm.run_op(|cm| {
+                    cm.doc
+                        .set_selection(Pos::new(0, 2), Some(Pos::new(2, 50)), None)
+                });
+                cm.scroll_to(Some(300.0), Some(40.0));
+                let (coords, max_line, width, scroll, height) = layout(&cm);
+                let finite = coords
+                    .iter()
+                    .all(|&(a, b, c)| a.is_finite() && b.is_finite() && c.is_finite());
+                assert!(
+                    finite && width.is_finite() && height.is_finite(),
+                    "{w} {wrap}"
+                );
+                assert!(scroll.0.is_finite() && scroll.1.is_finite(), "{w} {wrap}");
+                assert!(cm.display.scroll_left.is_finite() && cm.display.scroll_top.is_finite());
+                if !wrap {
+                    assert_eq!(max_line, Some(2), "{w}");
+                }
+                let sel = cm.doc.list_selections();
+                cm.set_metrics(valid());
+                assert_eq!(layout(&cm), layout(&want), "{w} {wrap}");
+                assert_eq!(cm.doc.list_selections(), sel);
+                assert_eq!(cm.get_value(), text);
+                assert_eq!(cm.default_char_width(), 9.6328125);
+            }
+        }
+    }
+
+    /// Two editors measured with different widths keep their own metrics.
+    #[test]
+    fn caches_are_per_editor() {
+        let (mut a, mut b) = (MetricCache::default(), MetricCache::default());
+        let ma = a.metrics(&measured(9.6328125, 19.0));
+        let mb = b.metrics(&measured(0.0, 0.0));
+        assert_eq!((ma.char_width, mb.char_width), (9.6328125, 0.0));
+        assert!(a.complete() && !b.complete());
+        assert_eq!(a.metrics(&measured(1.0, 1.0)).char_width, 9.6328125);
+        assert_eq!(b.metrics(&measured(7.225, 14.0)).char_width, 7.225);
+    }
 }
