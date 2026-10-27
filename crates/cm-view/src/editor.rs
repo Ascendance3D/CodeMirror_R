@@ -345,7 +345,8 @@ pub fn sel_mouse() -> Option<SelOptions> {
 
 /// `cm.state.pasteIncoming > recent`. A stamp taken when the time was unknown (NaN)
 /// counts as recent: every text input resets both stamps, so a stamp only reaches
-/// the input that follows it (`cut` sets and consumes its own in one call).
+/// the input that follows it (`cut` sets and consumes its own in one call, and a
+/// blocked cut leaves no unknown-time stamp).
 fn incoming_recent(stamp: f64, recent: f64) -> bool {
     stamp > recent || stamp.is_nan()
 }
@@ -2346,9 +2347,15 @@ impl Editor {
             self.run_op(|cm| cm.doc.set_selections(&rs, None, sel_dont_scroll()));
             out = self.doc.get_selection(None);
         }
-        self.cut_incoming = cm_core::clock::now();
+        let now = cm_core::clock::now();
         if !self.is_read_only() {
+            self.cut_incoming = now;
             self.apply_text_input("", 0, None);
+        } else {
+            // CM5 still stamps a blocked cut (`poll` ignores read-only input), and the
+            // stamp expires 200 ms later. An unknown time cannot expire, so it leaves
+            // none, like CM5's `NaN > recent`.
+            self.cut_incoming = if now.is_nan() { -1.0 } else { now };
         }
         Some(out)
     }
