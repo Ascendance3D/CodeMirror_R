@@ -18,7 +18,7 @@ use cm_core::text::Text;
 use cm_core::util::misc::count_column;
 use cm_core::util::string_stream::{LineOracle, StringStream};
 use cm_core::{Doc, LineHandle, Pos};
-use cm_modes::{JsArg, Mode, State, copy_state, inner_mode, read_token, start_state};
+use cm_modes::{JsArg, Mode, State, copy_state, read_token, start_state, with_inner_mode_mut};
 
 /// `SavedContext` / a bare saved state: what `line.stateAfter` holds.
 #[derive(Debug)]
@@ -141,20 +141,19 @@ fn as_saved(v: &Rc<dyn Any>) -> &SavedContext {
         .expect("stateAfter holds a SavedContext")
 }
 
-/// `callBlankLine(mode, state)`.
-fn call_blank_line(mode: &Rc<dyn Mode>, state: &mut State) {
+/// `callBlankLine(mode, state)`: the mode's `blankLine`, else the innermost mode's,
+/// on the inner state itself (as the JS `innerMode` result is).
+fn call_blank_line(mode: &Rc<dyn Mode>, state: &mut State) -> Option<String> {
     if mode.has_blank_line() {
-        mode.blank_line(state);
-        return;
+        return mode.blank_line(state);
     }
-    // `if (!mode.innerMode) return; let inner = innerMode(mode, state); ...`
-    // Rust inner modes get a copy of the state; the ported modes with an inner mode
-    // (htmlmixed) define `blankLine` themselves, so this path never mutates.
-    let (inner, _s) = inner_mode(mode.clone(), state.clone());
-    if inner.has_blank_line() && !Rc::ptr_eq(&inner, mode) {
-        let mut s = _s;
-        inner.blank_line(&mut s);
-    }
+    with_inner_mode_mut(mode, state, |inner, s| {
+        if inner.has_blank_line() {
+            inner.blank_line(s)
+        } else {
+            None
+        }
+    })
 }
 
 /// `processLine(cm, text, context, startAt)`.
@@ -228,10 +227,9 @@ fn find_start_line(
     minline
 }
 
-/// Whether the mode object has an `innerMode` method. Only htmlmixed among the
-/// ported modes does.
+/// Whether the mode object has an `innerMode` method ([`Mode::has_inner_mode`]).
 pub fn mode_has_inner(mode: &Rc<dyn Mode>) -> bool {
-    matches!(mode.name(), "htmlmixed")
+    mode.has_inner_mode()
 }
 
 /// `getContextBefore(cm, n, precise)`.
@@ -357,9 +355,8 @@ fn run_mode_line(
     {
         let mut stream = StringStream::new(text, Some(hs.tab_size), Some(&oracle));
         if text.is_empty() {
-            // `extractLineClasses(callBlankLine(mode, context.state), lineClasses)`:
-            // the ported modes' blankLine returns nothing.
-            call_blank_line(mode, &mut ctx.state);
+            // `extractLineClasses(callBlankLine(mode, context.state), lineClasses)`.
+            extract_line_classes(call_blank_line(mode, &mut ctx.state), line_classes);
         }
         while !stream.eol() {
             let style;

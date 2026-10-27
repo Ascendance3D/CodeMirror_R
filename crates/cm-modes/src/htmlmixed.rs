@@ -490,6 +490,26 @@ impl Mode for HtmlMixedMode {
     fn has_indent(&self) -> bool {
         true
     }
+    fn has_inner_mode(&self) -> bool {
+        true
+    }
+    /// `{state: state.localState || state.htmlState, mode: state.localMode || htmlMode}`.
+    fn inner_mode_mut(
+        &self,
+        state: &mut State,
+        f: &mut dyn FnMut(&Rc<dyn Mode>, &mut State),
+    ) -> bool {
+        let s = state.get_mut::<HtmlMixedState>();
+        let mode = s
+            .local_mode
+            .clone()
+            .unwrap_or_else(|| self.html_mode.clone());
+        match &mut s.local_state {
+            Some(ls) => f(&mode, ls),
+            None => f(&mode, &mut s.html_state),
+        }
+        true
+    }
     fn inner_mode(&self, state: &State) -> Option<(Rc<dyn Mode>, State)> {
         let s = state.get::<HtmlMixedState>();
         Some(match (&s.local_mode, &s.local_state) {
@@ -504,11 +524,12 @@ impl Mode for HtmlMixedMode {
 /// `defineMode("htmlmixed", ..., "xml", "javascript", "css")` and
 /// `defineMIME("text/html", "htmlmixed")`.
 pub fn register(r: &mut Registry) {
-    r.define_mode(
+    r.define_mode_with_dependencies(
         "htmlmixed",
         Rc::new(|reg, options, spec| {
             Rc::new(HtmlMixedMode::new(reg, options, spec)) as Rc<dyn Mode>
         }),
+        &["xml", "javascript", "css"],
     );
     r.define_mime("text/html", MimeTarget::Name("htmlmixed".into()));
 }

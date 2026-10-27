@@ -4,8 +4,15 @@
 //! ([`StringStream::match_with`]); JS `eat(string | RegExp | function)` is split into
 //! [`StringStream::eat`], [`StringStream::eat_str`] and [`StringStream::eat_fn`].
 
+use std::cell::Cell;
+
 use super::misc::count_column;
+use super::regexp::{Match, RegExp};
 use crate::text::{Text, index_of, is_js_space};
+
+thread_local! {
+    static NEXT_STREAM_ID: Cell<u64> = const { Cell::new(1) };
+}
 
 /// The `lineOracle` the stream consults for `lookAhead` / `baseToken`.
 pub trait LineOracle {
@@ -31,6 +38,7 @@ pub struct StringStream<'a> {
     last_column_value: i64,
     pub line_start: usize,
     pub line_oracle: Option<&'a dyn LineOracle>,
+    id: u64,
 }
 
 impl<'a> StringStream<'a> {
@@ -52,7 +60,18 @@ impl<'a> StringStream<'a> {
             last_column_value: 0,
             line_start: 0,
             line_oracle,
+            id: NEXT_STREAM_ID.with(|n| {
+                let id = n.get();
+                n.set(id + 1);
+                id
+            }),
         }
+    }
+    /// The object identity of this stream: distinct for every [`StringStream::new`]
+    /// on a thread. `addon/mode/overlay.js` compares streams (`stream !=
+    /// state.streamSeen`) to notice a new line.
+    pub fn id(&self) -> u64 {
+        self.id
     }
 
     pub fn eol(&self) -> bool {
@@ -206,6 +225,28 @@ impl<'a> StringStream<'a> {
         }
         if consume {
             self.pos += m.len;
+        }
+        Some(m)
+    }
+    /// `match(regexp, consume)`: `this.string.slice(this.pos).match(regexp)`. The
+    /// match spans are relative to `pos` (the sliced string). A match that does not
+    /// start at `pos` is no match. With `g`, JS `String.prototype.match` returns
+    /// every match and no `index`, so the first match is taken wherever it starts
+    /// and its length consumed; only its group 0 is kept.
+    pub fn match_regexp(&mut self, re: &RegExp, consume: bool) -> Option<Match> {
+        let rest = &self.string[self.pos.min(self.string.len())..];
+        let m = re.exec(rest)?;
+        if re.flags().global {
+            if consume {
+                self.pos += m.len();
+            }
+            return Some(m);
+        }
+        if m.index() > 0 {
+            return None;
+        }
+        if consume {
+            self.pos += m.len();
         }
         Some(m)
     }

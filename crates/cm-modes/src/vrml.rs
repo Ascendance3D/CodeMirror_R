@@ -393,9 +393,9 @@ impl Mode for VrmlMode {
         state.at_start = false;
         style.map(str::to_string)
     }
-    fn blank_line(&self, state: &mut State) -> Option<()> {
+    fn blank_line(&self, state: &mut State) -> Option<String> {
         state.get_mut::<VrmlState>().at_start = false;
-        Some(())
+        None
     }
     fn has_blank_line(&self) -> bool {
         true
