@@ -6,11 +6,11 @@
 //! "display" is a scroll position, a size, and the viewport (`viewFrom`/`viewTo`)
 //! that decides which lines a renderer draws and which keep a saved mode state.
 //!
+//! Events are typed (`on_change`, `on_cursor_activity`, …; see [`crate::events`]).
+//!
 //! Not ported:
-//! * events: no generic `on`/`off`/`signal`/`signalLater`; only the typed
-//!   [`cm_core::Doc`] hooks (`on_before_change`, `on_before_selection_change`, and
-//!   `on_change`, which runs synchronously) and marker `on_clear`. No `changes`/
-//!   `cursorActivity`/`keyHandled`/`scroll`/`focus`/... editor events.
+//! * the `scroll`/`swapDoc`/`refresh`/
+//!   `optionChange`/`gutterClick`/DOM editor events.
 //! * `addOverlay`/`removeOverlay`, `getHelper`/`registerHelper`: `findWordAt` and
 //!   group motion use plain `isWordChar`, so javascript's `wordChars` helper
 //!   (`[\w$]`) is ignored and `$` is not a word character.
@@ -21,16 +21,27 @@
 //! * bidi in measurement, cursors, selection drawing and clicks (left to right only;
 //!   `moveVisually` and `endOfLine` do use the ported bidi ordering).
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::rc::Rc;
 
+use cm_core::events::ListenerId;
+use cm_core::operation_group::{Batch, end_group, group_open, start_operation};
 use cm_core::pos::{Sticky, cmp};
 use cm_core::text::{Text, from_u16, is_js_space, split_lines_auto, to_u16};
 use cm_core::util::misc::count_column;
-use cm_core::{ChangeInfo, Doc, DocOptions, EditorSemantics, Pos, SelOptions, SelRange};
+use cm_core::{
+    CmError, Doc, DocOptions, EditorId, EditorSemantics, EditorSink, Editors, NoEditors, Pos,
+    SelOptions, SelRange,
+};
 use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_mode};
 
+use crate::events::{
+    ChangeHandler, ChangesHandler, Cx, DisplayEvent, EditorEvents, EditorHandler, EditorShared,
+    InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler, NameHandler,
+    OpRecord, Parked, ViewChange, ViewportHandler, WithSelf, finish,
+};
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
 use crate::measure::{LineLayout, Metrics, PosInfo, Rect, coords_char_inner};
@@ -63,6 +74,8 @@ pub struct EditorOptions {
     pub drag_drop: bool,
     pub undo_depth: f64,
     pub history_event_delay: f64,
+    /// `selectionsMayTouch`.
+    pub selections_may_touch: bool,
     pub max_highlight_length: usize,
     pub flatten_spans: bool,
     /// `lineSeparator`.
@@ -92,6 +105,7 @@ impl Default for EditorOptions {
             drag_drop: true,
             undo_depth: 200.0,
             history_event_delay: 1250.0,
+            selections_may_touch: false,
             max_highlight_length: 10000,
             flatten_spans: true,
             line_separator: None,
@@ -124,6 +138,32 @@ pub struct Display {
     pub shift: bool,
     pub view_from: i64,
     pub view_to: i64,
+    /// `display.reportedViewFrom/To`: the range last reported by `viewportChange`.
+    pub reported_view: (i64, i64),
+    /// `display.updateLineNumbers`: the first line whose number a change shifted
+    /// since the display was last drawn (set by `regChange`).
+    pub update_line_numbers: Option<i64>,
+    /// `display.lineNumChars`: the characters of the last line number when the
+    /// gutter width was last computed.
+    pub line_num_chars: Option<usize>,
+    /// How many times a rendered range outside the document's lines was found and
+    /// reset instead of drawn (no CM5 equivalent: CM5 would read missing lines).
+    /// Every invalidation is ported, so this stays 0 unless one is missed.
+    pub invalid_views: Cell<u64>,
+    /// The last such range, for diagnosis.
+    pub last_invalid_view: Cell<Option<InvalidView>>,
+}
+
+/// A rendered range found outside `[doc.first, doc.first + doc.size)`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InvalidView {
+    /// `viewFrom`/`viewTo` as found.
+    pub view: (i64, i64),
+    /// `doc.first` and `doc.first + doc.size` at that point.
+    pub doc: (i64, i64),
+    /// Where it was found: `"display"` (after the operation's invalidations were
+    /// replayed) or `"render"` (`render_view_styles` outside an operation's end).
+    pub at: &'static str,
 }
 
 /// `lastCopied` (module state in src/input/input.js).
@@ -145,9 +185,10 @@ pub fn last_copied() -> Option<LastCopied> {
     LAST_COPIED.with(|l| l.borrow().clone())
 }
 
+/// The scroll requests of the current operation (`op.scrollToPos`, `op.scrollTop`,
+/// `op.scrollLeft`), applied by its display phase.
 #[derive(Default, Clone, Debug)]
 struct OpState {
-    depth: u32,
     scroll_to_pos: Option<(Pos, Pos, f64)>,
     scroll_top: Option<f64>,
     scroll_left: Option<f64>,
@@ -156,13 +197,13 @@ struct OpState {
 /// Heights of wrapped lines (`line.height` when `lineWrapping` is on).
 #[derive(Default, Debug)]
 pub(crate) struct HeightCache {
-    wrap_width: f64,
+    pub(crate) wrap_width: f64,
     /// Per line; NaN = needs layout.
-    heights: Vec<f64>,
+    pub(crate) heights: Vec<f64>,
     /// Prefix sums, `prefix[i]` = height of lines before i.
-    prefix: Option<Vec<f64>>,
+    pub(crate) prefix: Option<Vec<f64>>,
     /// Width of the widest line (`display.maxLine`), recomputed after changes.
-    max_width: Option<f64>,
+    pub(crate) max_width: Option<f64>,
 }
 
 pub(crate) struct MouseState {
@@ -171,6 +212,10 @@ pub(crate) struct MouseState {
 
 /// The editor.
 pub struct Editor {
+    /// Unique on the thread; names this editor in an [`crate::EditorSet`] and in
+    /// queued callbacks.
+    pub id: EditorId,
+    pub(crate) shared: Rc<EditorShared>,
     pub doc: Doc,
     pub options: EditorOptions,
     pub registry: Rc<Registry>,
@@ -192,15 +237,43 @@ pub struct Editor {
     pub keymaps: KeyMaps,
     /// `CodeMirror.commands`, including user-defined ones (`save`, ...).
     pub commands: HashMap<String, CommandFn>,
-    /// Names of the keys `dispatchKeyInner` handled, in order. It stands in for
-    /// `signalLater(cm, "keyHandled", cm, name, e)`; nothing here clears it.
-    pub keyhandled: Vec<String>,
+    /// `cm.curOp.forceUpdate`, or a redraw an option change asked for: the next
+    /// display phase redraws (and reports `update`).
+    pub(crate) force_update: bool,
+    /// `state.focused`.
+    focused: bool,
     op: OpState,
     pub(crate) heights: Rc<RefCell<HeightCache>>,
     pub(crate) mouse: Option<MouseState>,
     pub(crate) clicks: crate::mouse::ClickTracker,
     /// Gutter width in px (line numbers), recomputed by [`Editor::update_gutter`].
     pub gutter_width: f64,
+}
+
+/// Dropping an editor destroys it (D5): its document is detached from it (as
+/// `swapDoc` detaches the old document), work parked on it is discarded, and so is
+/// work queued for it later, each with a diagnostic
+/// ([`cm_core::operation_group::take_diagnostics`]). The document and its markers
+/// keep working, and their own pending callbacks are still delivered.
+impl Drop for Editor {
+    fn drop(&mut self) {
+        self.shared.destroyed.set(true);
+        let parked = std::mem::take(&mut *self.shared.parked.borrow_mut());
+        if !parked.is_empty() {
+            cm_core::operation_group::diagnostic(format!(
+                "discarded {} parked deliveries of editor {}, which was dropped",
+                parked.len(),
+                self.id.get()
+            ));
+        }
+        if self
+            .doc
+            .sink()
+            .is_some_and(|s| std::ptr::addr_eq(Rc::as_ptr(&s), Rc::as_ptr(&self.shared)))
+        {
+            self.doc.detach_editor();
+        }
+    }
 }
 
 fn sel_opts(origin: Option<&str>, bias: Option<i64>, scroll: Option<bool>) -> SelOptions {
@@ -260,6 +333,10 @@ impl Editor {
     }
 
     /// An editor over an existing document (`CodeMirror(place, {value: doc})`).
+    ///
+    /// # Panics
+    /// When the document already has an editor ("This document is already in
+    /// use."); [`Editor::try_with_doc`] returns the error instead.
     pub fn with_doc(
         doc: Doc,
         mode: Spec,
@@ -267,12 +344,19 @@ impl Editor {
         metrics: Metrics,
         registry: Rc<Registry>,
     ) -> Editor {
-        doc.attach_editor_semantics(EditorSemantics {
-            history_event_delay: options.history_event_delay,
-            whole_line_update_before: true,
-            selections_may_touch: false,
-            undo_depth: options.undo_depth,
-        });
+        Editor::try_with_doc(doc, mode, options, metrics, registry)
+            .unwrap_or_else(|e| panic!("{e}"))
+    }
+
+    /// [`Editor::with_doc`], or [`CmError::DocInUse`] when the document already has
+    /// an editor (which keeps it).
+    pub fn try_with_doc(
+        doc: Doc,
+        mode: Spec,
+        options: EditorOptions,
+        metrics: Metrics,
+        registry: Rc<Registry>,
+    ) -> Result<Editor, CmError> {
         let mode_opts = ModeOptions {
             indent_unit: options.indent_unit,
             tab_size: options.tab_size,
@@ -286,29 +370,21 @@ impl Editor {
         hs.flatten_spans = options.flatten_spans;
         let hs = Rc::new(RefCell::new(hs));
         let heights = Rc::new(RefCell::new(HeightCache::default()));
-        {
-            let hs2 = hs.clone();
-            let h2 = heights.clone();
-            doc.on_change(move |d, info: &ChangeInfo| {
-                // makeChangeSingleDocInEditor: `retreatFrontier(doc, from.line)`.
-                highlight::retreat_frontier(d, &mut hs2.borrow_mut(), info.from.line);
-                let mut h = h2.borrow_mut();
-                if !h.heights.is_empty() {
-                    let first = d.first_line();
-                    let a = (info.from.line - first).max(0) as usize;
-                    let b = ((info.to.line - first + 1).max(0) as usize).min(h.heights.len());
-                    if a <= b {
-                        h.heights
-                            .splice(a..b, std::iter::repeat_n(f64::NAN, info.text_lines));
-                    } else {
-                        h.heights.clear();
-                    }
-                }
-                h.prefix = None;
-                h.max_width = None;
-            });
-        }
+        let shared = EditorShared::new(
+            EditorSemantics {
+                history_event_delay: options.history_event_delay,
+                whole_line_update_before: true,
+                selections_may_touch: options.selections_may_touch,
+                undo_depth: options.undo_depth,
+            },
+            hs.clone(),
+            heights.clone(),
+        );
+        let id = shared.id;
+        doc.attach_editor(shared.clone())?;
         let mut ed = Editor {
+            id,
+            shared,
             doc,
             registry,
             mode_spec: mode,
@@ -324,6 +400,11 @@ impl Editor {
                 shift: false,
                 view_from: first,
                 view_to: first,
+                reported_view: (first, first),
+                update_line_numbers: None,
+                line_num_chars: None,
+                invalid_views: Cell::new(0),
+                last_invalid_view: Cell::new(None),
             },
             overwrite: false,
             paste_incoming: -1.0,
@@ -333,7 +414,8 @@ impl Editor {
             extra_keys: None,
             keymaps: KeyMaps::standard(options.mac),
             commands: crate::commands::builtin_commands(),
-            keyhandled: Vec::new(),
+            force_update: false,
+            focused: false,
             op: OpState::default(),
             heights,
             mouse: None,
@@ -344,7 +426,9 @@ impl Editor {
         ed.update_gutter();
         ed.update_view();
         ed.render_view_styles();
-        ed
+        // The constructor's operation draws the display and reports its range.
+        ed.display.reported_view = (ed.display.view_from, ed.display.view_to);
+        Ok(ed)
     }
 
     // ------------------------------------------------------------------------------
@@ -357,29 +441,39 @@ impl Editor {
             tab_size: self.options.tab_size,
             highlight_non_standard_property_keywords: None,
         };
-        self.mode = self.registry.get_mode(&mode_opts, &spec);
-        self.mode_spec = spec;
-        highlight::reset_mode_state(&self.doc, &mut self.hs.borrow_mut());
+        self.run_op(|cm| {
+            cm.mode = cm.registry.get_mode(&mode_opts, &spec);
+            cm.mode_spec = spec;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.force_update = true;
+        });
     }
     /// `setOption("tabSize", n)`: `resetModeState`, `clearCaches`.
     pub fn set_tab_size(&mut self, n: i64) {
-        self.options.tab_size = n;
-        self.hs.borrow_mut().tab_size = n;
-        highlight::reset_mode_state(&self.doc, &mut self.hs.borrow_mut());
-        self.invalidate_heights();
+        self.run_op(|cm| {
+            cm.options.tab_size = n;
+            cm.hs.borrow_mut().tab_size = n;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.invalidate_heights();
+            cm.force_update = true;
+        });
     }
     /// `setOption("lineWrapping", v)`.
     pub fn set_line_wrapping(&mut self, v: bool) {
-        self.options.line_wrapping = v;
-        self.invalidate_heights();
-        self.update_view();
+        self.run_op(|cm| {
+            cm.options.line_wrapping = v;
+            cm.invalidate_heights();
+            cm.force_update = true;
+        });
     }
     /// `setSize(width, height)`.
     pub fn set_size(&mut self, width: f64, height: f64) {
-        self.display.width = width;
-        self.display.height = height;
-        self.invalidate_heights();
-        self.update_view();
+        self.run_op(|cm| {
+            cm.display.width = width;
+            cm.display.height = height;
+            cm.invalidate_heights();
+            cm.force_update = true;
+        });
     }
     /// `isReadOnly()`.
     pub fn is_read_only(&self) -> bool {
@@ -401,55 +495,431 @@ impl Editor {
     }
 
     /// Gutter width: `lineNumberWidth` + gutter padding (`.CodeMirror-linenumber {
-    /// padding: 0 3px 0 5px; min-width: 20px }`).
+    /// padding: 0 3px 0 5px; min-width: 20px }`), for the number of the last line
+    /// (`lineNumberFor(options, doc.first + doc.size - 1)`).
     pub fn update_gutter(&mut self) {
         if !self.options.line_numbers {
             self.gutter_width = 0.0;
+            self.display.line_num_chars = None;
             return;
         }
-        let last = self.options.first_line_number + self.doc.line_count() as i64 - 1;
-        let digits = last.max(1).to_string().len() as f64;
-        let inner = (digits * self.metrics.char_width).max(20.0);
+        let chars = self.last_line_number_chars();
+        let inner = (chars as f64 * self.metrics.char_width).max(20.0);
         self.gutter_width = (inner + 8.0 + 1.0).ceil();
+        self.display.line_num_chars = Some(chars);
+    }
+
+    fn last_line_number_chars(&self) -> usize {
+        let last =
+            self.options.first_line_number + self.first_line() + self.doc.line_count() as i64 - 1;
+        last.to_string().len()
+    }
+
+    /// `maybeUpdateLineNumberWidth(cm)` (src/display/line_numbers.js:32): when the
+    /// last line number has another number of characters, update the gutter and
+    /// return `true` (the caller resets the view).
+    fn maybe_update_line_number_width(&mut self) -> bool {
+        if !self.options.line_numbers
+            || self.display.line_num_chars == Some(self.last_line_number_chars())
+        {
+            return false;
+        }
+        self.update_gutter();
+        true
     }
 
     // ------------------------------------------------------------------------------
     // Operations
 
-    /// `runInOp(cm, f)` / `methodOp`: run `f` inside one operation.
+    /// `runInOp(cm, f)` / `methodOp`: run `f` inside one operation, with no other
+    /// editor reachable (see [`Editor::run_op_with`]).
     pub fn run_op<R>(&mut self, f: impl FnOnce(&mut Editor) -> R) -> R {
-        let doc = self.doc.clone();
-        self.op.depth += 1;
-        // `extendSelection(s)` reads `doc.cm.display.shift` (src/model/selection_updates.js).
-        doc.set_display_shift(self.display.shift);
-        let r = doc.operation(|| f(self));
-        doc.set_display_shift(self.display.shift);
-        self.op.depth -= 1;
-        if self.op.depth == 0 {
-            self.end_operation();
-        }
-        r
+        self.run_op_with(&mut NoEditors, |ed, _| f(ed))
     }
 
-    /// `endOperation`: apply scroll requests and update the viewport.
-    fn end_operation(&mut self) {
+    /// `runInOp(cm, f)` with the other editors `rest` reaches: when this operation
+    /// ends the group, their callbacks and operation ends are delivered too. Work
+    /// parked on this editor is delivered first, when no group is open.
+    pub fn run_op_with<R>(
+        &mut self,
+        rest: &mut dyn Editors,
+        f: impl FnOnce(&mut Editor, &mut dyn Editors) -> R,
+    ) -> R {
+        if !group_open() && self.parked_len() > 0 {
+            self.flush_parked_with(rest);
+        }
+        let doc = self.doc.clone();
+        // `extendSelection(s)` reads `doc.cm.display.shift` (src/model/selection_updates.js).
+        doc.set_display_shift(self.display.shift);
+        let sink: Rc<dyn EditorSink> = self.shared.clone();
+        let started = start_operation(&sink);
+        let r = catch_unwind(AssertUnwindSafe(|| f(&mut *self, &mut *rest)));
+        doc.set_display_shift(self.display.shift);
+        if started == Some(true) {
+            end_group(&mut WithSelf { me: self, rest });
+        }
+        r.unwrap_or_else(|p| resume_unwind(p))
+    }
+
+    /// How many deliveries are parked on this editor (see [`Doc::attach_editor`]).
+    pub fn parked_len(&self) -> usize {
+        self.shared.parked.borrow().len()
+    }
+
+    /// Deliver the work parked on this editor now.
+    pub fn flush_parked(&mut self) {
+        self.flush_parked_with(&mut NoEditors);
+    }
+
+    /// [`Editor::flush_parked`] with other editors reachable.
+    ///
+    /// Parked work keeps its order. A panic in a parked callback skips the parked
+    /// callbacks of the same batch after it (the rest of that group's queue, as in
+    /// `fireCallbacksForOps`); callbacks of other batches, and every parked
+    /// operation end, still run. A panic in an operation's display or finish phase
+    /// skips nothing. The first panic resumes, with its payload, when the parked
+    /// work is done (D4).
+    pub fn flush_parked_with(&mut self, rest: &mut dyn Editors) {
+        let mut panicked: Option<Box<dyn std::any::Any + Send>> = None;
+        let mut skipped: Vec<Batch> = Vec::new();
+        loop {
+            let items = std::mem::take(&mut *self.shared.parked.borrow_mut());
+            if items.is_empty() {
+                break;
+            }
+            for item in items {
+                let r = match item {
+                    Parked::Call(batch, _) if skipped.contains(&batch) => continue,
+                    Parked::Call(batch, call) => {
+                        let r = catch_unwind(AssertUnwindSafe(|| call(&mut *self, &mut *rest)));
+                        if r.is_err() {
+                            skipped.push(batch);
+                        }
+                        r
+                    }
+                    Parked::Finish(call) => {
+                        catch_unwind(AssertUnwindSafe(|| call(&mut *self, &mut *rest)))
+                    }
+                    Parked::End(mut rec) => catch_unwind(AssertUnwindSafe(|| {
+                        self.end_operation_display(&mut rec);
+                        finish(
+                            &mut Cx {
+                                editor: &mut *self,
+                                others: &mut *rest,
+                            },
+                            *rec,
+                        );
+                    })),
+                };
+                if let Err(p) = r {
+                    panicked.get_or_insert(p);
+                }
+            }
+        }
+        if let Some(p) = panicked {
+            resume_unwind(p);
+        }
+    }
+
+    // ------------------------------------------------------------------------------
+    // Events
+
+    /// A handle on this editor's listener tables (usable from any handler).
+    pub fn events(&self) -> EditorEvents {
+        EditorEvents(self.shared.clone())
+    }
+    /// Remove the editor handler registered as `id`, whatever its event.
+    pub fn off(&self, id: ListenerId) -> bool {
+        // Dropped with the tables released: a handler's destructor may use them.
+        let gone = self.shared.ls.borrow_mut().remove(id);
+        gone.is_some()
+    }
+    /// `on("beforeChange", f)`: before a change is applied, after the document's
+    /// own handlers; `f` may `update` or `cancel` it (immediate).
+    pub fn on_before_change(
+        &self,
+        f: impl Fn(&Doc, EditorId, &mut cm_core::BeforeChange) + 'static,
+    ) -> ListenerId {
+        self.shared.ls.borrow_mut().before_change.on_rc(Rc::new(f))
+    }
+    /// `on("beforeSelectionChange", f)` (immediate).
+    pub fn on_before_selection_change(
+        &self,
+        f: impl Fn(&Doc, EditorId, &mut cm_core::BeforeSelectionChange) + 'static,
+    ) -> ListenerId {
+        self.shared
+            .ls
+            .borrow_mut()
+            .before_selection_change
+            .on_rc(Rc::new(f))
+    }
+    /// `on("change", f)`: once per change (delayed to the end of the operation).
+    pub fn on_change(&self, f: impl Fn(&mut Cx, &cm_core::ChangeObj) + 'static) -> ListenerId {
+        let f: Rc<ChangeHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().change.on_rc(f)
+    }
+    /// `on("changes", f)`: all changes of an operation, at its end.
+    pub fn on_changes(
+        &self,
+        f: impl Fn(&mut Cx, &[Rc<cm_core::ChangeObj>]) + 'static,
+    ) -> ListenerId {
+        let f: Rc<ChangesHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().changes.on_rc(f)
+    }
+    /// `on("cursorActivity", f)`: the selection changed in the operation.
+    pub fn on_cursor_activity(&self, f: impl Fn(&mut Cx) + 'static) -> ListenerId {
+        let f: Rc<EditorHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().cursor_activity.on_rc(f)
+    }
+    /// `on("update", f)`: the operation redrew the display.
+    pub fn on_update(&self, f: impl Fn(&mut Cx) + 'static) -> ListenerId {
+        let f: Rc<EditorHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().update.on_rc(f)
+    }
+    /// `on("viewportChange", f)`: the rendered line range is now `from..to`.
+    pub fn on_viewport_change(&self, f: impl Fn(&mut Cx, i64, i64) + 'static) -> ListenerId {
+        let f: Rc<ViewportHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().viewport_change.on_rc(f)
+    }
+    /// `on("markerAdded", f)` (delayed).
+    pub fn on_marker_added(
+        &self,
+        f: impl Fn(&mut Cx, &cm_core::TextMarker) + 'static,
+    ) -> ListenerId {
+        let f: Rc<MarkerHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().marker_added.on_rc(f)
+    }
+    /// `on("markerCleared", f)`: `min`/`max` are the lines of a collapsed marker
+    /// (delayed).
+    pub fn on_marker_cleared(
+        &self,
+        f: impl Fn(&mut Cx, &cm_core::TextMarker, Option<i64>, Option<i64>) + 'static,
+    ) -> ListenerId {
+        let f: Rc<MarkerClearedHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().marker_cleared.on_rc(f)
+    }
+    /// `on("inputRead", f)`: typed or pasted text was applied (delayed).
+    pub fn on_input_read(&self, f: impl Fn(&mut Cx, &InputChange) + 'static) -> ListenerId {
+        let f: Rc<InputReadHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().input_read.on_rc(f)
+    }
+    /// `on("electricInput", f)`: an electric character reindented line `n`
+    /// (delayed).
+    pub fn on_electric_input(&self, f: impl Fn(&mut Cx, i64) + 'static) -> ListenerId {
+        let f: Rc<LineHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().electric_input.on_rc(f)
+    }
+    /// `on("focus", f)` (immediate).
+    pub fn on_focus(&self, f: impl Fn(&mut Cx) + 'static) -> ListenerId {
+        let f: Rc<EditorHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().focus.on_rc(f)
+    }
+    /// `on("blur", f)` (immediate).
+    pub fn on_blur(&self, f: impl Fn(&mut Cx) + 'static) -> ListenerId {
+        let f: Rc<EditorHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().blur.on_rc(f)
+    }
+    /// `state.focused`.
+    pub fn has_focus(&self) -> bool {
+        self.focused
+    }
+    /// `onFocus`/`onBlur`: the host's window gained or lost focus. `focus`/`blur`
+    /// handlers run immediately, only when the state changes (a `"nocursor"`
+    /// read-only editor is not focused).
+    pub fn set_focused(&mut self, focused: bool) {
+        if focused == self.focused {
+            return;
+        }
+        self.focused = focused;
+        let snap = {
+            let ls = self.shared.ls.borrow();
+            if focused {
+                ls.focus.snapshot()
+            } else {
+                ls.blur.snapshot()
+            }
+        };
+        for e in snap.iter() {
+            (e.f)(&mut Cx {
+                editor: self,
+                others: &mut NoEditors,
+            });
+        }
+    }
+    /// The host's `setTimeout(fireOrphanDelayed, 0)` for an editor on its own:
+    /// deliver the work parked on this editor (it was due first), then the
+    /// callbacks queued outside any operation, then anything they parked. Hosts
+    /// with several editors use [`crate::EditorSet`].
+    pub fn fire_orphan_delayed(&mut self) {
+        self.flush_parked();
+        cm_core::operation_group::fire_orphan_delayed(&mut WithSelf {
+            me: self,
+            rest: &mut NoEditors,
+        });
+        self.flush_parked();
+    }
+
+    /// `on("keyHandled", f)`: a key binding handled a key, with its name (delayed).
+    pub fn on_key_handled(&self, f: impl Fn(&mut Cx, &str) + 'static) -> ListenerId {
+        let f: Rc<NameHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().key_handled.on_rc(f)
+    }
+
+    /// `endOperation_R1` … `W2`: apply scroll requests and update the viewport.
+    ///
+    /// The operation's `regChange` and `regLineChange` calls are replayed, in order,
+    /// against the rendered range it started with (the range does not move during
+    /// an operation: a scroll is applied here, like `op.scrollTop`). A `regChange`
+    /// may cut, shift or reset the range; a `regLineChange` only marks a rendered
+    /// line dirty. Then `updateDisplayIfNeeded` decides: it bails out, keeping the
+    /// range, when nothing forces a redraw (an option, a resize), the visible lines
+    /// are rendered, the view was not cut, no rendered line is dirty, and no line
+    /// number before the range's end shifted. Otherwise a new number of digits in
+    /// the last line number resets the view (`maybeUpdateLineNumberWidth`), the
+    /// range is recomputed, and `update` is reported unless the second bail-out
+    /// applies (same range, nothing dirty in it, no shifted line numbers).
+    /// `viewportChange` follows when the range differs from the one last reported.
+    pub(crate) fn end_operation_display(&mut self, rec: &mut OpRecord) {
+        let (old_from, old_to) = (self.display.view_from, self.display.view_to);
         self.take_sel_scroll();
         if let Some(st) = self.op.scroll_top.take() {
-            self.set_scroll_top(st);
+            self.put_scroll_top(st);
         }
         if let Some(sl) = self.op.scroll_left.take() {
             self.set_scroll_left(sl);
         }
+        // The `DisplayUpdate` viewport (endOperation_R1): `op.scrollTop`, and the
+        // lines `op.scrollToPos` will scroll to, before that scroll is applied.
+        let view_top = self.display.scroll_top;
+        let mut ensure = None;
         if let Some((from, to, margin)) = self.op.scroll_to_pos.take() {
             let from = self.doc.clip_pos(from);
             let to = self.doc.clip_pos(to);
+            ensure = Some((from.line, to.line));
             self.scroll_pos_into_view(from, to, margin);
         }
-        if self.options.line_numbers {
-            self.update_gutter();
+        // regChange (view_tracking.js:13) and regLineChange (:78), in order, without
+        // collapsed spans. The view array is not kept: `replaced` stands for
+        // `renderedView != view` (a cut or a reset view), and `lines` for the
+        // rendered lines whose `lineView.changes` are set (`countDirtyView`).
+        let first = self.first_line();
+        let (mut vf, mut vt) = (old_from, old_to);
+        let mut replaced = false;
+        let mut lines: Vec<i64> = Vec::new();
+        for reg in &rec.regs {
+            let (from, to, lendiff) = match *reg {
+                ViewChange::Line(n) => {
+                    // Only a line of the rendered range is marked; the range stays.
+                    if n >= vf && n < vt && !lines.contains(&n) {
+                        lines.push(n);
+                    }
+                    continue;
+                }
+                ViewChange::ViewLines => {
+                    for n in vf..vt {
+                        if !lines.contains(&n) {
+                            lines.push(n);
+                        }
+                    }
+                    continue;
+                }
+                ViewChange::Range { from, to, lendiff } => (from, to, lendiff),
+            };
+            if lendiff != 0 && to < vt && self.display.update_line_numbers.is_none_or(|n| n > from)
+            {
+                self.display.update_line_numbers = Some(from);
+            }
+            if from >= vt {
+                // Change after.
+            } else if to <= vf {
+                // Change before: the line views move with their lines.
+                vf += lendiff;
+                vt += lendiff;
+                lines.iter_mut().for_each(|n| *n += lendiff);
+            } else if from <= vf && to >= vt {
+                // Full overlap: resetView.
+                (vf, vt) = (first, first);
+                lines.clear();
+                replaced = true;
+            } else if from <= vf {
+                // Top overlap: viewCuttingPoint gives the line after the change.
+                vf = to + lendiff;
+                vt += lendiff;
+                lines.retain(|&n| n >= to);
+                lines.iter_mut().for_each(|n| *n += lendiff);
+                replaced = true;
+            } else if to >= vt {
+                // Bottom overlap.
+                vt = from;
+                lines.retain(|&n| n < from);
+                replaced = true;
+            } else {
+                // Gap in the middle: lines `from..to` get new (dirty) views.
+                vt += lendiff;
+                lines.retain(|&n| n < from || n >= to);
+                lines
+                    .iter_mut()
+                    .filter(|n| **n >= to)
+                    .for_each(|n| *n += lendiff);
+                replaced = true;
+            }
         }
-        self.update_view();
+        self.set_view(vf, vt);
+        let force = std::mem::take(&mut self.force_update);
+        let numbers_ok = |n: Option<i64>, to: i64| n.is_none_or(|n| n >= to);
+        let (vis_from, vis_to) = self.visible_lines_in(view_top, ensure);
+        // updateDisplayIfNeeded (update_display.js:93): the first bail-out.
+        let mut redrawn = force
+            || vis_from < vf
+            || vis_to > vt
+            || !numbers_ok(self.display.update_line_numbers, vt)
+            || replaced
+            || !lines.is_empty();
+        if redrawn {
+            // maybeUpdateLineNumberWidth, only past the first bail-out: a new
+            // number of digits resets the view (update_display.js:108).
+            if self.maybe_update_line_number_width() {
+                self.set_view(first, first);
+                (vf, vt) = (first, first);
+                lines.clear();
+                replaced = true;
+            }
+            self.update_view_for((vis_from, vis_to));
+            let view = (self.display.view_from, self.display.view_to);
+            // The second bail-out: nothing to draw after `adjustView`.
+            redrawn = view != (vf, vt)
+                || replaced
+                || force
+                || lines.iter().any(|&n| n >= view.0 && n < view.1)
+                || !numbers_ok(self.display.update_line_numbers, view.1);
+        }
+        // Not in CM5. The replay may leave a range outside the document (a shift
+        // past a short range is a change after it), but then a line is dirty and
+        // `adjustView` moves it inside. A range still outside here means an
+        // invalidation was missed: it is recorded, then reset and computed again
+        // (resetView) instead of drawn, which would read lines that do not exist.
+        if !self.view_in_doc(self.display.view_from, self.display.view_to) {
+            self.note_invalid_view((self.display.view_from, self.display.view_to), "display");
+            self.set_view(first, first);
+            self.update_view_for((vis_from, vis_to));
+            redrawn = true;
+        }
         self.render_view_styles();
+        if redrawn {
+            self.display.update_line_numbers = None;
+            let ls = self.shared.ls.borrow();
+            if !ls.update.is_empty() {
+                rec.display.push(DisplayEvent::Update);
+            }
+            let view = (self.display.view_from, self.display.view_to);
+            if view != self.display.reported_view {
+                if !ls.viewport_change.is_empty() {
+                    rec.display
+                        .push(DisplayEvent::ViewportChange(view.0, view.1));
+                }
+                self.display.reported_view = view;
+            }
+        }
     }
 
     /// The highlighting side effects of drawing the viewport (`patchDisplay` ->
@@ -458,15 +928,34 @@ impl Editor {
     /// `maxHighlightLength`, the state from *before* the line) and advancing the
     /// highlight frontier. Done at the end of every operation, like `endOperation`.
     pub fn render_view_styles(&self) {
-        let (from, to) = (
-            self.display.view_from,
-            self.display
-                .view_to
-                .min(self.first_line() + self.doc.line_count() as i64),
-        );
+        let (from, to) = (self.display.view_from, self.display.view_to);
+        if !self.view_in_doc(from, to) {
+            // Only reachable between a document change and the end of this editor's
+            // operation (its display phase still parked): draw nothing.
+            self.note_invalid_view((from, to), "render");
+            return;
+        }
         for n in from..to {
             self.line_styles(n);
         }
+    }
+
+    /// Whether `[from, to)` is a range of the document's lines
+    /// (`doc.first <= from <= to <= doc.first + doc.size`).
+    fn view_in_doc(&self, from: i64, to: i64) -> bool {
+        let first = self.first_line();
+        first <= from && from <= to && to <= first + self.doc.line_count() as i64
+    }
+
+    fn note_invalid_view(&self, view: (i64, i64), at: &'static str) {
+        let first = self.first_line();
+        let d = &self.display;
+        d.invalid_views.set(d.invalid_views.get() + 1);
+        d.last_invalid_view.set(Some(InvalidView {
+            view,
+            doc: (first, first + self.doc.line_count() as i64),
+            at,
+        }));
     }
 
     /// `ensureCursorVisible(cm)`.
@@ -633,7 +1122,7 @@ impl Editor {
             let (st, sl) = self.calculate_scroll_pos(rect);
             let (start_top, start_left) = (self.display.scroll_top, self.display.scroll_left);
             if let Some(v) = st {
-                self.set_scroll_top(v);
+                self.put_scroll_top(v);
                 if (self.display.scroll_top - start_top).abs() > 1.0 {
                     changed = true;
                 }
@@ -662,25 +1151,33 @@ impl Editor {
         };
         (h, w)
     }
-    /// `setScrollTop(cm, val)`.
+    /// `updateScrollTop(cm, val)`, run as an operation: the rendered range,
+    /// `update` and `viewportChange` follow at its end (`updateDisplaySimple`).
     pub fn set_scroll_top(&mut self, val: f64) {
+        self.run_op(|cm| cm.put_scroll_top(val));
+    }
+    /// `setScrollTop(cm, val)`: the scroll position only, clamped. The rendered
+    /// range follows in the display phase (`op.scrollTop`, endOperation_R1).
+    fn put_scroll_top(&mut self, val: f64) {
         let (mh, _) = self.max_scroll();
         self.display.scroll_top = val.min(mh).max(0.0);
-        self.update_view();
     }
     /// `setScrollLeft(cm, val)`.
     pub fn set_scroll_left(&mut self, val: f64) {
         let (_, mw) = self.max_scroll();
         self.display.scroll_left = val.min(mw).max(0.0);
     }
-    /// `scrollTo(x, y)`.
+    /// `scrollTo(x, y)` (a `methodOp`: the display, `update` and `viewportChange`
+    /// follow at the end of the operation).
     pub fn scroll_to(&mut self, x: Option<f64>, y: Option<f64>) {
-        if let Some(y) = y {
-            self.set_scroll_top(y);
-        }
-        if let Some(x) = x {
-            self.set_scroll_left(x);
-        }
+        self.run_op(|cm| {
+            if let Some(y) = y {
+                cm.put_scroll_top(y);
+            }
+            if let Some(x) = x {
+                cm.set_scroll_left(x);
+            }
+        });
     }
 
     /// Widest line, for the horizontal scroll extent (`display.maxLine`).
@@ -710,19 +1207,36 @@ impl Editor {
 
     /// `visibleLines(display, doc)`: `[from, to)`.
     pub fn visible_lines(&self) -> (i64, i64) {
-        let top = (self.display.scroll_top - self.metrics.padding_top)
-            .floor()
-            .max(0.0);
+        self.visible_lines_in(self.display.scroll_top, None)
+    }
+
+    /// `visibleLines(display, doc, {top, ensure})`: the lines visible at scroll
+    /// position `top`, moved to take in the lines `ensure` when they are outside.
+    fn visible_lines_in(&self, top: f64, ensure: Option<(i64, i64)>) -> (i64, i64) {
+        let top = (top.max(0.0) - self.metrics.padding_top).floor();
         let bottom = top + self.display.height;
-        let from = self.line_at_height(top);
-        let to = self.line_at_height(bottom);
+        let mut from = self.line_at_height(top);
+        let mut to = self.line_at_height(bottom);
+        if let Some((ensure_from, ensure_to)) = ensure {
+            let last = self.first_line() + self.doc.line_count() as i64 - 1;
+            if ensure_from < from {
+                from = ensure_from;
+                to = self.line_at_height(self.height_at_line(ensure_from) + self.display.height);
+            } else if ensure_to.min(last) >= to {
+                from = self.line_at_height(self.height_at_line(ensure_to) - self.display.height);
+                to = ensure_to;
+            }
+        }
         (from, to.max(from + 1))
     }
 
     /// Update `viewFrom`/`viewTo` (`updateDisplayIfNeeded`: visible lines plus
     /// `viewportMargin` on each side).
     pub fn update_view(&mut self) {
-        let (from, to) = self.visible_lines();
+        self.update_view_for(self.visible_lines());
+    }
+
+    fn update_view_for(&mut self, (from, to): (i64, i64)) {
         let first = self.first_line();
         let end = first + self.doc.line_count() as i64;
         let m = self.options.viewport_margin;
@@ -736,11 +1250,15 @@ impl Editor {
         if old_to > vt && old_to - vt < 20 {
             vt = old_to.min(end);
         }
-        self.display.view_from = vf;
-        self.display.view_to = vt;
+        self.set_view(vf, vt);
+    }
+
+    fn set_view(&mut self, from: i64, to: i64) {
+        self.display.view_from = from;
+        self.display.view_to = to;
         let mut hs = self.hs.borrow_mut();
-        hs.view_from = self.display.view_from;
-        hs.view_to = self.display.view_to;
+        hs.view_from = from;
+        hs.view_to = to;
     }
 
     // ------------------------------------------------------------------------------
@@ -1492,7 +2010,22 @@ impl Editor {
                     }
                 }
             };
-            self.doc.make_change_lines(from, to, text, Some(&origin));
+            self.doc
+                .make_change_lines(from, to, text.clone(), Some(&origin));
+            // `signalLater(cm, "inputRead", cm, changeEvent)`
+            let snap = self.shared.ls.borrow().input_read.snapshot();
+            if !snap.is_empty() {
+                let ev = Rc::new(InputChange {
+                    from,
+                    to,
+                    text,
+                    origin,
+                });
+                for e in snap.iter() {
+                    let (f, ev) = (e.f.clone(), ev.clone());
+                    self.shared.later(move |cx| f(cx, &ev));
+                }
+            }
         }
         if !inserted.is_empty() && !paste {
             self.trigger_electric(inserted);
@@ -1514,15 +2047,24 @@ impl Editor {
                 continue;
             }
             let mode = self.get_mode_at(range.head);
+            let mut indented = false;
             if let Some(ec) = mode.electric_chars() {
                 if ec.chars().any(|c| inserted.contains(c)) {
-                    self.indent_line_raw(range.head.line, Indent::Smart, false);
+                    indented = self.indent_line_raw(range.head.line, Indent::Smart, false);
                 }
             } else {
                 let line = self.line_text(range.head.line);
                 let upto = &line[..(range.head.ch.max(0) as usize).min(line.len())];
                 if mode.electric_input(upto) == Some(true) {
-                    self.indent_line_raw(range.head.line, Indent::Smart, false);
+                    indented = self.indent_line_raw(range.head.line, Indent::Smart, false);
+                }
+            }
+            if indented {
+                // `signalLater(cm, "electricInput", cm, range.head.line)`
+                let snap = self.shared.ls.borrow().electric_input.snapshot();
+                for e in snap.iter() {
+                    let (f, line) = (e.f.clone(), range.head.line);
+                    self.shared.later(move |cx| f(cx, line));
                 }
             }
         }
@@ -1705,7 +2247,12 @@ impl Editor {
             self.key_seq = Some(name.to_string());
         }
         if result == Some(Lookup::Handled) {
-            self.keyhandled.push(name.to_string());
+            // `signalLater(cm, "keyHandled", cm, name, e)`
+            let snap = self.shared.ls.borrow().key_handled.snapshot();
+            for e in snap.iter() {
+                let (f, name) = (e.f.clone(), name.to_string());
+                self.shared.later(move |cx| f(cx, &name));
+            }
         }
         result.is_some()
     }
@@ -1738,12 +2285,19 @@ impl Editor {
 
     /// `onKeyDown(e)`; returns whether a binding handled it.
     pub fn key_down(&mut self, e: &KeyEvent) -> bool {
-        self.display.shift = e.key == "Shift" || e.shift;
-        self.handle_key_binding(e)
+        // input.js: `on(d.input, "keydown", operation(cm, onKeyDown))`
+        self.run_op(|cm| {
+            cm.display.shift = e.key == "Shift" || e.shift;
+            cm.handle_key_binding(e)
+        })
     }
 
     /// `onKeyPress(e)` for a typed character: char bindings (`"'x'"`), then input.
     pub fn key_press(&mut self, ch: &str, e: &KeyEvent) -> bool {
+        // `on(d.input, "keypress", operation(cm, onKeyPress))`
+        self.run_op(|cm| cm.key_press_in_op(ch, e))
+    }
+    fn key_press_in_op(&mut self, ch: &str, e: &KeyEvent) -> bool {
         if e.ctrl && !e.alt || self.options.mac && e.meta {
             return false;
         }

@@ -2,6 +2,11 @@
 //! helpers in `test/multi_test.js`.
 #![allow(dead_code)]
 
+pub mod events;
+
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use cm_core::Pos;
 use cm_core::pos::Sticky;
 use cm_modes::Spec;
@@ -133,4 +138,15 @@ pub fn has_cursors(cm: &Editor, s: &[(i64, i64)]) {
 /// `cm.getCursor()`.
 pub fn cur(cm: &Editor) -> Pos {
     cm.doc.get_cursor(None)
+}
+
+/// An event log shared by handlers.
+pub type Log = Rc<RefCell<Vec<String>>>;
+
+pub fn push(l: &Log, s: impl Into<String>) {
+    l.borrow_mut().push(s.into());
+}
+
+pub fn take(l: &Log) -> Vec<String> {
+    std::mem::take(&mut *l.borrow_mut())
 }

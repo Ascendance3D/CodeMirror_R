@@ -81,10 +81,10 @@ fn attached_document_still_scrolls() {
     assert_eq!(second.display.scroll_top, 0.0);
 }
 
-/// An editor dropped without `detach_editor_semantics` (the `Editor` has no `Drop`):
-/// attaching the document to the next editor must not inherit its request either.
-/// CM5 cannot reach this state (`attachDoc` throws "This document is already in
-/// use."); here attaching starts from an empty queue.
+/// An editor dropped without `detach_editor_semantics` (dropping detaches the
+/// document, and attaching clears the queue as well): the next editor does not
+/// inherit the request. CM5 cannot reach this state (`attachDoc` throws "This
+/// document is already in use.").
 #[test]
 fn attach_discards_request_left_by_dropped_editor() {
     let doc = Doc::new(&text());

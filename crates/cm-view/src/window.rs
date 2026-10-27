@@ -131,13 +131,18 @@ pub struct EditorWindow {
     blink_start: Instant,
     focused: bool,
     script: Option<std::collections::VecDeque<Step>>,
+    /// The manual clock of a scripted run (`pause` advances it).
+    script_clock: Option<std::rc::Rc<std::cell::Cell<f64>>>,
     pub exit_error: Option<String>,
     start: Instant,
 }
 
 impl EditorWindow {
     pub fn new(path: PathBuf, opts: AppOptions, script: Option<Vec<Step>>) -> EditorWindow {
+        // The event loop runs on this thread, so the thread-local clock applies.
+        let script_clock = script.as_ref().map(|_| cm_core::clock::manual(1_000_000.0));
         EditorWindow {
+            script_clock,
             path,
             opts,
             app: None,
@@ -216,7 +221,10 @@ impl EditorWindow {
                     self.input(e);
                 }
             }
-            Step::Pause(ms) => std::thread::sleep(Duration::from_millis(ms)),
+            Step::Pause(ms) => match &self.script_clock {
+                Some(c) => c.set(c.get() + ms as f64),
+                None => std::thread::sleep(Duration::from_millis(ms)),
+            },
             Step::Screenshot(path) => {
                 if let (Some(st), Some(app)) = (&mut self.state, &mut self.app) {
                     let (w, h) = (st.config.width, st.config.height);
@@ -360,6 +368,9 @@ impl ApplicationHandler for EditorWindow {
             }
             WindowEvent::Focused(f) => {
                 self.focused = f;
+                if let Some(app) = &mut self.app {
+                    app.set_focused(f);
+                }
                 if let Some(st) = &self.state {
                     st.window.request_redraw();
                 }

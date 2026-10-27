@@ -13,13 +13,14 @@
 //! re-check the selection. [`Doc::attach_editor_semantics`] switches a document to
 //! the editor behavior without any view, and [`Doc::operation`] groups calls.
 
-use std::cell::{Ref, RefCell, RefMut};
+use std::any::Any;
+use std::cell::{Cell, Ref, RefCell, RefMut};
 use std::rc::Rc;
-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU32, Ordering};
 
 use super::change_measurement::compute_replaced_sel;
 use super::changes::{
-    BeforeChange, BeforeSelectionChange, Change, make_change, make_change_from_history,
+    BeforeChange, BeforeSelectionChange, Change, ChangeObj, make_change, make_change_from_history,
     replace_range,
 };
 use super::history::{
@@ -40,12 +41,13 @@ use super::spans::{
 };
 use super::tree::Tree;
 use crate::CmError;
+use crate::events::{ListenerId, Listeners, removed};
+use crate::operation_group::{EditorId, EditorSink, Editors, NoEditors, run_in_op};
 use crate::pos::{CH_END, Pos, PosRef};
 use crate::text::{Text, from_u16, join, split_by, split_lines_auto, to_u16};
 use crate::util::bidi::Direction;
 
 static NEXT_DOC_ID: AtomicU32 = AtomicU32::new(0);
-static NEXT_OP_ID: AtomicU64 = AtomicU64::new(0);
 
 /// Model-level behavior of a document attached to an editor.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -71,14 +73,51 @@ impl Default for EditorSemantics {
     }
 }
 
+/// The editor of a document with [`Doc::attach_editor_semantics`]: operations and
+/// options, no view and no editor events.
+struct HeadlessSink {
+    id: EditorId,
+    sem: EditorSemantics,
+    op: Cell<Option<u64>>,
+}
+
+impl EditorSink for HeadlessSink {
+    fn id(&self) -> EditorId {
+        self.id
+    }
+    fn semantics(&self) -> EditorSemantics {
+        self.sem
+    }
+    fn op_id(&self) -> Option<u64> {
+        self.op.get()
+    }
+    fn open_op(&self, id: u64) {
+        self.op.set(Some(id));
+    }
+    fn close_op(&self) -> Box<dyn Any> {
+        self.op.set(None);
+        Box::new(())
+    }
+    fn end_display(&self, rec: Box<dyn Any>, _: &mut dyn Editors) -> Option<Box<dyn Any>> {
+        Some(rec)
+    }
+    fn park_call(&self, _: crate::operation_group::Batch, _: crate::operation_group::EdCall) {
+        crate::operation_group::diagnostic(format!(
+            "discarded a callback for headless editor {}",
+            self.id.get()
+        ));
+    }
+}
+
 pub(crate) struct Link {
     pub doc: Doc,
     pub is_parent: bool,
     pub shared_hist: bool,
 }
 
-type BeforeChangeHandler = Rc<dyn Fn(&Doc, &mut BeforeChange)>;
-type BeforeSelHandler = Rc<dyn Fn(&Doc, &mut BeforeSelectionChange)>;
+pub(crate) type BeforeChangeHandler = dyn Fn(&Doc, &mut BeforeChange);
+pub(crate) type BeforeSelHandler = dyn Fn(&Doc, &mut BeforeSelectionChange);
+pub(crate) type ChangeHandler = dyn Fn(&Doc, &ChangeObj);
 
 pub(crate) struct DocInner {
     pub id: u32,
@@ -93,15 +132,19 @@ pub(crate) struct DocInner {
     pub extend: bool,
     pub direction: Direction,
     pub mode_option: Option<String>,
-    pub editor: Option<EditorSemantics>,
-    pub cur_op: Option<u64>,
-    /// `op.markedSpans`: span arrays created by `addMarkedSpan` in the current
-    /// operation, which later additions in the same operation mutate in place.
-    pub op_span_arrays: Vec<super::spans::SpanArr>,
-    pub before_change: Vec<BeforeChangeHandler>,
-    pub before_selection_change: Vec<BeforeSelHandler>,
-    /// Editor `change` listeners (view bookkeeping; see [`Doc::on_change`]).
-    pub change_listeners: Vec<ChangeHandler>,
+    /// `doc.cm`: the editor this document is attached to.
+    pub sink: Option<Rc<dyn EditorSink>>,
+    /// `op.markedSpans`: span arrays created by `addMarkedSpan` in the operation
+    /// with this id, which later additions in the same operation mutate in place.
+    pub op_span_arrays: (u64, Vec<super::spans::SpanArr>),
+    pub before_change: Listeners<BeforeChangeHandler>,
+    pub before_selection_change: Listeners<BeforeSelHandler>,
+    /// `change` (delayed).
+    pub change: Listeners<ChangeHandler>,
+    /// `cursorActivity` (delayed).
+    pub cursor_activity: Listeners<dyn Fn(&Doc)>,
+    /// `historyAdded` (immediate).
+    pub history_added: Listeners<dyn Fn(&Doc)>,
     /// `cm.state.suppressEdits`: set while a key handler runs in a read-only editor.
     pub suppress_edits: bool,
     /// The cursor at each `ensureCursorVisible(doc.cm)` call of `setSelectionNoUndo`
@@ -111,19 +154,6 @@ pub(crate) struct DocInner {
     /// `cm.display.shift` (see [`Doc::set_display_shift`]).
     pub display_shift: bool,
 }
-
-/// What a `change` listener sees: the change as applied to this document.
-#[derive(Clone, Debug, PartialEq)]
-pub struct ChangeInfo {
-    pub from: Pos,
-    /// End of the replaced range, in pre-change coordinates.
-    pub to: Pos,
-    /// Number of inserted lines (`change.text.length`).
-    pub text_lines: usize,
-    pub origin: Option<String>,
-}
-
-type ChangeHandler = Rc<dyn Fn(&Doc, &ChangeInfo)>;
 
 #[derive(Clone)]
 pub struct Doc(pub(crate) Rc<RefCell<DocInner>>);
@@ -211,15 +241,16 @@ impl Doc {
             extend: false,
             direction,
             mode_option: mode,
-            editor: None,
-            cur_op: None,
-            op_span_arrays: Vec::new(),
-            before_change: Vec::new(),
-            change_listeners: Vec::new(),
+            sink: None,
+            op_span_arrays: (0, Vec::new()),
+            before_change: Listeners::default(),
             suppress_edits: false,
             display_shift: false,
             scroll_requests: Vec::new(),
-            before_selection_change: Vec::new(),
+            before_selection_change: Listeners::default(),
+            change: Listeners::default(),
+            cursor_activity: Listeners::default(),
+            history_added: Listeners::default(),
         };
         let doc = Doc(Rc::new(RefCell::new(inner)));
         let text = match lines {
@@ -236,6 +267,7 @@ impl Doc {
                 origin: None,
                 full: false,
             },
+            None,
             None,
         );
         set_selection(
@@ -269,27 +301,44 @@ impl Doc {
         self.inner().history.clone()
     }
     pub(crate) fn has_editor(&self) -> bool {
-        self.inner().editor.is_some()
+        self.inner().sink.is_some()
+    }
+    /// `hasHandler(doc, "beforeChange") || doc.cm && hasHandler(doc.cm, "beforeChange")`.
+    pub(crate) fn has_before_change(&self) -> bool {
+        !self.inner().before_change.is_empty() || self.sink().is_some_and(|s| s.has_before_change())
+    }
+    /// The same for `beforeSelectionChange`.
+    pub(crate) fn has_before_selection_change(&self) -> bool {
+        !self.inner().before_selection_change.is_empty()
+            || self.sink().is_some_and(|s| s.has_before_selection_change())
+    }
+    /// `doc.cm`, cloned so no document borrow is held while it is used.
+    pub fn sink(&self) -> Option<Rc<dyn EditorSink>> {
+        self.inner().sink.clone()
+    }
+    /// The id of the editor this document is attached to.
+    pub fn editor_id(&self) -> Option<EditorId> {
+        self.sink().map(|s| s.id())
+    }
+    fn semantics(&self) -> Option<EditorSemantics> {
+        self.sink().map(|s| s.semantics())
     }
     pub(crate) fn history_event_delay(&self) -> f64 {
-        self.inner()
-            .editor
+        self.semantics()
             .map(|e| e.history_event_delay)
             .unwrap_or(500.0)
     }
     pub(crate) fn whole_line_update_before(&self) -> bool {
-        self.inner()
-            .editor
-            .is_none_or(|e| e.whole_line_update_before)
+        self.semantics().is_none_or(|e| e.whole_line_update_before)
     }
     pub(crate) fn selections_may_touch(&self) -> bool {
-        self.inner().editor.is_some_and(|e| e.selections_may_touch)
+        self.semantics().is_some_and(|e| e.selections_may_touch)
     }
     /// `doc.cm && (doc.cm.display.shift || doc.extend)`: without an editor this is
     /// always false, even after `setExtending(true)`.
     pub(crate) fn extend_flag(&self) -> bool {
         let i = self.inner();
-        i.editor.is_some() && (i.display_shift || i.extend)
+        i.sink.is_some() && (i.display_shift || i.extend)
     }
     /// `cm.display.shift`, mirrored by a view so `extendSelection(s)` sees it.
     pub fn set_display_shift(&self, v: bool) {
@@ -297,32 +346,17 @@ impl Doc {
     }
     /// `doc.cm ? doc.cm.curOp.id : NaN`.
     pub(crate) fn op_id(&self) -> Option<u64> {
-        let i = self.inner();
-        if i.editor.is_some() { i.cur_op } else { None }
+        self.sink().and_then(|s| s.op_id())
     }
-    /// Run `f` inside an operation when the document has editor semantics and no
-    /// operation is active (what `docMethodOp`/`operation()` do in the JS).
+    /// `docMethodOp`: run `f` inside an operation of the attached editor, opening
+    /// one when none is open. A document cannot reach its editor, so when this
+    /// operation opens the group, the editor's part of the work is parked on the
+    /// editor until its next entry (see [`Doc::attach_editor`]).
     pub(crate) fn in_op<R>(&self, f: impl FnOnce() -> R) -> R {
-        let start = {
-            let i = self.inner();
-            i.editor.is_some() && i.cur_op.is_none()
-        };
-        if !start {
-            return f();
+        match self.sink() {
+            Some(sink) => run_in_op(&sink, &mut NoEditors, |_| f()),
+            None => f(),
         }
-        self.inner_mut().cur_op = Some(NEXT_OP_ID.fetch_add(1, Ordering::Relaxed) + 1);
-        // `endOperation` runs in a `finally` in the JS, so end the operation on unwind too.
-        struct End<'a>(&'a Doc);
-        impl Drop for End<'_> {
-            fn drop(&mut self) {
-                if let Ok(mut i) = self.0.0.try_borrow_mut() {
-                    i.cur_op = None;
-                    i.op_span_arrays.clear();
-                }
-            }
-        }
-        let _end = End(self);
-        f()
     }
     pub(crate) fn is_line(&self, l: i64) -> bool {
         let i = self.inner();
@@ -372,9 +406,17 @@ impl Doc {
     }
     /// `doc.remove(at, n)`.
     pub(crate) fn remove_lines(&self, at: i64, n: usize) {
-        let mut i = self.inner_mut();
-        let rel = at - i.first;
-        i.tree.remove_inner(super::tree::ROOT, rel, n);
+        let deleted = {
+            let mut i = self.inner_mut();
+            let rel = at - i.first;
+            i.tree.remove_inner(super::tree::ROOT, rel, n);
+            std::mem::take(&mut i.tree.deleted_with_handlers)
+        };
+        super::mark_text::flush_marker_line_hooks();
+        // chunk.js removeInner: `signalLater(line, "delete")` for each removed line.
+        for line in deleted {
+            super::line::signal_line_delete(&line);
+        }
     }
     /// `getBetween(doc, start, end)`.
     pub(crate) fn get_between(&self, start: Pos, end: Pos) -> Vec<Text> {
@@ -491,24 +533,63 @@ impl Doc {
     // ----------------------------------------------------------------------------
     // Editor semantics, operations, events
 
-    /// Make the model behave as if the document were attached to an editor.
+    /// Make the model behave as if the document were attached to an editor, with no
+    /// view: operations, editor options, no editor events.
+    ///
+    /// # Panics
+    /// When the document already has an editor ([`CmError::DocInUse`]).
     pub fn attach_editor_semantics(&self, sem: EditorSemantics) {
+        if let Err(e) = self.attach_editor(Rc::new(HeadlessSink {
+            id: EditorId::next(),
+            sem,
+            op: Cell::new(None),
+        })) {
+            panic!("{e}");
+        }
+    }
+    /// `attachDoc(cm, doc)`: attach the document to an editor (`doc.cm = cm`).
+    ///
+    /// Delivery contract for document methods called directly on an attached
+    /// document (not through the editor): the call runs in an operation of the
+    /// editor, like `docMethodOp`, and its document, line and marker events are
+    /// delivered when it returns. The editor's own events and its display update
+    /// cannot run without the editor, so they are parked on it and delivered at
+    /// its next entry (any editor method that runs an operation), or when the host
+    /// flushes it; nothing is dropped while the editor exists. Parked work runs in
+    /// the order it was parked, but it runs after the document changes that came
+    /// after it: a handler of parked work sees the document as it is when the work
+    /// is delivered, and an editor call it makes delivers the rest of the parked
+    /// work first.
+    ///
+    /// A document has at most one editor: attaching a second one fails with
+    /// [`CmError::DocInUse`] (`attachDoc` throws "This document is already in use.")
+    /// and leaves the first attached.
+    pub fn attach_editor(&self, sink: Rc<dyn EditorSink>) -> Result<(), CmError> {
+        let undo_depth = sink.semantics().undo_depth;
         let mut i = self.inner_mut();
-        i.editor = Some(sem);
-        // A request belongs to the editor it was made for (see
-        // `detach_editor_semantics`); a new editor starts with none, even when the
-        // previous one was dropped without detaching.
+        if i.sink.is_some() {
+            return Err(CmError::DocInUse);
+        }
+        i.sink = Some(sink);
+        // A request belongs to the editor it was made for (see `detach_editor`); a
+        // new editor starts with none, even when the previous one was dropped
+        // without detaching.
         i.scroll_requests.clear();
         drop(i);
         // The `undoDepth` option handler runs when the editor is created.
-        self.set_undo_depth(sem.undo_depth);
+        self.set_undo_depth(undo_depth);
+        Ok(())
     }
-    pub fn detach_editor_semantics(&self) {
+    /// `detachDoc`: the document has no editor afterwards.
+    pub fn detach_editor(&self) {
         let mut i = self.inner_mut();
-        i.editor = None;
-        i.cur_op = None;
+        i.sink = None;
         // CM5 writes each request into the old editor's `curOp`; none outlives it.
         i.scroll_requests.clear();
+    }
+    /// The same as [`Doc::detach_editor`].
+    pub fn detach_editor_semantics(&self) {
+        self.detach_editor();
     }
     /// `cm.operation(f)`: group calls into one operation (only meaningful with
     /// editor semantics).
@@ -516,20 +597,37 @@ impl Doc {
         self.in_op(f)
     }
     /// `on("beforeChange", f)`.
-    pub fn on_before_change<F: Fn(&Doc, &mut BeforeChange) + 'static>(&self, f: F) {
-        self.inner_mut().before_change.push(Rc::new(f));
+    pub fn on_before_change<F: Fn(&Doc, &mut BeforeChange) + 'static>(&self, f: F) -> ListenerId {
+        self.inner_mut().before_change.on_rc(Rc::new(f))
     }
-    /// Editor-side `change` notification (`makeChangeSingleDocInEditor`), called
-    /// after each change is applied to this document's lines and before the
-    /// selection is updated. Used by a view for frontier/cache invalidation.
-    pub fn on_change<F: Fn(&Doc, &ChangeInfo) + 'static>(&self, f: F) {
-        self.inner_mut().change_listeners.push(Rc::new(f));
+    /// Remove the document handler registered as `id`, whatever its event.
+    /// `false` when no document handler has that id.
+    pub fn off(&self, id: ListenerId) -> bool {
+        let gone = {
+            let mut i = self.inner_mut();
+            removed(i.before_change.remove(id))
+                .or_else(|| removed(i.before_selection_change.remove(id)))
+                .or_else(|| removed(i.change.remove(id)))
+                .or_else(|| removed(i.cursor_activity.remove(id)))
+                .or_else(|| removed(i.history_added.remove(id)))
+        };
+        gone.is_some()
     }
-    pub(crate) fn fire_change(&self, info: &ChangeInfo) {
-        let ls: Vec<ChangeHandler> = self.inner().change_listeners.clone();
-        for l in ls {
-            l(self, info);
-        }
+    /// `on("change", f)`: called after each change to this document, with the
+    /// change as applied here. Delayed (`signalLater`): it runs when the outermost
+    /// operation ends, or, with no operation open (no editor), when the host
+    /// delivers the orphan queue ([`crate::operation_group::fire_orphan_delayed`]).
+    pub fn on_change<F: Fn(&Doc, &ChangeObj) + 'static>(&self, f: F) -> ListenerId {
+        self.inner_mut().change.on_rc(Rc::new(f))
+    }
+    /// `on("cursorActivity", f)`: the selection changed. Delayed like `change`.
+    pub fn on_cursor_activity<F: Fn(&Doc) + 'static>(&self, f: F) -> ListenerId {
+        self.inner_mut().cursor_activity.on_rc(Rc::new(f))
+    }
+    /// `on("historyAdded", f)`: a change started a new history event (it was not
+    /// merged into the previous one). Immediate.
+    pub fn on_history_added<F: Fn(&Doc) + 'static>(&self, f: F) -> ListenerId {
+        self.inner_mut().history_added.on_rc(Rc::new(f))
     }
     /// `cm.state.suppressEdits` (src/edit/key_events.js:doHandleBinding sets it while a
     /// key handler runs in a read-only editor). Only honored with editor semantics,
@@ -552,7 +650,7 @@ impl Doc {
     }
     pub fn suppress_edits(&self) -> bool {
         let i = self.inner();
-        i.editor.is_some() && i.suppress_edits
+        i.sink.is_some() && i.suppress_edits
     }
     /// `goalColumn` of each current selection range (`moveV`, src/edit/methods.js).
     pub fn goal_columns(&self) -> Vec<Option<f64>> {
@@ -619,8 +717,8 @@ impl Doc {
     pub fn on_before_selection_change<F: Fn(&Doc, &mut BeforeSelectionChange) + 'static>(
         &self,
         f: F,
-    ) {
-        self.inner_mut().before_selection_change.push(Rc::new(f));
+    ) -> ListenerId {
+        self.inner_mut().before_selection_change.on_rc(Rc::new(f))
     }
 
     // ----------------------------------------------------------------------------
@@ -983,7 +1081,7 @@ impl Doc {
             }
             if let Some(ns) = new_sel {
                 set_selection_replace_history(self, ns, None);
-            } else if self.inner().editor.is_some() {
+            } else if self.has_editor() {
                 // `else if (this.cm) ensureCursorVisible(this.cm)`, applied by the view
                 // like the request of `setSelectionNoUndo` (see `take_scroll_requests`).
                 self.request_cursor_visible();

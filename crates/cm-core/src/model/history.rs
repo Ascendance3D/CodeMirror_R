@@ -263,7 +263,14 @@ pub(crate) fn add_change_to_history(
     hist.last_sel_op = op_id;
     hist.last_origin = change.origin.clone();
     hist.last_sel_origin = change.origin.clone();
-    let _ = merged; // `signal(doc, "historyAdded")` is not ported.
+    drop(hist);
+    // `if (!last) signal(doc, "historyAdded")`
+    if !merged {
+        let snap = doc.inner().history_added.snapshot();
+        for e in snap.iter() {
+            (e.f)(doc);
+        }
+    }
 }
 
 fn selection_event_can_be_merged(

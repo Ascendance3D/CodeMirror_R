@@ -44,6 +44,14 @@ Recorded baselines (strict, `CM_EVIDENCE` unset, GPU adapter of the reviewed gol
 | `44ad822` (P0) | 381 | 0 | 0 | 0 |
 | `eca4e29` | 387 | 0 | 0 | 0 |
 | the commit titled "README: test baseline of the corrected P0 head" | 392 | 0 | 0 | 0 |
+| the commit titled "P1.6: native host integration and event QA" | 454 | 0 | 0 | 0 |
+| the commit titled "P1: fixes from the independent review" | 457 | 0 | 0 | 0 |
+| the commit titled "P1: viewport events (M3) and reentrant listener tables" | 481 | 0 | 0 | 0 |
+| the commit titled "P1: shiftDoc editor part and a rendered-range guard (R1)" | 518 | 0 | 0 | 0 |
+
+## Events
+
+Editor, document, line and marker events follow CM5's order: immediate events (`beforeChange`, `beforeSelectionChange`, `beforeCursorEnter`, `historyAdded`, `focus`, `blur`) run at once; the others are delayed to the end of the outermost operation (or, outside any operation, to the host's next `fire_orphan_delayed`). Handlers are typed (`Editor::on_change`, `Doc::on_change`, `LineHandle::on_delete`, `TextMarker::on_hide`, …) and return a `ListenerId` for `off`. Editor handlers receive a `Cx` with `&mut Editor` and the other editors the caller can reach; several editors that share documents or call each other live in an `EditorSet`. Event state is per thread. A document method called directly on a document attached to an editor parks the editor's part of the operation until the editor's next call or `flush_parked`. A panic in a handler still ends the operation; `panic = "abort"` builds are not supported. See `crates/cm-core/src/operation_group.rs` and `crates/cm-view/src/events.rs`; the order is checked against CM5 recordings in `crates/cm-view/tests/editor_events.rs` and `editor_set.rs`.
 
 ## C0 suite
 

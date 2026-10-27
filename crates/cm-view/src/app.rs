@@ -231,6 +231,13 @@ impl App {
 
     /// Handle one input event. Returns whether the view needs a redraw.
     pub fn handle(&mut self, input: Input) -> bool {
+        let r = self.handle_input(input);
+        // Like `setTimeout(fireOrphanDelayed, 0)` after the browser event.
+        self.deliver_pending();
+        r
+    }
+
+    fn handle_input(&mut self, input: Input) -> bool {
         match input {
             Input::Key { key, text } => {
                 let handled = self.editor.key_down(&key);
@@ -338,7 +345,21 @@ impl App {
     /// Run the background highlighter for a bounded amount of work; returns
     /// whether more remains.
     pub fn idle(&mut self) -> bool {
+        self.deliver_pending();
         self.editor.highlight_step(200)
+    }
+
+    /// Deliver event callbacks queued outside an operation (the orphan queue) and
+    /// editor work parked by direct document calls.
+    pub fn deliver_pending(&mut self) {
+        if cm_core::operation_group::orphans_pending() || self.editor.parked_len() > 0 {
+            self.editor.fire_orphan_delayed();
+        }
+    }
+
+    /// The window gained or lost focus (`focus`/`blur` events).
+    pub fn set_focused(&mut self, focused: bool) {
+        self.editor.set_focused(focused);
     }
 }
 
@@ -349,6 +370,8 @@ impl App {
 pub enum Step {
     Input(Vec<Input>),
     /// `pause <ms>`: let time pass (history events stop merging after 1250ms).
+    /// A scripted run uses a manual clock that the pause advances, so the result
+    /// does not depend on how fast the machine replays the steps.
     Pause(u64),
     Screenshot(PathBuf),
     Quit,

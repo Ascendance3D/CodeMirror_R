@@ -4,7 +4,7 @@
 use std::rc::Rc;
 
 use super::change_measurement::compute_sel_after_change;
-use super::doc::Doc;
+use super::doc::{BeforeChangeHandler, Doc};
 use super::document_data::update_doc;
 use super::history::{
     ChangeEvent, HistEvent, HistRef, add_change_to_history, history_change_from_change,
@@ -31,6 +31,18 @@ impl Change {
     pub fn text(&self) -> &Vec<Text> {
         self.text.as_ref().expect("change with text")
     }
+}
+
+/// A change as `change`/`changes` handlers receive it (`{from, to, text, removed,
+/// origin}`), after it was applied: `to` is the end of the replaced range in the
+/// coordinates from before the change.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ChangeObj {
+    pub from: Pos,
+    pub to: Pos,
+    pub text: Vec<String>,
+    pub removed: Vec<String>,
+    pub origin: Option<String>,
 }
 
 /// The object `beforeChange` handlers receive.
@@ -101,7 +113,13 @@ impl BeforeChange {
 /// `filterChange(doc, change, update)`: run `beforeChange` handlers. `None` when a
 /// handler cancelled the change. Note the result drops `full`, like the JS.
 fn filter_change(doc: &Doc, change: &Change, update: bool) -> Option<Change> {
-    let handlers = doc.inner().before_change.clone();
+    let handlers: Vec<Rc<BeforeChangeHandler>> = doc
+        .inner()
+        .before_change
+        .snapshot()
+        .iter()
+        .map(|e| e.f.clone())
+        .collect();
     let mut obj = BeforeChange {
         from: change.from,
         to: change.to,
@@ -116,7 +134,26 @@ fn filter_change(doc: &Doc, change: &Change, update: bool) -> Option<Change> {
         pending: None,
     };
     let mut text_u16: Vec<Text> = change.text().clone();
-    for h in handlers {
+    // `signal(doc, "beforeChange", …)`, then `if (doc.cm) signal(doc.cm, …)`: the
+    // editor's handlers are looked up after the document's ran.
+    let mut editor_handlers = None;
+    let mut i = 0;
+    loop {
+        let h = match handlers.get(i) {
+            Some(h) => h.clone(),
+            None => {
+                let eh = editor_handlers.get_or_insert_with(|| {
+                    doc.sink()
+                        .map(|s| s.before_change_handlers())
+                        .unwrap_or_default()
+                });
+                match eh.get(i - handlers.len()) {
+                    Some(h) => h.clone(),
+                    None => break,
+                }
+            }
+        };
+        i += 1;
         h(doc, &mut obj);
         // Apply updates the way the JS closure does: immediately, with clipping.
         if let Some(p) = obj.pending.take() {
@@ -155,7 +192,7 @@ pub(crate) fn make_change(doc: &Doc, change: Change, ignore_read_only: bool) {
     }
     doc.in_op(|| {
         let mut change = change;
-        if !doc.inner().before_change.is_empty() {
+        if doc.has_before_change() {
             match filter_change(doc, &change, true) {
                 Some(c) => change = c,
                 None => return,
@@ -327,7 +364,7 @@ pub(crate) fn make_change_from_history(doc: &Doc, undo: bool, allow_selection_on
         idx
     };
 
-    let filter = !doc.inner().before_change.is_empty();
+    let filter = doc.has_before_change();
 
     for i in (0..event.changes.len()).rev() {
         let hchange = &event.changes[i];
@@ -399,25 +436,41 @@ fn shift_doc(doc: &Doc, distance: i64) {
     if distance == 0 {
         return;
     }
-    let mut inner = doc.inner_mut();
-    inner.first += distance;
-    let sel = inner.sel.clone();
-    let ranges = sel
-        .ranges
-        .iter()
-        .map(|r| {
-            Range::new(
-                PosRef::lc(r.anchor.line() + distance, r.anchor.ch()),
-                PosRef::lc(r.head.line() + distance, r.head.ch()),
-            )
-        })
-        .collect();
-    inner.sel = new_sel(ranges, sel.prim_index);
+    {
+        let mut inner = doc.inner_mut();
+        inner.first += distance;
+        let sel = inner.sel.clone();
+        let ranges = sel
+            .ranges
+            .iter()
+            .map(|r| {
+                Range::new(
+                    PosRef::lc(r.anchor.line() + distance, r.anchor.ch()),
+                    PosRef::lc(r.head.line() + distance, r.head.ch()),
+                )
+            })
+            .collect();
+        inner.sel = new_sel(ranges, sel.prim_index);
+    }
+    // `if (doc.cm) { regChange(…); regLineChange(…, "gutter") … }`
+    if let Some(s) = doc.sink() {
+        s.doc_shifted(doc, distance);
+    }
 }
 
 /// `makeChangeSingleDoc(doc, change, selAfter, spans)`: apply to one document,
 /// clipping the change to a sub-view's range.
 fn make_change_single_doc(
+    doc: &Doc,
+    change: &Change,
+    sel_after: Option<Sel>,
+    spans: Option<NewSpans>,
+) {
+    // `if (doc.cm && !doc.cm.curOp) return operation(doc.cm, makeChangeSingleDoc)(…)`
+    doc.in_op(|| make_change_single_doc_in_op(doc, change, sel_after, spans))
+}
+
+fn make_change_single_doc_in_op(
     doc: &Doc,
     change: &Change,
     sel_after: Option<Sel>,
@@ -458,19 +511,36 @@ fn make_change_single_doc(
             full: false,
         };
     }
-    // (`change.removed = getBetween(...)` only feeds change events, not ported.)
+    let obj = Rc::new(ChangeObj {
+        from: change.from,
+        to: change.to,
+        text: change
+            .text()
+            .iter()
+            .map(|t| crate::text::from_u16(t))
+            .collect(),
+        removed: doc
+            .get_between(change.from, change.to)
+            .iter()
+            .map(|t| crate::text::from_u16(t))
+            .collect(),
+        origin: change.origin.clone(),
+    });
     let sel_after = match sel_after {
         Some(s) => s,
         None => compute_sel_after_change(doc, &change),
     };
-    update_doc(doc, &change, spans);
-    if !doc.inner().change_listeners.is_empty() {
-        doc.fire_change(&super::doc::ChangeInfo {
-            from: change.from,
-            to: change.to,
-            text_lines: change.text().len(),
-            origin: change.origin.clone(),
-        });
+    let sink = doc.sink();
+    // makeChangeSingleDocInEditor: `if (doc.sel.contains(change.from, change.to) > -1)
+    // signalCursorActivity(cm)`, with the selection from before the change.
+    if let Some(s) = &sink
+        && doc.inner().sel.contains(&change.from, Some(&change.to)) > -1
+    {
+        s.signal_cursor_activity();
+    }
+    update_doc(doc, &change, spans, Some(&obj));
+    if let Some(s) = &sink {
+        s.change_applied(doc, &obj, change.full);
     }
     set_selection_no_undo(
         doc,

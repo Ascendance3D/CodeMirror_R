@@ -1,0 +1,5421 @@
+{
+ "version": "5.65.21",
+ "cases": {
+  "c01_insert_above": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)",
+      "B:update",
+      "B:viewportChange(53,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_scroll",
+     "log": [
+      "B:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 410,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_edit_first",
+     "log": [
+      "B:change(53:0,53:0,[\"X\"])",
+      "A:change(53:0,53:0,[\"X\"])",
+      "B:cursorActivity",
+      "B:changes(1)",
+      "B:update",
+      "A:changes(1)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 410,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:1-53:1"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_edit_inside_b",
+     "log": [
+      "A:change(60:0,60:0,[\"Y\",\"\"])",
+      "B:change(60:0,60:0,[\"Y\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,100)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(53,82)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        100
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 204,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 74",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        82
+       ],
+       "top": 410,
+       "left": 0,
+       "lines": 101,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 59",
+       "lineNumChars": null,
+       "sels": [
+        "53:1-53:1"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c01b_insert_above_parent_top": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       0,
+       17
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       0,
+       7
+      ],
+      "firstText": "line 0",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(0,20)",
+      "B:update",
+      "B:viewportChange(53,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        0,
+        20
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        0,
+        7
+       ],
+       "firstText": "line 0",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c02_delete_above": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_delete_3_above",
+     "log": [
+      "A:change(10:0,13:0,[\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(65,96)",
+      "B:update",
+      "B:viewportChange(47,75)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        65,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 197,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 81",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        47,
+        75
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 47,
+       "visible": [
+        57,
+        65
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "47:0-47:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_scroll",
+     "log": [
+      "B:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        65,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 197,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 81",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        47,
+        75
+       ],
+       "top": 300,
+       "left": 0,
+       "lines": 100,
+       "first": 47,
+       "visible": [
+        54,
+        62
+       ],
+       "firstText": "line 57",
+       "lineNumChars": null,
+       "sels": [
+        "47:0-47:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c03_insert_at_first_line": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       67
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       50,
+       57
+      ],
+      "firstText": "line 50",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_at_50_0",
+     "log": [
+      "A:change(50:0,50:0,[\"P\",\"Q\",\"\"])",
+      "B:change(50:0,50:0,[\"P\",\"Q\",\"\"])",
+      "B:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,98)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(50,69)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        98
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 202,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 76",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        69
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 102,
+       "first": 50,
+       "visible": [
+        50,
+        57
+       ],
+       "firstText": "P",
+       "lineNumChars": null,
+       "sels": [
+        "52:0-52:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c04_insert_end_of_line_before_first": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       67
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       50,
+       57
+      ],
+      "firstText": "line 50",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_at_49_end",
+     "log": [
+      "A:change(49:7,49:7,[\"P\",\"Q\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,97)",
+      "B:update",
+      "B:viewportChange(51,68)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        97
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 201,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 77",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        51,
+        68
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 100,
+       "first": 51,
+       "visible": [
+        51,
+        58
+       ],
+       "firstText": "line 50",
+       "lineNumChars": null,
+       "sels": [
+        "51:0-51:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c05_delete_across_first": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       67
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       50,
+       57
+      ],
+      "firstText": "line 50",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_delete_48_to_52",
+     "log": [
+      "A:change(48:0,52:0,[\"\"])",
+      "B:change(48:0,50:0,[\"\"])",
+      "B:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(64,96)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(48,65)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        64,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 196,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 82",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        48,
+        65
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 98,
+       "first": 48,
+       "visible": [
+        48,
+        55
+       ],
+       "firstText": "line 52",
+       "lineNumChars": null,
+       "sels": [
+        "48:0-48:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_edit_first",
+     "log": [
+      "B:change(48:0,48:0,[\"X\"])",
+      "A:change(48:0,48:0,[\"X\"])",
+      "B:cursorActivity",
+      "B:changes(1)",
+      "B:update",
+      "A:changes(1)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        64,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 196,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 82",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        48,
+        65
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 98,
+       "first": 48,
+       "visible": [
+        48,
+        55
+       ],
+       "firstText": "Xline 52",
+       "lineNumChars": null,
+       "sels": [
+        "48:1-48:1"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c06_replace_across_first": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_replace_49_3_to_51_2",
+     "log": [
+      "A:change(49:3,51:2,[\"a\",\"b\",\"c\"])",
+      "B:change(51:0,52:2,[\"c\"])",
+      "B:cursorActivity",
+      "A:changes(1)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(51,79)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 78",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        51,
+        79
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 99,
+       "first": 51,
+       "visible": [
+        61,
+        69
+       ],
+       "firstText": "line 61",
+       "lineNumChars": null,
+       "sels": [
+        "51:1-51:1"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_scroll",
+     "log": [
+      "B:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 78",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        51,
+        79
+       ],
+       "top": 420,
+       "left": 0,
+       "lines": 99,
+       "first": 51,
+       "visible": [
+        61,
+        69
+       ],
+       "firstText": "line 61",
+       "lineNumChars": null,
+       "sels": [
+        "51:1-51:1"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c07_insert_within": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_at_60",
+     "log": [
+      "A:change(60:0,60:0,[\"P\",\"Q\",\"\"])",
+      "B:change(60:0,60:0,[\"P\",\"Q\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,98)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(50,80)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        98
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 202,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 76",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        80
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 102,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "P",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_insert_at_62_in_b_view",
+     "log": [
+      "A:change(62:0,62:0,[\"R\",\"\"])",
+      "B:change(62:0,62:0,[\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(50,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 103,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "P",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c08_delete_within": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_delete_60_to_65",
+     "log": [
+      "A:change(60:0,65:0,[\"\"])",
+      "B:change(60:0,65:0,[\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(63,96)",
+      "B:changes(1)",
+      "B:update"
+     ],
+     "eds": [
+      {
+       "vp": [
+        63,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 195,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 83",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        78
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 95,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "line 65",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c09_edit_below": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_at_170",
+     "log": [
+      "A:change(170:0,170:0,[\"P\",\"Q\",\"\"])",
+      "A:changes(1)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 202,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 78",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        78
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_delete_160_to_165",
+     "log": [
+      "A:change(160:0,165:0,[\"\"])",
+      "A:changes(1)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 197,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 78",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        78
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c10_delete_across_last": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       118,
+       146
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       128,
+       136
+      ],
+      "firstText": "line 128",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_delete_148_to_152",
+     "log": [
+      "A:change(148:0,152:0,[\"\"])",
+      "B:change(148:0,149:8,[\"\"])",
+      "A:changes(1)",
+      "B:changes(1)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 196,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 78",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        118,
+        146
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 99,
+       "first": 50,
+       "visible": [
+        128,
+        136
+       ],
+       "firstText": "line 128",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c11_repeated_shift": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "ins3",
+     "log": [
+      "A:change(0:0,0:0,[\"a\",\"b\",\"c\",\"\"])",
+      "A:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)",
+      "B:update",
+      "B:viewportChange(53,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "3:0-3:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "del5",
+     "log": [
+      "A:change(5:0,10:0,[\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(63,96)",
+      "B:update",
+      "B:viewportChange(48,76)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        63,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 198,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 80",
+       "lineNumChars": null,
+       "sels": [
+        "3:0-3:0"
+       ]
+      },
+      {
+       "vp": [
+        48,
+        76
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 48,
+       "visible": [
+        58,
+        66
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "48:0-48:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_scroll",
+     "log": [
+      "B:update",
+      "B:viewportChange(69,97)",
+      "B:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        63,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 198,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 80",
+       "lineNumChars": null,
+       "sels": [
+        "3:0-3:0"
+       ]
+      },
+      {
+       "vp": [
+        69,
+        97
+       ],
+       "top": 1200,
+       "left": 0,
+       "lines": 100,
+       "first": 48,
+       "visible": [
+        79,
+        87
+       ],
+       "firstText": "line 81",
+       "lineNumChars": null,
+       "sels": [
+        "48:0-48:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "ins1",
+     "log": [
+      "A:change(3:0,3:0,[\"d\",\"\"])",
+      "A:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(64,97)",
+      "B:update",
+      "B:viewportChange(70,98)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        64,
+        97
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 199,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 79",
+       "lineNumChars": null,
+       "sels": [
+        "4:0-4:0"
+       ]
+      },
+      {
+       "vp": [
+        70,
+        98
+       ],
+       "top": 1200,
+       "left": 0,
+       "lines": 100,
+       "first": 49,
+       "visible": [
+        80,
+        88
+       ],
+       "firstText": "line 81",
+       "lineNumChars": null,
+       "sels": [
+        "49:0-49:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "ins10",
+     "log": [
+      "A:change(1:0,1:0,[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"\"])",
+      "A:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,107)",
+      "B:update",
+      "B:viewportChange(80,108)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        107
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 209,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 69",
+       "lineNumChars": null,
+       "sels": [
+        "14:0-14:0"
+       ]
+      },
+      {
+       "vp": [
+        80,
+        108
+       ],
+       "top": 1200,
+       "left": 0,
+       "lines": 100,
+       "first": 59,
+       "visible": [
+        90,
+        98
+       ],
+       "firstText": "line 81",
+       "lineNumChars": null,
+       "sels": [
+        "59:0-59:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "del_to_first",
+     "log": [
+      "A:change(0:0,59:0,[\"\"])",
+      "B:change(0:0,0:0,[\"\"])",
+      "A:cursorActivity",
+      "B:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,96)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(21,49)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 150,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 128",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        21,
+        49
+       ],
+       "top": 1200,
+       "left": 0,
+       "lines": 100,
+       "first": 0,
+       "visible": [
+        31,
+        39
+       ],
+       "firstText": "line 81",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_scroll_top",
+     "log": [
+      "B:update",
+      "B:viewportChange(0,17)",
+      "B:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 150,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 128",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        0,
+        17
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 100,
+       "first": 0,
+       "visible": [
+        0,
+        7
+       ],
+       "firstText": "line 50",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c12_multiple_subviews": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     },
+     {
+      "vp": [
+       41,
+       69
+      ],
+      "top": 1200,
+      "left": 0,
+      "lines": 100,
+      "first": 20,
+      "visible": [
+       51,
+       59
+      ],
+      "firstText": "line 51",
+      "lineNumChars": null,
+      "sels": [
+       "20:0-20:0"
+      ]
+     },
+     {
+      "vp": [
+       100,
+       117
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 90,
+      "first": 100,
+      "visible": [
+       100,
+       107
+      ],
+      "firstText": "line 100",
+      "lineNumChars": null,
+      "sels": [
+       "100:0-100:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_3_at_10",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)",
+      "B:update",
+      "B:viewportChange(53,81)",
+      "C:update",
+      "C:viewportChange(44,72)",
+      "D:update",
+      "D:viewportChange(103,120)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      },
+      {
+       "vp": [
+        44,
+        72
+       ],
+       "top": 1200,
+       "left": 0,
+       "lines": 100,
+       "first": 23,
+       "visible": [
+        54,
+        62
+       ],
+       "firstText": "line 51",
+       "lineNumChars": null,
+       "sels": [
+        "23:0-23:0"
+       ]
+      },
+      {
+       "vp": [
+        103,
+        120
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 90,
+       "first": 103,
+       "visible": [
+        103,
+        110
+       ],
+       "firstText": "line 100",
+       "lineNumChars": null,
+       "sels": [
+        "103:0-103:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_delete_25_to_30",
+     "log": [
+      "A:change(25:0,30:0,[\"\"])",
+      "C:change(25:0,30:0,[\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(63,96)",
+      "B:update",
+      "B:viewportChange(48,76)",
+      "C:changes(1)",
+      "C:update",
+      "C:viewportChange(39,72)",
+      "D:update",
+      "D:viewportChange(98,115)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        63,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 198,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 80",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        48,
+        76
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 48,
+       "visible": [
+        58,
+        66
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "48:0-48:0"
+       ]
+      },
+      {
+       "vp": [
+        39,
+        72
+       ],
+       "top": 1200,
+       "left": 0,
+       "lines": 95,
+       "first": 23,
+       "visible": [
+        54,
+        62
+       ],
+       "firstText": "line 56",
+       "lineNumChars": null,
+       "sels": [
+        "23:0-23:0"
+       ]
+      },
+      {
+       "vp": [
+        98,
+        115
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 90,
+       "first": 98,
+       "visible": [
+        98,
+        105
+       ],
+       "firstText": "line 100",
+       "lineNumChars": null,
+       "sels": [
+        "98:0-98:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_insert_at_104",
+     "log": [
+      "A:change(104:0,104:0,[\"S\",\"T\",\"\"])",
+      "B:change(104:0,104:0,[\"S\",\"T\",\"\"])",
+      "C:change(104:0,104:0,[\"S\",\"T\",\"\"])",
+      "D:change(104:0,104:0,[\"S\",\"T\",\"\"])",
+      "A:changes(1)",
+      "B:changes(1)",
+      "C:changes(1)",
+      "D:changes(1)",
+      "D:update",
+      "D:viewportChange(98,117)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        63,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 80",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        48,
+        76
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 102,
+       "first": 48,
+       "visible": [
+        58,
+        66
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "48:0-48:0"
+       ]
+      },
+      {
+       "vp": [
+        39,
+        72
+       ],
+       "top": 1200,
+       "left": 0,
+       "lines": 97,
+       "first": 23,
+       "visible": [
+        54,
+        62
+       ],
+       "firstText": "line 56",
+       "lineNumChars": null,
+       "sels": [
+        "23:0-23:0"
+       ]
+      },
+      {
+       "vp": [
+        98,
+        117
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 92,
+       "first": 98,
+       "visible": [
+        98,
+        105
+       ],
+       "firstText": "line 100",
+       "lineNumChars": null,
+       "sels": [
+        "98:0-98:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "c_insert_at_30",
+     "log": [
+      "C:change(30:0,30:0,[\"U\",\"\"])",
+      "A:change(30:0,30:0,[\"U\",\"\"])",
+      "C:changes(1)",
+      "C:update",
+      "C:viewportChange(40,73)",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(64,97)",
+      "B:update",
+      "B:viewportChange(49,77)",
+      "D:update",
+      "D:viewportChange(99,118)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        64,
+        97
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 201,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 79",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        49,
+        77
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 102,
+       "first": 49,
+       "visible": [
+        59,
+        67
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "49:0-49:0"
+       ]
+      },
+      {
+       "vp": [
+        40,
+        73
+       ],
+       "top": 1200,
+       "left": 0,
+       "lines": 98,
+       "first": 23,
+       "visible": [
+        54,
+        62
+       ],
+       "firstText": "line 55",
+       "lineNumChars": null,
+       "sels": [
+        "23:0-23:0"
+       ]
+      },
+      {
+       "vp": [
+        99,
+        118
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 92,
+       "first": 99,
+       "visible": [
+        99,
+        106
+       ],
+       "firstText": "line 100",
+       "lineNumChars": null,
+       "sels": [
+        "99:0-99:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c13_edits_in_one_operation": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_op",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:change(0:0,2:0,[\"\"])",
+      "A:change(60:0,60:0,[\"X\"])",
+      "B:change(60:0,60:0,[\"X\"])",
+      "A:cursorActivity",
+      "A:changes(3)",
+      "A:update",
+      "A:viewportChange(68,97)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(51,79)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        97
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 201,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 77",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        51,
+        79
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 51,
+       "visible": [
+        61,
+        69
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "51:0-51:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c14_nested_operations": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_nested",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"\"])",
+      "A:change(20:0,20:0,[\"Q\",\"R\",\"\"])",
+      "A:changes(2)",
+      "A:update",
+      "A:viewportChange(68,99)",
+      "B:update",
+      "B:viewportChange(53,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c15_line_numbers": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": 3,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": 3,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)",
+      "B:update",
+      "B:viewportChange(53,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": 3,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": 3,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_delete_5_above",
+     "log": [
+      "A:change(0:0,5:0,[\"\"])",
+      "A:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(63,96)",
+      "B:update",
+      "B:viewportChange(48,76)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        63,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 198,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 80",
+       "lineNumChars": 3,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        48,
+        76
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 48,
+       "visible": [
+        58,
+        66
+       ],
+       "firstText": "line 60",
+       "lineNumChars": 3,
+       "sels": [
+        "48:0-48:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c16_line_numbers_digit_change": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": 3,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 48,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": 2,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)",
+      "B:update",
+      "B:viewportChange(53,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": 3,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 48,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": 3,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_delete_3_above",
+     "log": [
+      "A:change(10:0,13:0,[\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(65,96)",
+      "B:update",
+      "B:viewportChange(50,78)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        65,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 78",
+       "lineNumChars": 3,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        78
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 48,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "line 60",
+       "lineNumChars": 2,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c17_markers_and_selections": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       67
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       50,
+       57
+      ],
+      "firstText": "line 50",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "setup",
+     "log": [
+      "B:cursorActivity",
+      "B:update",
+      "A:cursorActivity",
+      "A:update",
+      "A:viewportChange(39,66)",
+      "A:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        39,
+        66
+       ],
+       "top": 1866,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        49,
+        56
+       ],
+       "firstText": "line 49",
+       "lineNumChars": null,
+       "sels": [
+        "49:1-49:1"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        67
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 100,
+       "first": 50,
+       "visible": [
+        50,
+        57
+       ],
+       "firstText": "line 50",
+       "lineNumChars": null,
+       "sels": [
+        "50:2-50:2"
+       ]
+      }
+     ],
+     "markers": [
+      "50:0-51:3"
+     ]
+    },
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(39,69)",
+      "B:update",
+      "B:viewportChange(53,70)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        39,
+        69
+       ],
+       "top": 1866,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        49,
+        56
+       ],
+       "firstText": "line 46",
+       "lineNumChars": null,
+       "sels": [
+        "52:1-52:1"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        70
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        53,
+        60
+       ],
+       "firstText": "line 50",
+       "lineNumChars": null,
+       "sels": [
+        "53:2-53:2"
+       ]
+      }
+     ],
+     "markers": [
+      "53:0-54:3"
+     ]
+    },
+    {
+     "label": "a_delete_across_first",
+     "log": [
+      "A:change(51:0,54:0,[\"\"])",
+      "B:change(51:0,52:0,[\"\"])",
+      "A:cursorActivity",
+      "B:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(39,66)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(51,68)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        39,
+        66
+       ],
+       "top": 1866,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        49,
+        56
+       ],
+       "firstText": "line 46",
+       "lineNumChars": null,
+       "sels": [
+        "51:0-51:0"
+       ]
+      },
+      {
+       "vp": [
+        51,
+        68
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 99,
+       "first": 51,
+       "visible": [
+        51,
+        58
+       ],
+       "firstText": "line 51",
+       "lineNumChars": null,
+       "sels": [
+        "51:0-51:0"
+       ]
+      }
+     ],
+     "markers": [
+      "51:0-51:3"
+     ]
+    },
+    {
+     "label": "b_cursor_first",
+     "log": [
+      "B:cursorActivity"
+     ],
+     "eds": [
+      {
+       "vp": [
+        39,
+        66
+       ],
+       "top": 1866,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        49,
+        56
+       ],
+       "firstText": "line 46",
+       "lineNumChars": null,
+       "sels": [
+        "51:0-51:0"
+       ]
+      },
+      {
+       "vp": [
+        51,
+        68
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 99,
+       "first": 51,
+       "visible": [
+        51,
+        58
+       ],
+       "firstText": "line 51",
+       "lineNumChars": null,
+       "sels": [
+        "51:1-51:1"
+       ]
+      }
+     ],
+     "markers": [
+      "51:0-51:3"
+     ]
+    }
+   ]
+  },
+  "c18_one_line_subview": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       51
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 1,
+      "first": 50,
+      "visible": [
+       50,
+       51
+      ],
+      "firstText": "line 50",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,97)",
+      "B:update",
+      "B:viewportChange(51,52)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        97
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 201,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 77",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        51,
+        52
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 1,
+       "first": 51,
+       "visible": [
+        51,
+        52
+       ],
+       "firstText": "line 50",
+       "lineNumChars": null,
+       "sels": [
+        "51:0-51:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_delete_above",
+     "log": [
+      "A:change(10:0,12:0,[\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(66,96)",
+      "B:update",
+      "B:viewportChange(49,50)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        66,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 199,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 79",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        49,
+        50
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 1,
+       "first": 49,
+       "visible": [
+        49,
+        50
+       ],
+       "firstText": "line 50",
+       "lineNumChars": null,
+       "sels": [
+        "49:0-49:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_edit_line",
+     "log": [
+      "A:change(49:0,49:0,[\"X\"])",
+      "B:change(49:0,49:0,[\"X\"])",
+      "B:cursorActivity",
+      "A:changes(1)",
+      "B:changes(1)",
+      "B:update"
+     ],
+     "eds": [
+      {
+       "vp": [
+        66,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 199,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 79",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        49,
+        50
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 1,
+       "first": 49,
+       "visible": [
+        49,
+        50
+       ],
+       "firstText": "Xline 50",
+       "lineNumChars": null,
+       "sels": [
+        "49:1-49:1"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c19_detach_and_reattach": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "b_detach",
+     "log": [],
+     "eds": [
+      {
+       "vp": [
+        68,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 78",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      null
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      null
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_attach",
+     "log": [
+      "B:update",
+      "B:viewportChange(53,81)",
+      "B:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_insert_2_above",
+     "log": [
+      "A:change(0:0,0:0,[\"S\",\"T\",\"\"])",
+      "A:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,101)",
+      "B:update",
+      "B:viewportChange(55,83)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        101
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 205,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 73",
+       "lineNumChars": null,
+       "sels": [
+        "2:0-2:0"
+       ]
+      },
+      {
+       "vp": [
+        55,
+        83
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 55,
+       "visible": [
+        65,
+        73
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "55:0-55:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_detach_after_shift",
+     "log": [],
+     "eds": [
+      {
+       "vp": [
+        68,
+        101
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 205,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 73",
+       "lineNumChars": null,
+       "sels": [
+        "2:0-2:0"
+       ]
+      },
+      null
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_delete_above",
+     "log": [
+      "A:change(0:0,4:0,[\"\"])",
+      "A:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(64,97)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        64,
+        97
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 201,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 77",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      null
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c19b_reattach_scrolled_away": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "b_detach",
+     "log": [],
+     "eds": [
+      {
+       "vp": [
+        68,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 78",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      null
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      null
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_attach",
+     "log": [
+      "B:update",
+      "B:viewportChange(95,123)",
+      "B:update",
+      "B:viewportChange(53,81)",
+      "B:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_insert_2_above",
+     "log": [
+      "A:change(0:0,0:0,[\"S\",\"T\",\"\"])",
+      "A:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,101)",
+      "B:update",
+      "B:viewportChange(55,83)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        101
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 205,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 73",
+       "lineNumChars": null,
+       "sels": [
+        "2:0-2:0"
+       ]
+      },
+      {
+       "vp": [
+        55,
+        83
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 55,
+       "visible": [
+        65,
+        73
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "55:0-55:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_edit_first",
+     "log": [
+      "B:change(55:0,55:0,[\"X\"])",
+      "A:change(55:0,55:0,[\"X\"])",
+      "B:cursorActivity",
+      "B:changes(1)",
+      "B:update",
+      "A:changes(1)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        101
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 205,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 73",
+       "lineNumChars": null,
+       "sels": [
+        "2:0-2:0"
+       ]
+      },
+      {
+       "vp": [
+        55,
+        83
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 55,
+       "visible": [
+        65,
+        73
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "55:1-55:1"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c20_unlink": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "unlink",
+     "log": [],
+     "eds": [
+      {
+       "vp": [
+        68,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 78",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        78
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        78
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_scroll",
+     "log": [
+      "B:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        78
+       ],
+       "top": 410,
+       "left": 0,
+       "lines": 100,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c21_undo_redo": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)",
+      "B:update",
+      "B:viewportChange(53,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_undo",
+     "log": [
+      "A:change(10:0,13:0,[\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(0,27)",
+      "B:update",
+      "B:viewportChange(50,78)",
+      "A:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        0,
+        27
+       ],
+       "top": 384,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        10,
+        17
+       ],
+       "firstText": "line 10",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        78
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_redo",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(0,30)",
+      "B:update",
+      "B:viewportChange(53,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        0,
+        30
+       ],
+       "top": 384,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        10,
+        17
+       ],
+       "firstText": "P",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_edit",
+     "log": [
+      "B:change(70:0,70:0,[\"X\",\"\"])",
+      "A:change(70:0,70:0,[\"X\",\"\"])",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(53,82)",
+      "A:changes(1)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        0,
+        30
+       ],
+       "top": 384,
+       "left": 0,
+       "lines": 204,
+       "first": 0,
+       "visible": [
+        10,
+        17
+       ],
+       "firstText": "P",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        82
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 101,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_undo",
+     "log": [
+      "B:change(70:0,71:0,[\"\"])",
+      "A:change(70:0,71:0,[\"\"])",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(53,81)",
+      "A:changes(1)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        0,
+        30
+       ],
+       "top": 384,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        10,
+        17
+       ],
+       "firstText": "P",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_undo_again",
+     "log": [],
+     "eds": [
+      {
+       "vp": [
+        0,
+        30
+       ],
+       "top": 384,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        10,
+        17
+       ],
+       "firstText": "P",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": [],
+     "error": "TypeError: Cannot read properties of undefined (reading 'text')"
+    }
+   ]
+  },
+  "c21b_undo_redo_parent_at_top": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       0,
+       17
+      ],
+      "top": 0,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       0,
+       7
+      ],
+      "firstText": "line 0",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(0,20)",
+      "B:update",
+      "B:viewportChange(53,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        0,
+        20
+       ],
+       "top": 0,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        0,
+        7
+       ],
+       "firstText": "line 0",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_undo",
+     "log": [
+      "A:change(10:0,13:0,[\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "B:update",
+      "B:viewportChange(50,78)",
+      "A:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        0,
+        20
+       ],
+       "top": 122,
+       "left": 0,
+       "lines": 200,
+       "first": 0,
+       "visible": [
+        3,
+        11
+       ],
+       "firstText": "line 3",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        78
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_redo",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(0,23)",
+      "B:update",
+      "B:viewportChange(53,81)",
+      "A:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        0,
+        23
+       ],
+       "top": 236,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        6,
+        14
+       ],
+       "firstText": "line 6",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_delete_across_first",
+     "log": [
+      "A:change(48:0,55:0,[\"\"])",
+      "B:change(48:0,50:0,[\"\"])",
+      "B:cursorActivity",
+      "A:changes(1)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(48,76)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        0,
+        23
+       ],
+       "top": 236,
+       "left": 0,
+       "lines": 196,
+       "first": 0,
+       "visible": [
+        6,
+        14
+       ],
+       "firstText": "line 6",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        48,
+        76
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 98,
+       "first": 48,
+       "visible": [
+        58,
+        66
+       ],
+       "firstText": "line 62",
+       "lineNumChars": null,
+       "sels": [
+        "48:0-48:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_undo_delete",
+     "log": [
+      "A:change(48:0,48:0,[\"line 45\",\"line 46\",\"line 47\",\"line 48\",\"line 49\",\"line 50\",\"line 51\",\"\"])",
+      "B:change(48:0,48:0,[\"line 45\",\"line 46\",\"line 47\",\"line 48\",\"line 49\",\"line 50\",\"line 51\",\"\"])",
+      "B:cursorActivity",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(37,65)",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(48,83)",
+      "A:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        37,
+        65
+       ],
+       "top": 1828,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        48,
+        55
+       ],
+       "firstText": "line 45",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        48,
+        83
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 105,
+       "first": 48,
+       "visible": [
+        58,
+        66
+       ],
+       "firstText": "line 55",
+       "lineNumChars": null,
+       "sels": [
+        "55:0-55:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_undo_insert_above",
+     "log": [],
+     "eds": [
+      {
+       "vp": [
+        37,
+        65
+       ],
+       "top": 1828,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        48,
+        55
+       ],
+       "firstText": "line 45",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        48,
+        83
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 105,
+       "first": 48,
+       "visible": [
+        58,
+        66
+       ],
+       "firstText": "line 55",
+       "lineNumChars": null,
+       "sels": [
+        "55:0-55:0"
+       ]
+      }
+     ],
+     "markers": [],
+     "error": "TypeError: Cannot read properties of undefined (reading 'text')"
+    },
+    {
+     "label": "b_redo",
+     "log": [],
+     "eds": [
+      {
+       "vp": [
+        37,
+        65
+       ],
+       "top": 1828,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        48,
+        55
+       ],
+       "firstText": "line 45",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        48,
+        83
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 105,
+       "first": 48,
+       "visible": [
+        58,
+        66
+       ],
+       "firstText": "line 55",
+       "lineNumChars": null,
+       "sels": [
+        "55:0-55:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c22_sub_edit_shifts_sibling": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     },
+     {
+      "vp": [
+       100,
+       128
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 90,
+      "first": 100,
+      "visible": [
+       110,
+       118
+      ],
+      "firstText": "line 110",
+      "lineNumChars": null,
+      "sels": [
+       "100:0-100:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "b_insert_at_60",
+     "log": [
+      "B:change(60:0,60:0,[\"P\",\"Q\",\"\"])",
+      "A:change(60:0,60:0,[\"P\",\"Q\",\"\"])",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(50,80)",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,98)",
+      "C:update",
+      "C:viewportChange(102,130)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        98
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 202,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 76",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        80
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 102,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "P",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      },
+      {
+       "vp": [
+        102,
+        130
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 90,
+       "first": 102,
+       "visible": [
+        112,
+        120
+       ],
+       "firstText": "line 110",
+       "lineNumChars": null,
+       "sels": [
+        "102:0-102:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_delete_55_to_58",
+     "log": [
+      "B:change(55:0,58:0,[\"\"])",
+      "A:change(55:0,58:0,[\"\"])",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(50,78)",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(65,96)",
+      "C:update",
+      "C:viewportChange(99,127)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        65,
+        96
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 199,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 79",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        50,
+        78
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 99,
+       "first": 50,
+       "visible": [
+        60,
+        68
+       ],
+       "firstText": "line 61",
+       "lineNumChars": null,
+       "sels": [
+        "50:0-50:0"
+       ]
+      },
+      {
+       "vp": [
+        99,
+        127
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 90,
+       "first": 99,
+       "visible": [
+        109,
+        117
+       ],
+       "firstText": "line 110",
+       "lineNumChars": null,
+       "sels": [
+        "99:0-99:0"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  },
+  "c23_r1_then_more_edits": {
+   "before": {
+    "eds": [
+     {
+      "vp": [
+       68,
+       96
+      ],
+      "top": 3000,
+      "left": 0,
+      "lines": 200,
+      "first": 0,
+      "visible": [
+       78,
+       86
+      ],
+      "firstText": "line 78",
+      "lineNumChars": null,
+      "sels": [
+       "0:0-0:0"
+      ]
+     },
+     {
+      "vp": [
+       50,
+       78
+      ],
+      "top": 400,
+      "left": 0,
+      "lines": 100,
+      "first": 50,
+      "visible": [
+       60,
+       68
+      ],
+      "firstText": "line 60",
+      "lineNumChars": null,
+      "sels": [
+       "50:0-50:0"
+      ]
+     }
+    ],
+    "markers": []
+   },
+   "steps": [
+    {
+     "label": "a_insert_3_above",
+     "log": [
+      "A:change(10:0,10:0,[\"P\",\"Q\",\"R\",\"\"])",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,99)",
+      "B:update",
+      "B:viewportChange(53,81)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:0-53:0"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_edit",
+     "log": [
+      "B:change(53:0,53:0,[\"Z\"])",
+      "A:change(53:0,53:0,[\"Z\"])",
+      "B:cursorActivity",
+      "B:changes(1)",
+      "B:update",
+      "A:changes(1)"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:1-53:1"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "a_edit_in_a_view",
+     "log": [
+      "A:change(80:0,80:0,[\"W\"])",
+      "B:change(80:0,80:0,[\"W\"])",
+      "A:changes(1)",
+      "A:update",
+      "B:changes(1)",
+      "B:update"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        99
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 203,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 75",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        81
+       ],
+       "top": 400,
+       "left": 0,
+       "lines": 100,
+       "first": 53,
+       "visible": [
+        63,
+        71
+       ],
+       "firstText": "line 60",
+       "lineNumChars": null,
+       "sels": [
+        "53:1-53:1"
+       ]
+      }
+     ],
+     "markers": []
+    },
+    {
+     "label": "b_op_scroll_and_edit",
+     "log": [
+      "B:change(60:0,60:0,[\"V\",\"\"])",
+      "A:change(60:0,60:0,[\"V\",\"\"])",
+      "B:changes(1)",
+      "B:update",
+      "B:viewportChange(53,91)",
+      "A:changes(1)",
+      "A:update",
+      "A:viewportChange(68,100)",
+      "B:scroll"
+     ],
+     "eds": [
+      {
+       "vp": [
+        68,
+        100
+       ],
+       "top": 3000,
+       "left": 0,
+       "lines": 204,
+       "first": 0,
+       "visible": [
+        78,
+        86
+       ],
+       "firstText": "line 74",
+       "lineNumChars": null,
+       "sels": [
+        "0:0-0:0"
+       ]
+      },
+      {
+       "vp": [
+        53,
+        91
+       ],
+       "top": 800,
+       "left": 0,
+       "lines": 101,
+       "first": 53,
+       "visible": [
+        73,
+        81
+       ],
+       "firstText": "line 69",
+       "lineNumChars": null,
+       "sels": [
+        "53:1-53:1"
+       ]
+      }
+     ],
+     "markers": []
+    }
+   ]
+  }
+ },
+ "throws": {
+  "A_update": {
+   "error": "Error: boom",
+   "log": [
+    "A:change",
+    "A:changes",
+    "A:update"
+   ],
+   "after": {
+    "a": [
+     68,
+     99
+    ],
+    "b": [
+     53,
+     81
+    ],
+    "bFirst": 53
+   },
+   "next": [
+    "B:change",
+    "A:change",
+    "B:changes",
+    "B:update",
+    "B:viewportChange(53,81)",
+    "A:changes"
+   ],
+   "nextError": null
+  },
+  "B_update": {
+   "error": "Error: boom",
+   "log": [
+    "A:change",
+    "A:changes",
+    "A:update",
+    "A:viewportChange(68,99)",
+    "B:update"
+   ],
+   "after": {
+    "a": [
+     68,
+     99
+    ],
+    "b": [
+     53,
+     81
+    ],
+    "bFirst": 53
+   },
+   "next": [
+    "B:change",
+    "A:change",
+    "B:changes",
+    "B:update",
+    "A:changes"
+   ],
+   "nextError": null
+  },
+  "A_changes": {
+   "error": "Error: boom",
+   "log": [
+    "A:change",
+    "A:changes"
+   ],
+   "after": {
+    "a": [
+     68,
+     99
+    ],
+    "b": [
+     53,
+     81
+    ],
+    "bFirst": 53
+   },
+   "next": [
+    "B:change",
+    "A:change",
+    "B:changes",
+    "B:update",
+    "B:viewportChange(53,81)",
+    "A:changes"
+   ],
+   "nextError": null
+  },
+  "B_viewportChange": {
+   "error": "Error: boom",
+   "log": [
+    "A:change",
+    "A:changes",
+    "A:update",
+    "A:viewportChange(68,99)",
+    "B:update",
+    "B:viewportChange(53,81)"
+   ],
+   "after": {
+    "a": [
+     68,
+     99
+    ],
+    "b": [
+     53,
+     81
+    ],
+    "bFirst": 53
+   },
+   "next": [
+    "B:change",
+    "A:change",
+    "B:changes",
+    "B:update",
+    "A:changes"
+   ],
+   "nextError": null
+  }
+ },
+ "empty_subview": {
+  "first": 50,
+  "lines": 2,
+  "value": "undefined\nundefined"
+ }
+}

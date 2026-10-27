@@ -2,14 +2,16 @@
 //! selections, and keeping cursors out of atomic markers.
 
 use std::cmp::Ordering;
+use std::rc::Rc;
 
 use super::changes::BeforeSelectionChange;
-use super::doc::Doc;
+use super::doc::{BeforeSelHandler, Doc};
 use super::history::{HistEvent, SelHistOpts, add_selection_to_history};
 use super::mark_text::{SideFind, TextMarker};
 use super::selection::{
     Range, Sel, SelRange, new_sel, normalize_selection, sel_equals, simple_selection,
 };
+use crate::operation_group::{Delayed, signal_later};
 use crate::pos::{Pos, PosRef, cmp, cmp_num};
 
 /// Selection update options (`{origin, bias, scroll, clearRedo}`). Whether options
@@ -110,7 +112,13 @@ pub(crate) fn set_simple_selection(
 
 /// `filterSelectionChange(doc, sel, options)`.
 fn filter_selection_change(doc: &Doc, sel: Sel, options: Option<&SelOptions>) -> Sel {
-    let handlers = doc.inner().before_selection_change.clone();
+    let handlers: Vec<Rc<BeforeSelHandler>> = doc
+        .inner()
+        .before_selection_change
+        .snapshot()
+        .iter()
+        .map(|e| e.f.clone())
+        .collect();
     let mut obj = BeforeSelectionChange::new(
         sel.ranges
             .iter()
@@ -122,7 +130,25 @@ fn filter_selection_change(doc: &Doc, sel: Sel, options: Option<&SelOptions>) ->
         options.and_then(|o| o.origin.clone()),
     );
     let mut updated: Option<Vec<Range>> = None;
-    for h in handlers {
+    // The document's handlers, then the editor's (looked up after them).
+    let mut editor_handlers = None;
+    let mut i = 0;
+    loop {
+        let h = match handlers.get(i) {
+            Some(h) => h.clone(),
+            None => {
+                let eh = editor_handlers.get_or_insert_with(|| {
+                    doc.sink()
+                        .map(|s| s.before_selection_change_handlers())
+                        .unwrap_or_default()
+                });
+                match eh.get(i - handlers.len()) {
+                    Some(h) => h.clone(),
+                    None => break,
+                }
+            }
+        };
+        i += 1;
         h(doc, &mut obj);
         if let Some(rs) = obj.updated.take() {
             let clipped: Vec<Range> = rs
@@ -182,7 +208,7 @@ pub(crate) fn set_selection(doc: &Doc, sel: Sel, options: Option<&SelOptions>) {
 
 /// `setSelectionNoUndo(doc, sel, options)`.
 pub(crate) fn set_selection_no_undo(doc: &Doc, sel: Sel, options: Option<&SelOptions>) {
-    let sel = if doc.inner().before_selection_change.is_empty() {
+    let sel = if !doc.has_before_selection_change() {
         sel
     } else {
         filter_selection_change(doc, sel, options)
@@ -201,17 +227,28 @@ pub(crate) fn set_selection_no_undo(doc: &Doc, sel: Sel, options: Option<&SelOpt
     let skipped = skip_atomic_in_selection(doc, &sel, Some(bias), true);
     set_selection_inner(doc, skipped);
     // `if (!(options && options.scroll === false) && doc.cm) ensureCursorVisible(doc.cm)`
-    if options.and_then(|o| o.scroll) != Some(false) && doc.inner().editor.is_some() {
+    if options.and_then(|o| o.scroll) != Some(false) && doc.has_editor() {
         doc.request_cursor_visible();
     }
 }
 
+/// `setSelectionInner(doc, sel)`.
 fn set_selection_inner(doc: &Doc, sel: Sel) {
     let same = sel_equals(&sel, &doc.inner().sel);
     if same {
         return;
     }
     doc.inner_mut().sel = sel;
+    // `if (doc.cm) { …; signalCursorActivity(doc.cm) }`
+    if let Some(s) = doc.sink() {
+        s.selection_changed();
+    }
+    // `signalLater(doc, "cursorActivity", doc)`
+    let snap = doc.inner().cursor_activity.snapshot();
+    for e in snap.iter() {
+        let (f, d) = (e.f.clone(), doc.clone());
+        signal_later(Delayed::Free(Box::new(move || f(&d))));
+    }
 }
 
 /// `reCheckSelection(doc)`: make sure the selection does not partially select any
@@ -355,11 +392,7 @@ fn skip_atomic_inner_body(
         };
         if left_ok && right_ok {
             if may_clear {
-                // signal(m, "beforeCursorEnter"): the only model-level listener is
-                // the clearOnEnter one.
-                if m.data().opts.clear_on_enter {
-                    m.clear();
-                }
+                m.signal_before_cursor_enter();
                 if m.data().explicitly_cleared {
                     if line.borrow().marked_spans.is_none() {
                         break;
