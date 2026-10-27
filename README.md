@@ -13,6 +13,19 @@ This repository is private. It was extracted from `Ascendance3D/X_ITE_R` at `ffe
 | `cm-view` | commands, keymaps, measurement, highlighting, input, and a native wgpu editor (`cm-edit`, `cm-render`) |
 | `cm-evidence` | the test evidence policy: a test that cannot run fails or skips by name |
 
+## Targets and host services
+
+`cm-core`, `cm-modes` and `cm-view --no-default-features` are the shared engine. They build for native targets and for `wasm32-unknown-unknown`. `cm-view` features:
+
+- `gpu` (default): the wgpu renderer and the winit front end (`cm-edit`, `cm-render`). Native only.
+- `clipboard-native` (default): the system clipboard through arboard, on Linux and the BSDs, Windows and macOS. On other targets it adds nothing, and `native_clipboard::SystemClipboard` is an in-memory clipboard. `gpu` alone no longer includes it.
+
+The host supplies these services:
+
+- **Time:** `cm_core::clock::set_override` / `set_host_clock`. On `wasm32-unknown-unknown` there is no system clock. Install `Date.now` there; without it the time is unknown, and `+`-origin edits do not merge in the history. See the `clock` module documentation.
+- **Files:** `cm_view::fileio::FileHost` (`StdFs`, `MemFiles`, or your own) through `App::open_with`.
+- **Clipboard:** `cm_view::app::Clipboard`.
+
 ## Reference
 
 The CodeMirror 5.65.21 reference is pinned in `tools/reference.lock`:

@@ -8,7 +8,13 @@
 //!   document's `lineSeparator`, so saving keeps it; mixed line breaks are
 //!   normalized to `\n` on save (CM5's `getValue` behavior), which [`FileInfo::mixed_newlines`]
 //!   reports.
+//!
+//! [`decode`] and [`encode`] are pure and run on every target. Reading and writing
+//! the bytes is a host service ([`FileHost`]): [`StdFs`] is the local filesystem
+//! (native targets), [`MemFiles`] keeps files in memory (tests, or a host that moves
+//! the bytes itself, such as a browser).
 
+use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
@@ -68,10 +74,49 @@ pub fn decode(path: &Path, bytes: &[u8]) -> std::io::Result<(String, FileInfo)> 
     ))
 }
 
-/// Read a file.
+/// Read a file from the local filesystem.
 pub fn load(path: &Path) -> std::io::Result<(String, FileInfo)> {
     let bytes = std::fs::read(path)?;
     decode(path, &bytes)
+}
+
+/// Where file bytes come from and go to. Editing a document never needs one.
+pub trait FileHost {
+    /// The file's bytes, or `None` when the file does not exist.
+    fn read(&mut self, path: &Path) -> std::io::Result<Option<Vec<u8>>>;
+    /// Replace the file's bytes.
+    fn write(&mut self, path: &Path, bytes: &[u8]) -> std::io::Result<()>;
+}
+
+/// The local filesystem through `std::fs`. On `wasm32-unknown-unknown` every call
+/// returns an `Unsupported` error.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct StdFs;
+
+impl FileHost for StdFs {
+    fn read(&mut self, path: &Path) -> std::io::Result<Option<Vec<u8>>> {
+        if !path.exists() {
+            return Ok(None);
+        }
+        std::fs::read(path).map(Some)
+    }
+    fn write(&mut self, path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+        write_replacing(path, bytes)
+    }
+}
+
+/// Files kept in memory, by path.
+#[derive(Clone, Debug, Default)]
+pub struct MemFiles(pub HashMap<PathBuf, Vec<u8>>);
+
+impl FileHost for MemFiles {
+    fn read(&mut self, path: &Path) -> std::io::Result<Option<Vec<u8>>> {
+        Ok(self.0.get(path).cloned())
+    }
+    fn write(&mut self, path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+        self.0.insert(path.to_path_buf(), bytes.to_vec());
+        Ok(())
+    }
 }
 
 /// Encode text for writing.
@@ -102,16 +147,20 @@ pub fn encode(text: &str, info: &FileInfo) -> std::io::Result<Vec<u8>> {
     }
 }
 
-/// Write a file (to a temporary sibling, then rename).
+/// Write a file to the local filesystem (to a temporary sibling, then rename).
 pub fn save(path: &Path, text: &str, info: &FileInfo) -> std::io::Result<()> {
     let bytes = encode(text, info)?;
+    write_replacing(path, &bytes)
+}
+
+fn write_replacing(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
     let tmp = path.with_extension(format!(
         "{}.cm-edit-tmp",
         path.extension().and_then(|e| e.to_str()).unwrap_or("")
     ));
     {
         let mut f = std::fs::File::create(&tmp)?;
-        f.write_all(&bytes)?;
+        f.write_all(bytes)?;
         f.sync_all()?;
     }
     std::fs::rename(&tmp, path)

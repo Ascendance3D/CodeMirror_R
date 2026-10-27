@@ -12,7 +12,9 @@
 //! * [`measure`] — the character box model standing in for DOM measurement.
 //! * [`highlight`] — mode states, style arrays, frontiers, `getTokenAt`.
 //! * [`mouse`] — clicks, drags, word/line/rectangle selection.
-//! * `render` / `app` (feature `gpu`) — the wgpu renderer and the winit editor.
+//! * `render` / `window` (feature `gpu`) — the wgpu renderer and the winit editor.
+//! * [`native_clipboard`] — the system clipboard (feature `clipboard-native`, desktop
+//!   targets only).
 
 pub mod app;
 pub mod commands;
@@ -25,6 +27,7 @@ pub mod keymap;
 pub mod measure;
 pub mod mouse;
 pub mod movement;
+pub mod native_clipboard;
 #[cfg(feature = "gpu")]
 pub mod render;
 #[cfg(feature = "gpu")]

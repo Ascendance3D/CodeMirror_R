@@ -7,10 +7,14 @@ license.workspace = true
 publish.workspace = true
 
 [features]
-default = ["gpu"]
+default = ["gpu", "clipboard-native"]
 # The native renderer and the `cm-edit` binary. The editor model (commands, keymap,
 # measurement, highlighting, input) builds and tests without it.
-gpu = ["dep:wgpu", "dep:glyphon", "dep:winit", "dep:pollster", "dep:png", "dep:arboard", "dep:bytemuck"]
+gpu = ["dep:wgpu", "dep:glyphon", "dep:winit", "dep:pollster", "dep:png", "dep:bytemuck"]
+# The system clipboard through arboard (`native_clipboard`). arboard is a dependency
+# only on the desktop targets it supports; on WebAssembly, Android and iOS this
+# feature adds nothing and the clipboard stays in memory.
+clipboard-native = ["dep:arboard"]
 
 [dependencies]
 cm-core = { path = "../cm-core" }
@@ -21,8 +25,10 @@ glyphon = { version = "0.12", optional = true }
 winit = { version = "0.30", optional = true }
 pollster = { version = "0.4", optional = true }
 png = { version = "0.18", optional = true }
-arboard = { version = "3", optional = true, default-features = false }
 bytemuck = { version = "1", optional = true, features = ["derive"] }
+
+[target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "dragonfly", target_os = "netbsd", target_os = "openbsd", target_os = "windows", target_os = "macos"))'.dependencies]
+arboard = { version = "3", optional = true, default-features = false }
 
 [dev-dependencies]
 cm-evidence = { path = "../cm-evidence" }

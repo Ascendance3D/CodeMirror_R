@@ -271,7 +271,8 @@ pub struct Editor {
     pub display: Display,
     /// `cm.state.overwrite`.
     pub overwrite: bool,
-    /// `cm.state.pasteIncoming` / `cutIncoming` (timestamps).
+    /// `cm.state.pasteIncoming` / `cutIncoming` (timestamps; -1 when unset, NaN when
+    /// set at an unknown time, see `cm_core::clock`).
     pub paste_incoming: f64,
     pub cut_incoming: f64,
     /// `cm.state.keySeq`.
@@ -340,6 +341,13 @@ pub fn sel_dont_scroll() -> Option<SelOptions> {
 /// `sel_mouse`.
 pub fn sel_mouse() -> Option<SelOptions> {
     Some(sel_opts(Some("*mouse"), None, None))
+}
+
+/// `cm.state.pasteIncoming > recent`. A stamp taken when the time was unknown (NaN)
+/// counts as recent: every text input resets both stamps, so a stamp only reaches
+/// the input that follows it (`cut` sets and consumes its own in one call).
+fn incoming_recent(stamp: f64, recent: f64) -> bool {
+    stamp > recent || stamp.is_nan()
 }
 
 /// `spaceStr(n)`; a fractional count gives `"undefined"` like the JS array lookup.
@@ -2142,7 +2150,7 @@ impl Editor {
         self.display.shift = false;
         let sel = self.doc.list_selections();
         let recent = cm_core::clock::now() - 200.0;
-        let paste = origin == Some("paste") || self.paste_incoming > recent;
+        let paste = origin == Some("paste") || incoming_recent(self.paste_incoming, recent);
         let inserted16 = to_u16(inserted);
         let text_lines: Vec<String> = split_lines_auto(&inserted16)
             .iter()
@@ -2194,7 +2202,7 @@ impl Editor {
                 None => {
                     if paste {
                         "paste".into()
-                    } else if self.cut_incoming > recent {
+                    } else if incoming_recent(self.cut_incoming, recent) {
                         "cut".into()
                     } else {
                         "+input".into()
