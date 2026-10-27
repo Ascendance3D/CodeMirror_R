@@ -82,27 +82,53 @@ pub fn load(path: &Path) -> std::io::Result<(String, FileInfo)> {
 
 /// Where file bytes come from and go to. Editing a document never needs one.
 pub trait FileHost {
-    /// The file's bytes, or `None` when the file does not exist.
+    /// The file's bytes, or `None` when the file does not exist (a new file).
+    /// Any other failure (permission, a symlink loop, an invalid path, no
+    /// filesystem) is an `Err`, never `None`: [`App::open_with`](crate::app::App::open_with)
+    /// opens an empty document only for `None`.
     fn read(&mut self, path: &Path) -> std::io::Result<Option<Vec<u8>>>;
     /// Replace the file's bytes.
     fn write(&mut self, path: &Path, bytes: &[u8]) -> std::io::Result<()>;
 }
 
-/// The local filesystem through `std::fs`. On `wasm32-unknown-unknown` every call
-/// returns an `Unsupported` error.
+/// The local filesystem through `std::fs`. A file is missing only when the OS
+/// reports `NotFound`; other read errors are returned as they are. On
+/// `wasm32-unknown-unknown` every call returns an `Unsupported` error.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct StdFs;
 
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 impl FileHost for StdFs {
     fn read(&mut self, path: &Path) -> std::io::Result<Option<Vec<u8>>> {
-        if !path.exists() {
-            return Ok(None);
+        // One read, no `Path::exists` first: `exists` is false for every metadata
+        // error, which would make an unreadable file look new.
+        match std::fs::read(path) {
+            Ok(bytes) => Ok(Some(bytes)),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(e),
         }
-        std::fs::read(path).map(Some)
     }
     fn write(&mut self, path: &Path, bytes: &[u8]) -> std::io::Result<()> {
         write_replacing(path, bytes)
     }
+}
+
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+impl FileHost for StdFs {
+    fn read(&mut self, _path: &Path) -> std::io::Result<Option<Vec<u8>>> {
+        Err(no_local_filesystem())
+    }
+    fn write(&mut self, _path: &Path, _bytes: &[u8]) -> std::io::Result<()> {
+        Err(no_local_filesystem())
+    }
+}
+
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+fn no_local_filesystem() -> std::io::Error {
+    std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "StdFs: no local filesystem on wasm32-unknown-unknown (use a host FileHost)",
+    )
 }
 
 /// Files kept in memory, by path.

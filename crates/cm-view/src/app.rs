@@ -144,7 +144,7 @@ impl App {
     }
 
     /// Open a file from the local filesystem (a missing file opens empty and is
-    /// created on save).
+    /// created on save; any other read error is returned).
     pub fn open(
         path: &Path,
         metrics: Metrics,
@@ -154,7 +154,9 @@ impl App {
         App::open_with(Box::new(StdFs), path, metrics, opts, clipboard)
     }
 
-    /// Open a file through `files`, which [`App::save`] then writes to.
+    /// Open a file through `files`, which [`App::save`] then writes to. A read that
+    /// fails is returned as the host's error, and no editor is built; only a file the
+    /// host reports missing (`Ok(None)`) opens empty.
     pub fn open_with(
         mut files: Box<dyn FileHost>,
         path: &Path,
