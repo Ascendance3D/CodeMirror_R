@@ -518,3 +518,68 @@ fn undo_is_scroll_into_view_of_the_restored_range() {
         }
     }
 }
+
+/// The three request channels replay in call order (QA of PR #24): a cursor, a
+/// `setValue` reset, a history range and a cursor again, in one operation. The marks
+/// are positions in one sequence (`reset` counts earlier cursors, `range` counts
+/// earlier cursors and resets), so the range lies after the reset and before the
+/// last cursor.
+#[test]
+fn mixed_requests_keep_their_call_order() {
+    let mut cm = editor("long", false);
+    cm.run_op(|cm| {
+        cm.doc.replace_range("INS", Pos::new(40, 100), None, None);
+        cm.scroll_to(Some(0.0), Some(0.0));
+    });
+    cm.run_op(|cm| cm.set_value("a\nb\nc"));
+    let marks = cm.run_op(|cm| {
+        cm.doc.set_cursor(Pos::new(1, 0), None);
+        cm.doc.set_value("x\ny\nz");
+        cm.doc.undo();
+        cm.doc.set_cursor(Pos::new(2, 0), None);
+        let requests = cm.doc.take_scroll_requests();
+        let resets = cm.doc.take_scroll_resets();
+        let ranges = cm.doc.take_scroll_into_view();
+        // `take_*` consumed the queues for this check, so nothing replays.
+        (requests, resets, ranges)
+    });
+    let (requests, resets, ranges) = marks;
+    assert_eq!((resets.len(), ranges.len()), (1, 1));
+    assert!(requests.len() >= 2);
+    assert!(resets[0] >= 1, "a cursor request precedes the reset");
+    let at = ranges[0].0;
+    assert!(at >= resets[0] + 1, "the range follows the reset: {at}");
+    assert!(
+        at < requests.len() + resets.len(),
+        "a cursor request follows the range: {at}"
+    );
+}
+
+/// The last request decides where the view ends: a cursor after a history range
+/// brings the cursor line into view from the range's scroll position (CM5 resolves
+/// the range first, `scrollPosIntoView` reads `curOp.scrollTop`), and a range after
+/// a cursor scrolls to the range.
+#[test]
+fn later_of_range_and_cursor_wins() {
+    let prep = || {
+        let mut cm = editor("long", false);
+        cm.run_op(|cm| {
+            cm.doc.replace_range("INS", Pos::new(40, 100), None, None);
+            cm.scroll_to(Some(0.0), Some(0.0));
+        });
+        cm
+    };
+    let mut cm = prep();
+    cm.run_op(|cm| {
+        cm.doc.undo();
+        cm.doc.set_cursor(Pos::new(2, 3), None);
+    });
+    // Line 2 (top 80) is at the top of the view; the range at line 40 (about 1500) is gone.
+    assert_eq!(cm.display.scroll_top, 80.0);
+    let mut cm = prep();
+    cm.run_op(|cm| {
+        cm.doc.set_cursor(Pos::new(2, 3), None);
+        cm.doc.undo();
+    });
+    assert!(cm.display.scroll_top > 1000.0 && cm.display.scroll_left > 1000.0);
+}

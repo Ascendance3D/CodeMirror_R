@@ -882,6 +882,10 @@ impl Editor {
             }
             h.max_line.changed && self.options.line_wrapping
         };
+        // The browser clamps the scroller to the content once `updateDisplay` has
+        // resized the sizer, so a change that shortened the document moves the offsets
+        // whether or not a scroll is queued; queued scrolls are resolved against them.
+        self.clamp_scroll();
         self.take_sel_scroll();
         if let Some(st) = self.op.scroll_top.take() {
             self.put_scroll_top(st);
@@ -897,11 +901,6 @@ impl Editor {
             let from = self.doc.clip_pos(from);
             let to = self.doc.clip_pos(to);
             ensure = Some((from.line, to.line));
-            // `scrollPosIntoView` reads the DOM scroller, which the browser has
-            // already clamped to the content after a change that shortened it.
-            let (mh, mw) = self.max_scroll();
-            self.display.scroll_top = self.display.scroll_top.min(mh);
-            self.display.scroll_left = self.display.scroll_left.min(mw);
             self.scroll_pos_into_view(from, to, margin);
         }
         // regChange (view_tracking.js:13) and regLineChange (:78), in order, without
@@ -1403,16 +1402,22 @@ impl Editor {
     pub fn set_scroll_top(&mut self, val: f64) {
         self.run_op(|cm| cm.put_scroll_top(val));
     }
+    /// Keeps the scroll offsets inside the content ([`Editor::max_scroll`]).
+    fn clamp_scroll(&mut self) {
+        let (mh, mw) = self.max_scroll();
+        self.display.scroll_top = scroll_offset(self.display.scroll_top, mh);
+        self.display.scroll_left = scroll_offset(self.display.scroll_left, mw);
+    }
     /// `setScrollTop(cm, val)`: the scroll position only, clamped. The rendered
     /// range follows in the display phase (`op.scrollTop`, endOperation_R1).
     fn put_scroll_top(&mut self, val: f64) {
         let (mh, _) = self.max_scroll();
-        self.display.scroll_top = val.min(mh).max(0.0);
+        self.display.scroll_top = scroll_offset(val, mh);
     }
     /// `setScrollLeft(cm, val)`.
     pub fn set_scroll_left(&mut self, val: f64) {
         let (_, mw) = self.max_scroll();
-        self.display.scroll_left = val.min(mw).max(0.0);
+        self.display.scroll_left = scroll_offset(val, mw);
     }
     /// `scrollTo(x, y)` (a `methodOp`: the display, `update` and `viewportChange`
     /// follow at the end of the operation).
@@ -2721,6 +2726,16 @@ pub fn spec_named(name: &str, opts: &[(&str, ConfigValue)]) -> Spec {
         s.options.insert(k.to_string(), v.clone());
     }
     Spec::Obj(s)
+}
+
+/// A scroll offset inside `0..=max`. A NaN is 0: CM5's `Math.min`/`Math.max` keep it
+/// and the scroller's `scrollTop`/`scrollLeft` setter turns it into 0.
+fn scroll_offset(val: f64, max: f64) -> f64 {
+    if val.is_nan() {
+        0.0
+    } else {
+        val.clamp(0.0, max.max(0.0))
+    }
 }
 
 #[cfg(test)]
