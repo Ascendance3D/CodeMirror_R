@@ -891,7 +891,7 @@ impl Editor {
             self.put_scroll_top(st);
         }
         if let Some(sl) = self.op.scroll_left.take() {
-            self.set_scroll_left(sl);
+            self.put_scroll_left(sl);
         }
         // The `DisplayUpdate` viewport (endOperation_R1): `op.scrollTop`, and the
         // lines `op.scrollToPos` will scroll to, before that scroll is applied.
@@ -1368,13 +1368,13 @@ impl Editor {
             let (st, sl) = self.calculate_scroll_pos(rect);
             let (start_top, start_left) = (self.display.scroll_top, self.display.scroll_left);
             if let Some(v) = st {
-                self.put_scroll_top(v);
+                self.update_scroll_top(v);
                 if (self.display.scroll_top - start_top).abs() > 1.0 {
                     changed = true;
                 }
             }
             if let Some(v) = sl {
-                self.set_scroll_left(v);
+                self.update_scroll_left(v);
                 if (self.display.scroll_left - start_left).abs() > 1.0 {
                     changed = true;
                 }
@@ -1399,8 +1399,27 @@ impl Editor {
     }
     /// `updateScrollTop(cm, val)`, run as an operation: the rendered range,
     /// `update` and `viewportChange` follow at its end (`updateDisplaySimple`).
+    /// This models the scroller's `scroll` event, where the browser has already
+    /// moved the scroller (recorded p07c: a 1px native scroll ends at +1), so the
+    /// offset is applied whatever its size; only the `Math.abs(...) < 2` guard on
+    /// `cm.doc.scrollTop` has no observable effect here. The guard that does is
+    /// [`Editor::scroll_pos_into_view`]'s (see `update_scroll_top`).
     pub fn set_scroll_top(&mut self, val: f64) {
         self.run_op(|cm| cm.put_scroll_top(val));
+    }
+    /// `updateScrollTop` as `scrollPosIntoView` calls it: nothing scrolls the
+    /// scroller natively there, so a change under 2px is dropped
+    /// (src/display/scrolling.js:162). The guard compares the RAW target, unlike
+    /// [`Editor::update_scroll_left`]'s clamped one, as CM5 does: a request past the
+    /// maximum still runs `updateScrollTop`'s body (`setScrollTop` clamps, the offset
+    /// is unchanged; recorded `wheel_diag_down_100_at_max`). `scrollPosIntoView` never
+    /// sends such a target, so no offset can differ; do not clamp here to equalize
+    /// the two axes.
+    fn update_scroll_top(&mut self, val: f64) {
+        if (self.display.scroll_top - val).abs() < 2.0 {
+            return;
+        }
+        self.put_scroll_top(val);
     }
     /// Keeps the scroll offsets inside the content ([`Editor::max_scroll`]).
     fn clamp_scroll(&mut self) {
@@ -1414,8 +1433,28 @@ impl Editor {
         let (mh, _) = self.max_scroll();
         self.display.scroll_top = scroll_offset(val, mh);
     }
-    /// `setScrollLeft(cm, val)`.
+    /// `setScrollLeft(cm, val)`: the clamped offset, as the scroller's `scroll`
+    /// event and `op.scrollLeft` apply it (see [`Editor::set_scroll_top`]).
+    /// Deliberately NOT an operation, unlike `set_scroll_top`: CM5's `setScrollLeft`
+    /// only aligns the gutters (src/display/scrolling.js:179), while
+    /// `updateScrollTop` redraws, so a horizontal scroll reports no `update` or
+    /// `viewportChange` (test `set_scroll_left_is_a_direct_setter_unlike_set_scroll_top`).
+    /// It was a direct setter before the threshold change. `run_op` would be silent
+    /// too when the rendered range is unchanged, so the test pins the outcome, not
+    /// the mechanism; the direct form is kept because CM5 runs no operation here.
     pub fn set_scroll_left(&mut self, val: f64) {
+        self.put_scroll_left(val);
+    }
+    /// `setScrollLeft(cm, val)` as `scrollPosIntoView` calls it (not the scroller):
+    /// a clamped change under 2px is dropped (src/display/scrolling.js:181).
+    fn update_scroll_left(&mut self, val: f64) {
+        let (_, mw) = self.max_scroll();
+        if (self.display.scroll_left - scroll_offset(val, mw)).abs() < 2.0 {
+            return;
+        }
+        self.put_scroll_left(val);
+    }
+    fn put_scroll_left(&mut self, val: f64) {
         let (_, mw) = self.max_scroll();
         self.display.scroll_left = scroll_offset(val, mw);
     }
