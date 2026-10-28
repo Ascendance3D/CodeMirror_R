@@ -8,6 +8,7 @@ import { createServer } from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { extname, join, normalize } from "node:path";
+import { safeResolve } from "./server-utils.mjs";
 import { fileURLToPath } from "node:url";
 
 const ROOT = normalize(process.env.CM5_BUILD_DIR || "");
