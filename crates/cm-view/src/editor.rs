@@ -1809,7 +1809,8 @@ impl Editor {
     /// One slice of `highlightWorker(cm)`, as a host's idle turn runs it: the lines of
     /// the rendered range whose styles changed are reported with `regLineChange` in an
     /// operation of their own, so the display is updated and `update` fires
-    /// (highlight_worker.js:47-52). Returns whether work remains.
+    /// (highlight_worker.js:47-52). Called inside an operation, the lines join it
+    /// (`runInOp`). Returns whether work remains.
     pub fn highlight_work(&mut self, max_lines: usize) -> bool {
         let (changed, more) = {
             let mut hs = self.hs.borrow_mut();

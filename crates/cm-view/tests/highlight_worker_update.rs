@@ -28,7 +28,7 @@ fn body(n: usize) -> String {
     vec!["var x = 1;"; n].join("\n")
 }
 
-fn replay(name: &str, value: &str) {
+fn replay(name: &str, value: &str, nested: bool) {
     let rec = &data()["cases"][name];
     let mut cm = Editor::new(
         value,
@@ -63,7 +63,12 @@ fn replay(name: &str, value: &str) {
         rec["synchronous"]["spans"].as_u64().unwrap(),
         "{name}: spans before the worker"
     );
-    while cm.highlight_work(200) {}
+    if nested {
+        // `runInOp` inside an operation joins it: one display update at its end.
+        cm.run_op(|cm| while cm.highlight_work(200) {});
+    } else {
+        while cm.highlight_work(200) {}
+    }
     assert_eq!(
         updates.get(),
         rec["final"]["updates"].as_u64().unwrap(),
@@ -83,11 +88,23 @@ fn w01_comment_started_above_viewport() {
     replay(
         "w01_comment_started_above_viewport",
         &format!("/*\n{}\n*/\nvar y;", body(3000)),
+        false,
     );
 }
 
 /// w02: no style differs, so the worker fires nothing.
 #[test]
 fn w02_no_style_difference() {
-    replay("w02_no_style_difference", &body(3000));
+    replay("w02_no_style_difference", &body(3000), false);
+}
+
+/// w01 with the worker slices run inside one operation of the caller (`runInOp` joins
+/// the open operation): the same final `update` count and styles.
+#[test]
+fn w01_inside_an_open_operation() {
+    replay(
+        "w01_comment_started_above_viewport",
+        &format!("/*\n{}\n*/\nvar y;", body(3000)),
+        true,
+    );
 }
