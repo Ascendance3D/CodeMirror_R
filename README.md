@@ -56,6 +56,8 @@ The browsers are `chromium`, `firefox` and `webkit`, and the emulated profiles `
 
 Each browser ends `PASS`, `FAIL`, `BLOCKED` or `UNSUPPORTED` in `browser-run.json`, and the exit status is 0 only when all pass (1 for a failure, 2 for a missing tool or reference). Without the CM5 build, or with a directory that is not the pinned build, the browsers are `BLOCKED` and no comparison counts. A run passes only when all 60 required CM5 comparisons ran (`REQUIRED` in `browser-run.mjs`). Each browser is closed on every exit path, and a run that takes longer than `--browser-timeout` (300 s) fails. `crates/cm-web/tests/web/harness-selftest.mjs` checks these outcomes and the browser cleanup with broken references and injected faults.
 
+The same script then runs `crates/cm-web/tests/web/metrics-lifecycle.mjs` (`metrics-lifecycle.json`). It covers the adapter's font measurement against CM5: a hidden editor, showing it, container and window resizes, `refresh()` after a font change, 0 and small measured widths, and listener and observer cleanup. Where CM5 keeps a stale line measurement until `refresh()`, the check compares with CM5 after `refresh()` and is recorded as known.
+
 The Node run in `wasm_runtime.rs` has a 120 s deadline that the test enforces itself. It does not need a `timeout` program.
 
 CI runs `CM_EVIDENCE=ci` with `CM_EVIDENCE_ALLOW=no-gpu-adapter,tool-absent`. Each permitted skip is one line in `CM_EVIDENCE_LOG`, which `tools/evidence_summary.py` checks.

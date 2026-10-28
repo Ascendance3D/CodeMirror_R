@@ -4,6 +4,8 @@
 #   2. Chromium, Firefox and WebKit (Playwright): the same scenarios in a page, then
 #      real keyboard/mouse/wheel/touch/clipboard input, compared with CM5 when a
 #      built CM5 tree is given.
+#   3. The same browsers: the font-measurement lifecycle (hidden, shown, resized,
+#      refreshed) against CM5 (metrics-lifecycle.mjs, metrics-lifecycle.json).
 #
 #   CM5_PLAYWRIGHT_FROM=<dir with node_modules/playwright>/ tools/web-test.sh <out dir> [<built cm5 dir>] [browsers...]
 #
@@ -53,4 +55,14 @@ if [[ $browser -ne 0 ]]; then
   if [[ $browser -eq 2 && $status -eq 0 ]]; then status=2; else status=1; fi
 fi
 echo "browsers: $(node -e 'console.log(require(process.argv[1]).map(r => `${r.browser} ${r.status}`).join(", "))' "$out/browser-run.json")"
+if [[ -n "$cm5" ]]; then
+  lifecycle=0
+  node "$root/crates/cm-web/tests/web/metrics-lifecycle.mjs" --pkg "$out/pkg" --cm5 "$cm5" --out "$out" "${browsers[@]}" || lifecycle=$?
+  if [[ $lifecycle -ne 0 ]]; then
+    if [[ $lifecycle -eq 2 && $status -eq 0 ]]; then status=2; else status=1; fi
+  fi
+else
+  echo "metrics-lifecycle: BLOCKED (no CM5 build dir)"
+  [[ $status -eq 0 ]] && status=2
+fi
 exit $status
