@@ -11,9 +11,7 @@
 //! Not ported:
 //! * the `scroll`/`swapDoc`/`refresh`/
 //!   `optionChange`/`gutterClick`/DOM editor events.
-//! * `addOverlay`/`removeOverlay`. `getHelper`/`getHelpers` are ported, but
-//!   `findWordAt` and group motion still use plain `isWordChar`, so javascript's
-//!   `wordChars` helper (`[\w$]`) is ignored and `$` is not a word character.
+//! * `addOverlay`/`removeOverlay`. `getHelper`/`getHelpers` are ported.
 //! * `addLineClass`, `setGutterMarker` and the `gutters` option; `addLineWidget`,
 //!   `addWidget`.
 //! * collapsed ranges in layout: line heights and the viewport count every line
@@ -1760,12 +1758,16 @@ impl Editor {
         highlight::highlight_worker(&self.doc, &self.mode, &mut hs, max_lines).1
     }
     /// `getStateAfter(line, precise)` without returning the state.
-    pub fn catch_up_states(&self, line: Option<i64>, precise: bool) {
+    pub fn get_state_after(&self, line: Option<i64>, precise: bool) -> cm_modes::State {
         let doc = &self.doc;
         let l = line.unwrap_or(doc.first_line() + doc.line_count() as i64 - 1);
         let l = l.clamp(doc.first_line(), doc.last_line());
         let mut hs = self.hs.borrow_mut();
-        highlight::get_context_before(doc, &self.mode, &mut hs, l + 1, precise);
+        highlight::get_context_before(doc, &self.mode, &mut hs, l + 1, precise).state
+    }
+    /// `getStateAfter(line, precise)` without returning the state.
+    pub fn catch_up_states(&self, line: Option<i64>, precise: bool) {
+        self.get_state_after(line, precise);
     }
     /// `getTokenAt(pos, precise)`.
     pub fn get_token_at(&self, pos: Pos, precise: bool) -> Token {
@@ -2034,6 +2036,22 @@ impl Editor {
         let mut end = pos.ch;
         if !line.is_empty() {
             let len = line.len() as i64;
+            let helper = self.get_helper(pos, "wordChars");
+            let helper_test = helper
+                .as_ref()
+                .and_then(|h| h.downcast_ref::<cm_modes::RegExp>());
+            let test_fn = |ch: &[u16]| helper_test.map(|re| re.test(ch)).unwrap_or(false);
+
+            let helper_ref = helper_test.map(|re| {
+                let s = re.source();
+                let pattern = cm_core::text::to_u16(r"\w");
+                let has_w = s.windows(pattern.len()).any(|w| w == pattern);
+                cm_core::util::misc::WordCharHelper {
+                    source_contains_w: has_w,
+                    test: &test_fn,
+                }
+            });
+
             if (pos.sticky == Some(Sticky::Before) || end == len) && start != 0 {
                 start -= 1;
             } else {
@@ -2047,8 +2065,9 @@ impl Editor {
                 }
             };
             let start_char = char_at(start);
-            let is_w =
-                |c: Option<u16>| c.is_some_and(|c| cm_core::util::misc::is_word_char(&[c], None));
+            let is_w = |c: Option<u16>| {
+                c.is_some_and(|c| cm_core::util::misc::is_word_char(&[c], helper_ref.as_ref()))
+            };
             let is_s = |c: Option<u16>| c.is_some_and(is_js_space);
             let kind = if is_w(start_char) {
                 0

@@ -454,22 +454,46 @@ impl Mode for Named {
         self.inner.start_state(a1, a2)
     }
     fn token(&self, stream: &mut StringStream<'_>, state: &mut State) -> Option<String> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("token") {
+            if let Some(func) =
+                f.downcast_ref::<Rc<dyn Fn(&mut StringStream<'_>, &mut State) -> Option<String>>>()
+            {
+                return func(stream, state);
+            }
+        }
         self.inner.token(stream, state)
     }
     fn blank_line(&self, state: &mut State) -> Option<String> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("blankLine") {
+            if let Some(func) = f.downcast_ref::<Rc<dyn Fn(&mut State) -> Option<String>>>() {
+                return func(state);
+            }
+        }
         self.inner.blank_line(state)
     }
     fn has_blank_line(&self) -> bool {
-        self.inner.has_blank_line()
+        self.extensions.contains_key("blankLine") || self.inner.has_blank_line()
     }
     fn copy_state(&self, state: &State) -> Option<State> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("copyState") {
+            if let Some(func) = f.downcast_ref::<Rc<dyn Fn(&State) -> Option<State>>>() {
+                return func(state);
+            }
+        }
         self.inner.copy_state(state)
     }
     fn inner_mode(&self, state: &State) -> Option<(Rc<dyn Mode>, State)> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("innerMode") {
+            if let Some(func) =
+                f.downcast_ref::<Rc<dyn Fn(&State) -> Option<(Rc<dyn Mode>, State)>>>()
+            {
+                return func(state);
+            }
+        }
         self.inner.inner_mode(state)
     }
     fn has_inner_mode(&self) -> bool {
-        self.inner.has_inner_mode()
+        self.extensions.contains_key("innerMode") || self.inner.has_inner_mode()
     }
     fn inner_mode_mut(
         &self,
@@ -479,15 +503,32 @@ impl Mode for Named {
         self.inner.inner_mode_mut(state, f)
     }
     fn combine_tokens(&self, state: &State) -> Option<bool> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("combineTokens") {
+            if let Some(func) = f.downcast_ref::<Rc<dyn Fn(&State) -> Option<bool>>>() {
+                return func(state);
+            }
+        }
         self.inner.combine_tokens(state)
     }
     fn indent(&self, state: &State, text_after: &[u16], line: &[u16]) -> Option<f64> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("indent") {
+            if let Some(func) =
+                f.downcast_ref::<Rc<dyn Fn(&State, &[u16], &[u16]) -> Option<f64>>>()
+            {
+                return func(state, text_after, line);
+            }
+        }
         self.inner.indent(state, text_after, line)
     }
     fn has_indent(&self) -> bool {
-        self.inner.has_indent()
+        self.extensions.contains_key("indent") || self.inner.has_indent()
     }
     fn electric_input(&self, text: &[u16]) -> Option<bool> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("electricInput") {
+            if let Some(func) = f.downcast_ref::<Rc<dyn Fn(&[u16]) -> Option<bool>>>() {
+                return func(text);
+            }
+        }
         self.inner.electric_input(text)
     }
     /// `getMode` copies `modeExtensions[name]`, then `spec.modeProps`, onto the mode
