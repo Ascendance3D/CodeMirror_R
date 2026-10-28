@@ -1168,10 +1168,27 @@ impl Editor {
     /// `replaceSelections`); it records the cursor of each call, applied here in order
     /// with the other scroll requests: each call resolves the previous target first.
     fn take_sel_scroll(&mut self) {
-        for cur in self.doc.take_scroll_requests() {
+        let requests = self.doc.take_scroll_requests();
+        let mut resets = self.doc.take_scroll_resets().into_iter().peekable();
+        for (n, cur) in requests.into_iter().enumerate() {
+            while resets.next_if(|&at| at <= n).is_some() {
+                self.reset_scroll_queued();
+            }
             self.resolve_scroll_to_pos_raw();
             self.op.scroll_to_pos = Some((cur, cur, self.options.cursor_scroll_margin));
         }
+        for _ in resets {
+            self.reset_scroll_queued();
+        }
+    }
+
+    /// `scrollToCoords(cm, 0, 0)` for a `setValue` the document recorded
+    /// ([`Doc::take_scroll_resets`]); `resolveScrollToPos` has no document requests
+    /// left to take here.
+    fn reset_scroll_queued(&mut self) {
+        self.resolve_scroll_to_pos_raw();
+        self.op.scroll_left = Some(0.0);
+        self.op.scroll_top = Some(0.0);
     }
 
     /// `resolveScrollToPos(cm)`.

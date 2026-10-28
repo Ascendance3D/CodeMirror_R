@@ -710,17 +710,18 @@ fn run_probes(probes: Vec<Probe>) {
 }
 
 /// Not one of F1–F4: CM5's `Doc.setValue` also calls `scrollToCoords(cm, 0, 0)`
-/// (src/model/Doc.js:78); `Editor::set_value` keeps the scroll position. Pinned
-/// here so the difference stays visible until it is fixed.
+/// (src/model/Doc.js:78). This pinned a known difference (the scroll position was
+/// kept); `set_value` now scrolls to the top like CM5 (CODEMIRROR_R_SET_VALUE_SCROLL_01,
+/// full matrix in set_value_scroll.rs).
 #[test]
-fn known_difference_set_value_does_not_scroll_to_top() {
+fn set_value_scrolls_to_top() {
     let rec = rec();
     let r = &rec["cases"]["n1_set_value_scrolled"]["steps"][1];
     let mut cm = editor_with(&lines(200), EditorOptions::default());
     cm.scroll_to(None, Some(UP));
     cm.set_value(&lines(200));
     assert_eq!(r["state"]["top"], 0.0, "CM5 scrolls to the top");
-    assert_eq!(cm.display.scroll_top, UP, "Rust keeps the scroll position");
+    assert_eq!(cm.display.scroll_top, 0.0, "Rust scrolls to the top");
 }
 
 #[test]
