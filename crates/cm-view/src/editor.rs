@@ -1435,6 +1435,13 @@ impl Editor {
     }
     /// `setScrollLeft(cm, val)`: the clamped offset, as the scroller's `scroll`
     /// event and `op.scrollLeft` apply it (see [`Editor::set_scroll_top`]).
+    /// Deliberately NOT an operation, unlike `set_scroll_top`: CM5's `setScrollLeft`
+    /// only aligns the gutters (src/display/scrolling.js:179), while
+    /// `updateScrollTop` redraws, so a horizontal scroll reports no `update` or
+    /// `viewportChange` (test `set_scroll_left_is_a_direct_setter_unlike_set_scroll_top`).
+    /// It was a direct setter before the threshold change. `run_op` would be silent
+    /// too when the rendered range is unchanged, so the test pins the outcome, not
+    /// the mechanism; the direct form is kept because CM5 runs no operation here.
     pub fn set_scroll_left(&mut self, val: f64) {
         self.put_scroll_left(val);
     }

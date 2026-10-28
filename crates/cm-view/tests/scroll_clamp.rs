@@ -446,6 +446,46 @@ fn explicit_and_native_scrolls_apply_small_changes() {
     }
 }
 
+/// `set_scroll_left` is deliberately not an operation. The scroller's `scroll`
+/// handler (src/edit/CodeMirror.js:186) calls `updateScrollTop`, which redraws
+/// (`updateDisplaySimple`) and so reports `update`/`viewportChange`, then
+/// `setScrollLeft`, which only aligns the gutters and moves the offset
+/// (src/display/scrolling.js:179). A horizontal scroll reports nothing; a vertical
+/// one past the rendered range does. (Wrapping the setter in `run_op` would not change
+/// this outcome; the direct form is kept for fidelity with CM5.)
+#[test]
+fn set_scroll_left_is_a_direct_setter_unlike_set_scroll_top() {
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    let mut cm = editor("long", false);
+    let log: Rc<RefCell<Vec<&'static str>>> = Rc::default();
+    let l = log.clone();
+    cm.on_update(move |_| l.borrow_mut().push("update"));
+    let l = log.clone();
+    cm.on_viewport_change(move |_, _, _| l.borrow_mut().push("viewportChange"));
+    let view = (
+        cm.display.scroll_top,
+        cm.display.view_from,
+        cm.display.view_to,
+    );
+
+    cm.set_scroll_left(300.0);
+    assert_eq!(cm.display.scroll_left, 300.0);
+    assert!(log.borrow().is_empty(), "{:?}", log.borrow());
+    assert_eq!(
+        (
+            cm.display.scroll_top,
+            cm.display.view_from,
+            cm.display.view_to
+        ),
+        view
+    );
+
+    cm.set_scroll_top(800.0);
+    assert_eq!(cm.display.scroll_top, 800.0);
+    assert_eq!(*log.borrow(), ["update", "viewportChange"]);
+}
+
 /// The threshold belongs to one editor.
 #[test]
 fn threshold_leaves_other_editors_alone() {
