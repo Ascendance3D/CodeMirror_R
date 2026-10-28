@@ -151,6 +151,10 @@ pub(crate) struct DocInner {
     /// and `replaceSelections`, in order; taken by the view
     /// ([`Doc::take_scroll_requests`]).
     pub scroll_requests: Vec<Pos>,
+    /// Each `scrollToCoords(doc.cm, 0, 0)` of `setValue`, as the number of entries of
+    /// `scroll_requests` made before it; taken by the view
+    /// ([`Doc::take_scroll_resets`]).
+    pub scroll_resets: Vec<usize>,
     /// `cm.display.shift` (see [`Doc::set_display_shift`]).
     pub display_shift: bool,
 }
@@ -247,6 +251,7 @@ impl Doc {
             suppress_edits: false,
             display_shift: false,
             scroll_requests: Vec::new(),
+            scroll_resets: Vec::new(),
             before_selection_change: Listeners::default(),
             change: Listeners::default(),
             cursor_activity: Listeners::default(),
@@ -575,6 +580,7 @@ impl Doc {
         // new editor starts with none, even when the previous one was dropped
         // without detaching.
         i.scroll_requests.clear();
+        i.scroll_resets.clear();
         drop(i);
         // The `undoDepth` option handler runs when the editor is created.
         self.set_undo_depth(undo_depth);
@@ -586,6 +592,7 @@ impl Doc {
         i.sink = None;
         // CM5 writes each request into the old editor's `curOp`; none outlives it.
         i.scroll_requests.clear();
+        i.scroll_resets.clear();
     }
     /// The same as [`Doc::detach_editor`].
     pub fn detach_editor_semantics(&self) {
@@ -642,6 +649,18 @@ impl Doc {
     /// request keeps its own position. Only with editor semantics.
     pub fn take_scroll_requests(&self) -> Vec<Pos> {
         std::mem::take(&mut self.inner_mut().scroll_requests)
+    }
+    /// The `scrollToCoords(doc.cm, 0, 0)` calls of `setValue` since the last call, in
+    /// order, each as the number of [`Doc::take_scroll_requests`] entries made before
+    /// it (take both together to replay them in call order). Only with an editor.
+    pub fn take_scroll_resets(&self) -> Vec<usize> {
+        std::mem::take(&mut self.inner_mut().scroll_resets)
+    }
+    /// `scrollToCoords(doc.cm, 0, 0)`: record the reset for the view.
+    fn request_scroll_reset(&self) {
+        let mut i = self.inner_mut();
+        let at = i.scroll_requests.len();
+        i.scroll_resets.push(at);
     }
     /// `ensureCursorVisible(doc.cm)`: record the cursor for the view.
     pub(crate) fn request_cursor_visible(&self) {
@@ -770,6 +789,10 @@ impl Doc {
                 },
                 true,
             );
+            // `if (this.cm) scrollToCoords(this.cm, 0, 0)`, applied by the view.
+            if self.has_editor() {
+                self.request_scroll_reset();
+            }
             set_selection(
                 self,
                 simple_selection(PosRef::new(top), None),
