@@ -384,3 +384,79 @@ fn clamp_covers_the_lower_bound() {
         );
     }
 }
+
+/// Issue #66: `scrollPosIntoView` reaches `updateScrollTop` (src/display/scrolling.js:162)
+/// and `setScrollLeft` (:181, not the scroller), which drop a change under 2px; the
+/// queued `op.scrollToPos` path, `scrollTo` and the scroller's own `scroll` event
+/// do not. Expected values follow the pinned source.
+#[test]
+fn scroll_pos_into_view_drops_changes_under_two_pixels() {
+    // The cursor's top is `d` px above the view's top, so the needed change is `d`.
+    for (d, applied) in [(1.0, false), (1.9, false), (2.0, true), (7.5, true)] {
+        let mut cm = editor("long", false);
+        let p = Pos::new(30, 0);
+        let top = cm.cursor_coords(p, cm_view::CoordSys::Local).top;
+        cm.scroll_to(None, Some(top + d));
+        let start = cm.display.scroll_top;
+        cm.scroll_pos_into_view(p, p, 0.0);
+        let want = if applied { top } else { start };
+        assert_eq!(cm.display.scroll_top, want, "up {d}");
+    }
+    // Scrolling down by a small amount is dropped the same way.
+    let mut cm = editor("long", false);
+    let p = Pos::new(30, 0);
+    let c = cm.cursor_coords(p, cm_view::CoordSys::Local);
+    let st = c.bottom - 300.0 - 1.0;
+    cm.scroll_to(None, Some(st));
+    let start = cm.display.scroll_top;
+    cm.scroll_pos_into_view(p, p, 0.0);
+    assert_eq!(cm.display.scroll_top, start, "down 1");
+    // A request past the maximum that lands within 2px of it, after clamping.
+    let mut cm = editor("long", false);
+    let (_, mw) = cm.max_scroll();
+    cm.scroll_to(Some(mw - 1.0), None);
+    let end = Pos::new(0, 150);
+    cm.scroll_pos_into_view(end, end, 0.0);
+    assert_eq!(cm.display.scroll_left, mw - 1.0);
+    // The same far request from further away is applied.
+    let mut cm = editor("long", false);
+    cm.scroll_pos_into_view(end, end, 0.0);
+    assert_eq!(cm.display.scroll_left, mw);
+}
+
+/// The explicit entry points apply every change: `scrollTo` (no threshold) and the
+/// scroller's `scroll` event, whose offset the browser has already moved
+/// (recorded p07c, `p1_corrections.rs`).
+#[test]
+fn explicit_and_native_scrolls_apply_small_changes() {
+    let mut cm = editor("long", false);
+    cm.scroll_to(Some(300.0), Some(800.0));
+    for d in [1.0, -1.0, 0.5] {
+        cm.scroll_to(Some(300.0 + d), Some(800.0 + d));
+        assert_eq!(
+            (cm.display.scroll_left, cm.display.scroll_top),
+            (300.0 + d, 800.0 + d)
+        );
+        cm.set_scroll_top(800.0);
+        cm.set_scroll_left(300.0);
+        assert_eq!(
+            (cm.display.scroll_left, cm.display.scroll_top),
+            (300.0, 800.0)
+        );
+    }
+}
+
+/// The threshold belongs to one editor.
+#[test]
+fn threshold_leaves_other_editors_alone() {
+    let mut a = editor("long", false);
+    let mut b = editor("long", false);
+    let p = Pos::new(30, 0);
+    let top = a.cursor_coords(p, cm_view::CoordSys::Local).top;
+    a.scroll_to(None, Some(top + 1.0));
+    b.scroll_to(None, Some(top + 3.0));
+    a.scroll_pos_into_view(p, p, 0.0);
+    b.scroll_pos_into_view(p, p, 0.0);
+    assert_eq!(a.display.scroll_top, top + 1.0);
+    assert_eq!(b.display.scroll_top, top);
+}
