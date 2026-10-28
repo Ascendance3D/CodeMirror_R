@@ -295,6 +295,11 @@ impl EditorShared {
             && self.sem.get().whole_line_update_before
     }
 
+    /// `regLineChange(cm, line, "text")` for each of `lines`, in the open operation.
+    pub(crate) fn reg_line_changes(&self, lines: &[i64]) {
+        self.with_op(|op| op.regs.extend(lines.iter().copied().map(ViewChange::Line)));
+    }
+
     fn with_op(&self, f: impl FnOnce(&mut OpRecord)) {
         if let Some(op) = self.op.borrow_mut().as_mut() {
             f(op);
