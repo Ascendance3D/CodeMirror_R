@@ -335,3 +335,52 @@ fn all_states_are_inside_the_content() {
         }
     }
 }
+
+/// Out-of-range offsets from the public scroll calls (QA of PR #70). CM5 5.65.21 in
+/// Chromium 151 (`scrollTo(v, v)` on 60 lines of 150 `x`, 600x300): NaN, -5 and
+/// -Infinity end at (0, 0), +Infinity at the maximum (2297, 1988).
+#[test]
+fn non_finite_and_negative_offsets() {
+    for v in [f64::NAN, -5.0, f64::NEG_INFINITY] {
+        let mut cm = editor("long", false);
+        cm.scroll_to(Some(v), Some(v));
+        assert_eq!(
+            (cm.display.scroll_left, cm.display.scroll_top),
+            (0.0, 0.0),
+            "{v}"
+        );
+        let mut cm = editor("long", false);
+        cm.scroll_to(Some(300.0), Some(800.0));
+        cm.set_scroll_top(v);
+        cm.set_scroll_left(v);
+        assert_eq!(
+            (cm.display.scroll_left, cm.display.scroll_top),
+            (0.0, 0.0),
+            "{v}"
+        );
+    }
+    let mut cm = editor("long", false);
+    cm.scroll_to(Some(f64::INFINITY), Some(f64::INFINITY));
+    let (mh, mw) = cm.max_scroll();
+    assert_eq!((cm.display.scroll_left, cm.display.scroll_top), (mw, mh));
+}
+
+/// An offset left negative or NaN in the public `display` is brought inside by the
+/// next operation, not only the upper bound (`clamp_scroll`).
+#[test]
+fn clamp_covers_the_lower_bound() {
+    for v in [-100.0, f64::NAN] {
+        let mut cm = editor("long", false);
+        cm.display.scroll_left = v;
+        cm.display.scroll_top = v;
+        cm.run_op(|cm| {
+            cm.doc
+                .replace_range("", Pos::new(5, 0), Some(Pos::new(59, 150)), None)
+        });
+        assert_eq!(
+            (cm.display.scroll_left, cm.display.scroll_top),
+            (0.0, 0.0),
+            "{v}"
+        );
+    }
+}
