@@ -1757,7 +1757,7 @@ impl Editor {
         let mut hs = self.hs.borrow_mut();
         highlight::highlight_worker(&self.doc, &self.mode, &mut hs, max_lines).1
     }
-    /// `getStateAfter(line, precise)`.
+    /// Computes and returns the state after the given line, ported from `getStateAfter`.
     pub fn get_state_after(&self, line: Option<i64>, precise: bool) -> cm_modes::State {
         let doc = &self.doc;
         let l = line.unwrap_or(doc.first_line() + doc.line_count() as i64 - 1);
@@ -1765,7 +1765,7 @@ impl Editor {
         let mut hs = self.hs.borrow_mut();
         highlight::get_context_before(doc, &self.mode, &mut hs, l + 1, precise).state
     }
-    /// `getStateAfter(line, precise)` without returning the state.
+    /// Wrapper around `getStateAfter(line, precise)` that discards the returned state.
     pub fn catch_up_states(&self, line: Option<i64>, precise: bool) {
         self.get_state_after(line, precise);
     }

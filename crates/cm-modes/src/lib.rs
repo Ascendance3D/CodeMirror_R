@@ -451,6 +451,11 @@ impl Mode for Named {
         &self.name
     }
     fn start_state(&self, a1: JsArg, a2: JsArg) -> Option<State> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("startState") {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(JsArg, JsArg) -> Option<State>>>() {
+                return func(a1, a2);
+            }
+        }
         self.inner.start_state(a1, a2)
     }
     fn token(&self, stream: &mut StringStream<'_>, state: &mut State) -> Option<String> {
@@ -1119,15 +1124,30 @@ mod tests {
     fn extend_mode_invalid_override() {
         let mut r = Registry::with_all_modes();
         let mut ext = HashMap::new();
-        // Set fold to a number, which shouldn't affect anything for has_blank_line/etc if they check for downcasts correctly, but we'll test indent.
+        // Invalid override for a function-valued method
         ext.insert("indent".to_string(), ConfigValue::Num(4.0));
-        r.extend_mode("javascript", ext);
-        let m = r.get_mode(&ModeOptions::default(), &Spec::from("javascript"));
-        assert_eq!(m.has_indent(), true); // javascript has indent inner
-        // Actually, we need to test that providing an invalid function value doesn't cause a panic but gracefully bypasses or handles the capability check.
+        ext.insert("blankLine".to_string(), ConfigValue::Str("nope".into()));
+        r.extend_mode("vrml", ext);
+
+        let m = r.get_mode(&ModeOptions::default(), &Spec::from("vrml"));
+        // vrml mode does NOT have a blank_line inner, but we injected a string instead of a function.
+        // It should correctly check the type via downcast_ref and report false.
+        assert_eq!(m.has_blank_line(), false);
+        assert_eq!(m.has_indent(), true); // vrml has indent inner, which falls through
+
+        // Add a valid override
+        let mut valid_ext = HashMap::new();
+        let valid_blank = std::rc::Rc::new(|_: &mut State| Some("blank".to_string())) as std::rc::Rc<dyn Fn(&mut State) -> Option<String>>;
+        valid_ext.insert("blankLine".to_string(), ConfigValue::Obj(std::rc::Rc::new(valid_blank)));
+        r.extend_mode("vrml", valid_ext);
+
+        let m2 = r.get_mode(&ModeOptions::default(), &Spec::from("vrml"));
+        assert_eq!(m2.has_blank_line(), true);
     }
+
     #[test]
     fn extend_mode_and_mode_props() {
+
         let mut r = Registry::with_all_modes();
         let mut ext = HashMap::new();
         ext.insert("xxx".to_string(), ConfigValue::Str("a".into()));
