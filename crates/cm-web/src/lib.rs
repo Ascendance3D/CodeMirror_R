@@ -94,6 +94,12 @@ impl Inner {
         if let Some(d) = self.dom.as_mut() {
             let _ = d.apply(&f, tab, pre.as_deref());
         }
+        // After the DOM is current: `maybeScrollWindow` measures it.
+        if let Some(rect) = self.session.app.editor.take_window_scroll_rect() {
+            if let Some(d) = self.dom.as_ref() {
+                d.maybe_scroll_window(rect);
+            }
+        }
     }
 
     /// Measure the font when the cache lacks a value (a hidden element measured 0,

@@ -289,6 +289,8 @@ pub struct Editor {
     /// `state.focused`.
     focused: bool,
     op: OpState,
+    /// The rect of the last end-of-operation `scrollToPos`, for `maybeScrollWindow`.
+    window_scroll_rect: Option<Rect>,
     pub(crate) heights: Rc<RefCell<HeightCache>>,
     pub(crate) mouse: Option<MouseState>,
     pub(crate) clicks: crate::mouse::ClickTracker,
@@ -471,6 +473,7 @@ impl Editor {
             force_update: false,
             focused: false,
             op: OpState::default(),
+            window_scroll_rect: None,
             heights,
             mouse: None,
             clicks: Default::default(),
@@ -901,7 +904,9 @@ impl Editor {
             let from = self.doc.clip_pos(from);
             let to = self.doc.clip_pos(to);
             ensure = Some((from.line, to.line));
-            self.scroll_pos_into_view(from, to, margin);
+            // `maybeScrollWindow(cm, rect)` takes this rect; the engine has no window, so
+            // an adapter that has one reads it with `take_window_scroll_rect`.
+            self.window_scroll_rect = Some(self.scroll_pos_into_view(from, to, margin));
         }
         // regChange (view_tracking.js:13) and regLineChange (:78), in order, without
         // collapsed spans. The view array is not kept: `replaced` stands for
@@ -1384,6 +1389,14 @@ impl Editor {
             }
         }
         rect
+    }
+
+    /// The rect `endOperation_finish` passes to `maybeScrollWindow` (scrolling.js:15),
+    /// in `CoordSys::Local`, once per operation that scrolled a position into view.
+    /// Only a host with a window can act on it; the shared engine and the native
+    /// `App` have none.
+    pub fn take_window_scroll_rect(&mut self) -> Option<Rect> {
+        self.window_scroll_rect.take()
     }
 
     /// Largest scroll offsets.
