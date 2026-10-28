@@ -1806,7 +1806,24 @@ impl Editor {
         let mut hs = self.hs.borrow_mut();
         highlight::get_line_styles(&self.doc, &self.mode, &mut hs, n, Some(n))
     }
-    /// One step of the background highlighter; returns whether work remains.
+    /// One slice of `highlightWorker(cm)`, as a host's idle turn runs it: the lines of
+    /// the rendered range whose styles changed are reported with `regLineChange` in an
+    /// operation of their own, so the display is updated and `update` fires
+    /// (highlight_worker.js:47-52). Called inside an operation, the lines join it
+    /// (`runInOp`). Returns whether work remains.
+    pub fn highlight_work(&mut self, max_lines: usize) -> bool {
+        let (changed, more) = {
+            let mut hs = self.hs.borrow_mut();
+            highlight::highlight_worker(&self.doc, &self.mode, &mut hs, max_lines)
+        };
+        if !changed.is_empty() {
+            self.run_op(|cm| cm.shared.reg_line_changes(&changed));
+        }
+        more
+    }
+    /// One step of the background highlighter without the `regLineChange` of
+    /// [`Editor::highlight_work`], for callers that cannot borrow the editor mutably (no
+    /// display update or `update` event follows); returns whether work remains.
     pub fn highlight_step(&self, max_lines: usize) -> bool {
         let mut hs = self.hs.borrow_mut();
         highlight::highlight_worker(&self.doc, &self.mode, &mut hs, max_lines).1

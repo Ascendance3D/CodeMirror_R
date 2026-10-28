@@ -145,7 +145,7 @@ impl Inner {
         let mut more = true;
         while more && js_sys::Date::now() < end {
             self.session.app.deliver_pending();
-            more = self.session.app.editor.highlight_step(20);
+            more = self.session.app.editor.highlight_work(20);
         }
         if let Some(d) = self.dom.as_mut() {
             d.schedule_frame();
