@@ -147,7 +147,7 @@ impl Editor {
             if line.len() as i64 == coords.ch {
                 let col_diff = count_column(&line, Some(line.len()), self.options.tab_size, 0, 0)
                     - line.len() as i64;
-                let ch = (((x - self.metrics.padding_h) / self.metrics.char_width).round() as i64
+                let ch = (((x - self.metrics.padding_h) / self.char_width()).round() as i64
                     - col_diff)
                     .max(0);
                 coords = PosInfo {
