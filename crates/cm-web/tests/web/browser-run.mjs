@@ -126,7 +126,7 @@ const BROWSERS = ["chromium", "firefox", "webkit", ...Object.keys(MOBILE)];
 // UNSUPPORTED; any other shortfall fails the run.
 // REQUIRED counts comparisons with CM5 (needs the reference). REQUIRED_WEB counts the cm-web-only checks that
 // must run in every mode, with or without the reference; a run that skips one fails.
-const REQUIRED_WEB = { window_scroll: 2 };
+const REQUIRED_WEB = { window_scroll: 3 };
 const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 39, window_scroll: 10, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2 };
 
 // One browser run. It always returns a result with a status, and it closes the
@@ -457,7 +457,12 @@ async function runChecks(name, res, own) {
   res.window_scroll = winSeq;
   if (INJECT !== "drop-web-check") {
     check("window_scroll.inside_leaves_page", 0, winSeq["cm-web"].inside.wy);
-    check("window_scroll.top_moves_scroller_exactly", true, winSeq["cm-web"]["top_up_1"].top > 0 && winSeq["cm-web"]["top_up_30"].top > 0);
+    // The recorded CM5 result for the three "above the window" cases is one scroller offset, whatever the distance
+    // (the page is already at its top): the same positive offset for 1, 1.9 and 30 px.
+    const w = winSeq["cm-web"];
+    check("window_scroll.top_moves_scroller_exactly", true, w["top_up_1"].top > 0 && w["top_up_1"].top === w["top_up_1.9"].top && w["top_up_1"].top === w["top_up_30"].top && w["top_up_1"].wy === 0);
+    // Below the window bottom: the page moves down and the scroller is left alone.
+    check("window_scroll.bottom_scrolls_page_only", true, w.bottom.wy > 0 && w.bottom.top === 0);
   }
   if (haveCm5) for (const [label] of WIN_CASES) {
     const want = winSeq.cm5[label], got = winSeq["cm-web"][label];

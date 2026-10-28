@@ -59,7 +59,7 @@ const CASES = [
   ["fails-to-load", ref(throws), 2, "BLOCKED", /window.CodeMirror is undefined/, true],
   ["partial-api", ref(partialApi), 2, "BLOCKED", /CM5 API lacks getCursor/, true],
   // No reference: the cm-web-only checks still run and are still required (BLOCKED, not PASS: nothing was compared).
-  ["no-oracle", ["--no-cm5"], 2, "BLOCKED", /--no-cm5/, true, r => r.integrity?.complete === true && r.integrity.web_only?.window_scroll?.ran === 2 && !r.integrity.sections && r.summary.differential === 0],
+  ["no-oracle", ["--no-cm5"], 2, "BLOCKED", /--no-cm5/, true, r => r.integrity?.complete === true && r.integrity.web_only?.window_scroll?.ran === 3 && !r.integrity.sections && r.summary.differential === 0],
   ["no-oracle-drops-web-check", ["--no-cm5", "--inject", "drop-web-check"], 1, "FAIL", null, true, r => r.integrity?.incomplete?.join() === "window_scroll (cm-web only)"],
   ["oracle-drops-web-check", [...ref(CM5), "--inject", "drop-web-check"], 1, "FAIL", null, true, r => r.integrity?.incomplete?.join() === "window_scroll (cm-web only)" && r.integrity.sections.window_scroll.complete],
   ["compare-fail", [...ref(CM5), "--inject", "compare-fail"], 1, "FAIL", null, true, r => r.summary.failed.includes("keys.type")],
