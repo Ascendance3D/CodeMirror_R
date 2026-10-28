@@ -460,3 +460,127 @@ fn threshold_leaves_other_editors_alone() {
     assert_eq!(a.display.scroll_top, top + 1.0);
     assert_eq!(b.display.scroll_top, top);
 }
+
+fn threshold_data() -> Value {
+    serde_json::from_str(include_str!("data/cm5-scroll-threshold.json")).unwrap()
+}
+
+/// Number after the last `_` of a case name (`up_1.9` is 1.9).
+fn suffix(name: &str) -> f64 {
+    name.rsplit('_').next().unwrap().parse().unwrap()
+}
+
+fn scroll_of(v: &Value) -> (f64, f64) {
+    (num(&v["top"]), num(&v["left"]))
+}
+
+/// The 53 boundary recordings of `oracle/cm5-scroll-threshold.mjs` (CM5 5.65.21, the
+/// 600x300 "long" editor, offsets as the browser left them): `scrollPosIntoView`'s
+/// thresholds, explicit `scrollTo` and the scroller's own movement. The `window_top_*`
+/// cases (`maybeScrollWindow` scrolls the DOM) and the `wheel_*` cases (a wheel with a
+/// horizontal part is handled in JS and thresholded; the shared `App` wheel applies
+/// every delta) are recorded but not replayed: they are known differences (issue #66).
+/// The `.9` cases are not replayed either (see below).
+#[test]
+fn recorded_thresholds_at_the_boundaries() {
+    let data = threshold_data();
+    let (mut replayed, mut skipped) = (0, 0);
+    for (name, case) in data["cases"].as_object().unwrap() {
+        // A `.9` request is whole-pixel in the browser (the scroller rounds it, and its
+        // `scroll` event then rewrites `doc.scrollTop`), so the start CM5 compared
+        // against is not the requested one; the engine keeps fractions.
+        if name.starts_with("window_top_") || name.starts_with("wheel_") || name.ends_with(".9") {
+            skipped += 1;
+            continue;
+        }
+        let mut cm = editor("long", false);
+        let (mh, mw) = cm.max_scroll();
+        let (bt, bl) = scroll_of(&case["before"]);
+        let at = Pos::new(30, 0);
+        let first = Pos::new(0, 0);
+        let end = Pos::new(0, 150);
+        let last = Pos::new(59, 150);
+        let mut into = |cm: &mut Editor, p: Pos| cm.scroll_pos_into_view(p, p, 0.0);
+        if name.starts_with("up_") || name.starts_with("down_") {
+            cm.scroll_to(Some(bl), Some(bt));
+            into(&mut cm, at);
+        } else if name.starts_with("left_start_from_") || name.starts_with("to_top_from_") {
+            cm.scroll_to(Some(bl), Some(bt));
+            into(&mut cm, first);
+        } else if name.starts_with("last_line_from_max_minus_") {
+            // Setup scrolled to the maximum; the request starts `d` px above it.
+            cm.scroll_to(None, Some(mh - suffix(name)));
+            into(&mut cm, last);
+        } else if name.starts_with("right_end_from_max_minus_") {
+            cm.scroll_to(Some(mw - suffix(name)), None);
+            into(&mut cm, end);
+        } else if name == "right_end_from_zero" {
+            into(&mut cm, end);
+        } else if name == "repeat_up_1px" {
+            cm.scroll_to(Some(bl), Some(bt));
+            for _ in 0..3 {
+                into(&mut cm, at);
+            }
+        } else if name.starts_with("scrollTo_") {
+            let (x, y) = match name.as_str() {
+                "scrollTo_to_1px" => (300.0, 801.0),
+                "scrollTo_to_half" => (300.0, 800.5),
+                "scrollTo_to_negative" => (-50.0, -50.0),
+                "scrollTo_to_beyond" => (1e9, 1e9),
+                "scrollTo_to_same" => (300.0, 800.0),
+                "scrollTo_negative_at_zero" => (-2.0, -2.0),
+                "scrollTo_beyond_at_max" => (mw + 2.0, mh + 2.0),
+                _ => panic!("{name}"),
+            };
+            cm.scroll_to(Some(bl), Some(bt));
+            cm.scroll_to(Some(x), Some(y));
+        } else if name.starts_with("native_") {
+            // The browser moved the scroller (and clamped it); the scroll event
+            // hands that offset over, whatever its size.
+            let (at_t, at_l) = scroll_of(&case["after"]);
+            cm.scroll_to(Some(bl), Some(bt));
+            cm.set_scroll_top(at_t);
+            cm.set_scroll_left(at_l);
+        } else {
+            panic!("unclassified case {name}");
+        }
+        // The browser rounds a fractional offset to a whole pixel; the engine keeps it.
+        let (want_t, want_l) = scroll_of(&case["after"]);
+        let got = (cm.display.scroll_top, cm.display.scroll_left);
+        assert!(
+            (got.0 - want_t).abs() < 1.0 && (got.1 - want_l).abs() < 1.0,
+            "{name}: got {got:?}, CM5 ended at ({want_t}, {want_l})"
+        );
+        replayed += 1;
+    }
+    assert_eq!((replayed, skipped), (36, 17));
+}
+
+/// `setScrollLeft` (src/display/scrolling.js:181) compares the CLAMPED target, so a
+/// request past the maximum from within 2px of it is dropped; `updateScrollTop`
+/// (:162) compares the raw target, which `scrollPosIntoView` never sends past the
+/// maximum (it snaps to `docBottom - screen`), so that axis has no offset difference.
+/// Recorded: `right_end_from_max_minus_1` ends at max - 1 (the engine's maximum is
+/// fractional, so the same request is `max - 1.5` here).
+#[test]
+fn horizontal_threshold_compares_the_clamped_target() {
+    let end = Pos::new(0, 150);
+    for (back, applied) in [(1.5, false), (1.9, false), (2.5, true), (7.0, true)] {
+        let mut cm = editor("long", false);
+        let (_, mw) = cm.max_scroll();
+        cm.scroll_to(Some(mw - back), None);
+        cm.scroll_pos_into_view(end, end, 0.0);
+        let want = if applied { mw } else { mw - back };
+        assert_eq!(cm.display.scroll_left, want, "{back} px from the maximum");
+    }
+    // Already at the maximum: nothing to do. At zero, a request for column 0 is dropped.
+    let mut cm = editor("long", false);
+    let (_, mw) = cm.max_scroll();
+    cm.scroll_to(Some(mw), None);
+    cm.scroll_pos_into_view(end, end, 0.0);
+    assert_eq!((cm.display.scroll_left, cm.display.scroll_top), (mw, 0.0));
+    let mut cm = editor("long", false);
+    cm.scroll_to(Some(1.0), None);
+    cm.scroll_pos_into_view(Pos::new(0, 0), Pos::new(0, 0), 0.0);
+    assert_eq!(cm.display.scroll_left, 1.0);
+}

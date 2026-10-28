@@ -1409,7 +1409,12 @@ impl Editor {
     }
     /// `updateScrollTop` as `scrollPosIntoView` calls it: nothing scrolls the
     /// scroller natively there, so a change under 2px is dropped
-    /// (src/display/scrolling.js:162).
+    /// (src/display/scrolling.js:162). The guard compares the RAW target, unlike
+    /// [`Editor::update_scroll_left`]'s clamped one, as CM5 does: a request past the
+    /// maximum still runs `updateScrollTop`'s body (`setScrollTop` clamps, the offset
+    /// is unchanged; recorded `wheel_diag_down_100_at_max`). `scrollPosIntoView` never
+    /// sends such a target, so no offset can differ; do not clamp here to equalize
+    /// the two axes.
     fn update_scroll_top(&mut self, val: f64) {
         if (self.display.scroll_top - val).abs() < 2.0 {
             return;
