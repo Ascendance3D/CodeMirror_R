@@ -416,7 +416,10 @@ async function runChecks(name, res, own) {
     if (name === "firefox" && (l === "wheel_dx10_dy10" || l === "wheel_dx1_dyneg_big")) dcheck(`scroll.${l}.top`, Math.sign(want.top - 800), Math.sign(got.top - 800));
     else if (KNOWN[`scroll.${l}.top`] || l.startsWith("wheel_dx")) dcheck(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top));
     else dnear(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top), 1);
-    if (l.startsWith("wheel_dx")) dcheck(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left));
+    // Horizontally these steps stay inside the range (the editor's left range is 111px), so Firefox's native move is the clamp;
+    // a 2px tolerance covers its animation and rounding without hiding a Rust-managed move (which is exact elsewhere).
+    if (name === "firefox" && (l === "wheel_dx10_dy10" || l === "wheel_dx1_dyneg_big")) dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 2);
+    else if (l.startsWith("wheel_dx")) dcheck(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left));
     else dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 1);
   });
 

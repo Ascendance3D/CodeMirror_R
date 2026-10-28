@@ -997,9 +997,7 @@ fn is_gecko() -> bool {
             let Some(nav) = web_sys::window().map(|w| w.navigator()) else {
                 return false;
             };
-            let ua = nav.user_agent().unwrap_or_default().to_ascii_lowercase();
-            ua.match_indices("gecko/")
-                .any(|(i, m)| ua[i + m.len()..].starts_with(|c: char| c.is_ascii_digit()))
+            ua_is_gecko(&nav.user_agent().unwrap_or_default())
         })
     })
 }
@@ -1008,10 +1006,12 @@ fn is_gecko() -> bool {
 /// (src/display/scroll_events.js:91): the wheel is handled in JS, not by the
 /// browser's scroll, so each axis goes through the `< 2px` threshold of
 /// `updateScrollTop` (on the raw, floored-at-0 target) and `setScrollLeft` (on the
-/// clamped one), and `dy` is ignored when nothing scrolls vertically. A wheel with
-/// `dx == 0` is the browser's own scroll and reaches the editor through the scroller's
-/// `scroll` event, which applies every change; Gecko scrolls natively for both. Recorded
-/// in `tests/data/cm5-wheel-dx.json`. Offsets are `(top, left)`, `max` the same.
+/// clamped one), and `dy` is ignored when the editor cannot scroll vertically at all
+/// (`canScrollY`). The vertical compare is on the RAW target, as CM5's: at the bottom a
+/// further `dy` is kept, and `Input::Wheel` then clamps it to no change (recorded
+/// `d_10_100_at_max_top`); clamping the compare, as a reviewer suggested, would drop
+/// it, which only differs in CM5's skipped `updateDisplaySimple`. Recorded in
+/// `tests/data/cm5-wheel-dx.json`. Offsets are `(top, left)`, `max` the same.
 fn wheel_with_dx(
     (top, left): (f64, f64),
     (max_top, max_left): (f64, f64),
@@ -1032,6 +1032,13 @@ fn wheel_with_dx(
     (dx, dy)
 }
 
+/// `/gecko\/\d/i.test(userAgent)`.
+fn ua_is_gecko(ua: &str) -> bool {
+    let ua = ua.to_ascii_lowercase();
+    ua.match_indices("gecko/")
+        .any(|(i, m)| ua[i + m.len()..].starts_with(|c: char| c.is_ascii_digit()))
+}
+
 /// What `onScrollWheel` leaves to the editor for a wheel of `(dx, dy)` pixels.
 #[derive(Debug, PartialEq)]
 enum WheelAction {
@@ -1039,6 +1046,9 @@ enum WheelAction {
     /// event and does not cancel it), and the `scroll` event syncs the editor.
     Native,
     /// The editor scrolls by these deltas through `Input::Wheel`; the default is cancelled.
+    /// This is the thresholded JS path for `dx != 0` outside Gecko, and also every
+    /// vertical-only wheel: CM5 leaves that one to the browser, and cm-web applies
+    /// `deltaY` itself instead (KNOWN_GAPS.md G5, unchanged here).
     Editor(f64, f64),
 }
 
@@ -1191,6 +1201,15 @@ mod tests {
         use cm_view::app::{App, AppOptions, Input, MemClipboard};
         let rec: serde_json::Value =
             serde_json::from_str(include_str!("../tests/data/cm5-wheel-dx.json")).unwrap();
+        assert_eq!(rec["version"], "5.65.21");
+        for (browser, b) in rec["browsers"].as_object().unwrap() {
+            assert_eq!(
+                b["gecko"].as_bool().unwrap(),
+                ua_is_gecko(b["ua"].as_str().unwrap()),
+                "{browser}: the recorded user agent and the production rule agree"
+            );
+            assert_eq!(b["gecko"].as_bool().unwrap(), browser == "firefox");
+        }
         let f = |v: &serde_json::Value| v.as_f64().unwrap();
         let text = vec!["x".repeat(150); 60].join("\n");
         let (mut replayed, mut native) = (0, 0);
@@ -1251,6 +1270,26 @@ mod tests {
         }
         // 20 cases x 3 browsers; Firefox leaves the 18 with dx != 0 to the browser.
         assert_eq!((replayed, native), (42, 18));
+    }
+
+    /// The vertical compare is on the raw target (CM5's `updateScrollTop`): at the bottom a
+    /// further `dy` is kept (the editor then clamps it to no move); the horizontal compare
+    /// is on the clamped target, so the same request at the right edge is dropped.
+    #[test]
+    fn wheel_with_dx_compares_vertical_raw_and_horizontal_clamped() {
+        assert_eq!(
+            wheel_with_dx((1988.0, 0.0), (1988.0, 500.0), (0.0, 100.0)),
+            (0.0, 100.0)
+        );
+        assert_eq!(
+            wheel_with_dx((1988.0, 500.0), (1988.0, 500.0), (100.0, 100.0)),
+            (0.0, 100.0)
+        );
+        // One pixel short of the right edge: the clamped change is under 2px.
+        assert_eq!(
+            wheel_with_dx((800.0, 499.0), (1988.0, 500.0), (1.0, 0.0)),
+            (0.0, 0.0)
+        );
     }
 
     #[test]
