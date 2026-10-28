@@ -124,7 +124,7 @@ const BROWSERS = ["chromium", "firefox", "webkit", ...Object.keys(MOBILE)];
 // The CM5 comparisons each run must make, by section (60 in all). A section may run
 // fewer only when the environment cannot perform its action, which is recorded as
 // UNSUPPORTED; any other shortfall fails the run.
-const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 39, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2 };
+const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 39, window_scroll: 10, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2 };
 
 // One browser run. It always returns a result with a status, and it closes the
 // browser on every path (normal end, failed check, thrown error, rejected promise,
@@ -422,6 +422,43 @@ async function runChecks(name, res, own) {
     else if (l.startsWith("wheel_dx")) dcheck(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left));
     else dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 1);
   });
+
+  // --- Window scroll (maybeScrollWindow, scrolling.js:15) ----------------------
+  // An editor against the window's top or bottom whose cursor is out of the window: CM5 calls DOM scrollIntoView on a
+  // node over the cursor rect, which moves the page and the scroller exactly (recorded window_top_up_1 and _1.9 of
+  // oracle/cm5-scroll-threshold.mjs: the 1px and 1.9px moves apply). `inside` leaves the window alone.
+  progress("Window scroll");
+  const winSeq = {};
+  const WIN_CASES = [["top_up_1", "top", 1], ["top_up_1.9", "top", 1.9], ["top_up_30", "top", 30], ["bottom", "bottom", 0], ["inside", "inside", 0]];
+  for (const kind of haveCm5 ? ["cm5", "cm-web"] : ["cm-web"]) {
+    const rows = {};
+    for (const [label, edge, d] of WIN_CASES) {
+      await make(kind, LONG, "text/plain", { lineNumbers: true });
+      rows[label] = await page.evaluate(async ([edge, d]) => {
+        const wait = ms => new Promise(r => setTimeout(r, ms)), E = window.E, host = document.getElementById("host");
+        document.body.style.height = "4000px";
+        window.scrollTo(0, 0);
+        host.style.top = edge === "top" ? "0px" : edge === "bottom" ? `${innerHeight - 100}px` : "";
+        E.render(); await wait(200);
+        const setCursor = (l, c) => E.cm ? E.cm.setCursor({ line: l, ch: c }) : E.ed.setCursor(l, c);
+        if (edge === "top") { E.scroller().scrollTop = E.local(30, 0).top + d; await wait(200); setCursor(30, 0); }
+        else setCursor(edge === "bottom" ? 9 : 3, 0);
+        await wait(400);
+        const r = { top: E.scroller().scrollTop, wy: window.scrollY };
+        host.style.top = ""; document.body.style.height = ""; window.scrollTo(0, 0);
+        return r;
+      }, [edge, d]);
+    }
+    winSeq[kind] = rows;
+  }
+  res.window_scroll = winSeq;
+  check("window_scroll.inside_leaves_page", 0, winSeq["cm-web"].inside.wy);
+  check("window_scroll.top_moves_scroller_exactly", true, winSeq["cm-web"]["top_up_1"].top > 0 && winSeq["cm-web"]["top_up_30"].top > 0);
+  if (haveCm5) for (const [label] of WIN_CASES) {
+    const want = winSeq.cm5[label], got = winSeq["cm-web"][label];
+    dcheck(`window_scroll.${label}.top`, Math.round(want.top), Math.round(got.top));
+    dcheck(`window_scroll.${label}.page`, Math.round(want.wy), Math.round(got.wy));
+  }
 
   // --- Focus and blink -------------------------------------------------------
   progress("Focus and blink");

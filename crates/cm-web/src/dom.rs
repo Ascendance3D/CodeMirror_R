@@ -760,6 +760,46 @@ impl Dom {
         Ok(())
     }
 
+    /// `maybeScrollWindow(cm, rect)` (scrolling.js:15): when the editor sits partly
+    /// above or below the window and `rect` (sizer-relative, as the engine's `Local`
+    /// coordinates) is out of the window, scroll the page by a temporary node over
+    /// `rect` with DOM `scrollIntoView`, as CM5 does. That also moves the scroller
+    /// exactly (no 2 px threshold); its `scroll` event syncs the editor. CM5's
+    /// `scrollCursorIntoView` DOM-event veto has no counterpart here, and the call
+    /// runs when the frame is drawn, not inside the operation.
+    pub fn maybe_scroll_window(&self, rect: cm_view::measure::Rect) {
+        let sizer_top = self.sizer.get_bounding_client_rect().top();
+        let height = self
+            .window
+            .inner_height()
+            .ok()
+            .and_then(|h| h.as_f64())
+            .or_else(|| {
+                self.document
+                    .document_element()
+                    .map(|e| e.client_height() as f64)
+            })
+            .unwrap_or(0.0);
+        let Some(top_edge) = window_scroll_edge(rect.top, rect.bottom, sizer_top, height) else {
+            return;
+        };
+        // `scrollGap(cm)` is 50 minus the native scrollbar width; native bars add no `barHeight`.
+        let bar = (self.scroller.offset_width() - self.scroller.client_width()).max(0) as f64;
+        let Ok(node) = el(&self.document, "div", "") else {
+            return;
+        };
+        node.set_text_content(Some("\u{200b}"));
+        css(&node, "position", "absolute");
+        css(&node, "top", &px(rect.top));
+        css(&node, "height", &px(rect.bottom - rect.top + (50.0 - bar)));
+        css(&node, "left", &px(rect.left));
+        css(&node, "width", &px((rect.right - rect.left).max(2.0)));
+        if self.sizer.append_child(&node).is_ok() {
+            node.scroll_into_view_with_bool(top_edge);
+            let _ = self.sizer.remove_child(&node);
+        }
+    }
+
     /// Event position relative to the scroller's border box (window pixels of
     /// `App`'s input, where x < gutter width is the gutter).
     fn local(&self, client_x: f64, client_y: f64) -> (f64, f64) {
@@ -1032,6 +1072,25 @@ fn wheel_with_dx(
     (dx, dy)
 }
 
+/// Which edge of the window `maybeScrollWindow` (src/display/scrolling.js:15) scrolls to:
+/// `Some(true)` aligns the rect with the window top, `Some(false)` with the bottom,
+/// `None` leaves the window alone. `sizer_top` is the sizer's `getBoundingClientRect().top`,
+/// `rect_*` are `cursorCoords`-style local coordinates.
+fn window_scroll_edge(
+    rect_top: f64,
+    rect_bottom: f64,
+    sizer_top: f64,
+    window_height: f64,
+) -> Option<bool> {
+    if rect_top + sizer_top < 0.0 {
+        Some(true)
+    } else if rect_bottom + sizer_top > window_height {
+        Some(false)
+    } else {
+        None
+    }
+}
+
 /// `/gecko\/\d/i.test(userAgent)`.
 fn ua_is_gecko(ua: &str) -> bool {
     let ua = ua.to_ascii_lowercase();
@@ -1290,6 +1349,17 @@ mod tests {
             wheel_with_dx((800.0, 499.0), (1988.0, 500.0), (1.0, 0.0)),
             (0.0, 0.0)
         );
+    }
+
+    #[test]
+    fn window_scroll_edge_follows_maybe_scroll_window() {
+        // scrolling.js:19-20: above the window top -> true; below the bottom -> false.
+        assert_eq!(window_scroll_edge(100.0, 120.0, -101.0, 900.0), Some(true));
+        assert_eq!(window_scroll_edge(100.0, 120.0, -100.0, 900.0), None);
+        assert_eq!(window_scroll_edge(700.0, 721.0, 200.0, 920.0), Some(false));
+        assert_eq!(window_scroll_edge(700.0, 720.0, 200.0, 920.0), None);
+        // The top test wins when both hold.
+        assert_eq!(window_scroll_edge(0.0, 5000.0, -1.0, 900.0), Some(true));
     }
 
     #[test]
