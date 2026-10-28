@@ -124,7 +124,7 @@ const BROWSERS = ["chromium", "firefox", "webkit", ...Object.keys(MOBILE)];
 // The CM5 comparisons each run must make, by section (60 in all). A section may run
 // fewer only when the environment cannot perform its action, which is recorded as
 // UNSUPPORTED; any other shortfall fails the run.
-const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 21, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2 };
+const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 30, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2 };
 
 // One browser run. It always returns a result with a status, and it closes the
 // browser on every path (normal end, failed check, thrown error, rejected promise,
@@ -381,6 +381,11 @@ async function runChecks(name, res, own) {
     await page.keyboard.press(`${mod}+Home`); await snap("ctrl_home");
     await E(E => { E.scroller().scrollTop = 2000; }); await snap("scrollbar_2000");
     await page.keyboard.press("End"); await snap("end_long_line");
+    // A wheel with dx != 0 is handled in JS outside Gecko, so a 1px move is dropped (issue #66).
+    await E(E => { E.scroller().scrollTop = 800; E.scroller().scrollLeft = 300; }); await snap("scroller_800_300");
+    const w3 = await wheel(1, 1); await snap("wheel_dx1_dy1");
+    const w4 = await wheel(10, 10); await snap("wheel_dx10_dy10");
+    if (w3 || w4) res[`wheel_dx_unsupported_${kind}`] = w3 || w4;
     scrollSeq[kind] = seq;
   }
   res.scroll = scrollSeq;
@@ -391,9 +396,10 @@ async function runChecks(name, res, own) {
   if (haveCm5) scrollSeq.cm5.forEach(([l, want], i) => {
     const got = sw[i][1];
     dcheck(`scroll.${l}.cursor`, want.cursor, got.cursor);
-    if (KNOWN[`scroll.${l}.top`]) dcheck(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top));
+    if (KNOWN[`scroll.${l}.top`] || l.startsWith("wheel_dx")) dcheck(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top));
     else dnear(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top), 1);
-    dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 1);
+    if (l.startsWith("wheel_dx")) dcheck(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left));
+    else dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 1);
   });
 
   // --- Focus and blink -------------------------------------------------------
