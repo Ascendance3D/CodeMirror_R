@@ -10,6 +10,8 @@ async function runTest() {
   const sibling = root + "-evil";
   const outsideDir = await mkdtemp(join(tmpdir(), "server-test-outside-"));
   const outsideFile = join(outsideDir, "outside.js");
+  const cm5CmdOpsDir = await mkdtemp(join(tmpdir(), "server-test-cmdops-"));
+  const cm5BuildDir = join(cm5CmdOpsDir, "cm5-build");
   let server;
 
   try {
@@ -17,6 +19,12 @@ async function runTest() {
 
     await mkdir(sibling);
     await writeFile(join(sibling, "evil.js"), "console.log('evil');");
+
+    // Simulate cm5-cmd-ops.mjs ROOT vs HERE
+    await mkdir(cm5BuildDir);
+    await writeFile(join(cm5BuildDir, "cm5-vrml-mode.js"), "console.log('vrml');");
+    await writeFile(join(cm5CmdOpsDir, "cm5-cmd-ops.mjs"), "console.log('cmd-ops');");
+    await symlink(join(cm5CmdOpsDir, "cm5-cmd-ops.mjs"), join(cm5BuildDir, "link_to_here.js"));
 
     server = createServer(async (req, res) => {
         const url = new URL(req.url, "http://x");
@@ -66,11 +74,19 @@ async function runTest() {
     await symlink(outsideFile, join(root, "link_to_outside.js"));
     assert.strictEqual(await fetchNet("/link_to_outside.js"), 403, "403 for symlink escape");
 
+    // Symlink escape test for cm5-cmd-ops.mjs logic:
+    // When requesting a file that resolves via a symlink to outside the ROOT (cm5-build).
+    // The cm5-cmd-ops.mjs uses safeResolve against ROOT (cm5-build).
+    // This correctly rejects escaping to HERE (cm5CmdOpsDir).
+    const s_cmd = safeResolve("/link_to_here.js", cm5BuildDir);
+    assert.strictEqual(s_cmd.status, 403, "403 for symlink escape in cm5-cmd-ops logic");
+
   } finally {
     if (server) server.close();
     await rm(root, {recursive: true, force: true});
     await rm(sibling, {recursive: true, force: true});
     await rm(outsideDir, {recursive: true, force: true});
+    await rm(cm5CmdOpsDir, {recursive: true, force: true});
   }
 }
 
