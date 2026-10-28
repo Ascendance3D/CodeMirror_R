@@ -986,6 +986,88 @@ fn on_mouse_up(inner: &mut Inner, e: &MouseEvent) -> Post {
     Post::default()
 }
 
+/// `gecko` from src/util/browser.js: `/gecko\/\d/i.test(navigator.userAgent)`. The user
+/// agent does not change during a page's life, so it is read once.
+fn is_gecko() -> bool {
+    thread_local! {
+        static GECKO: std::cell::OnceCell<bool> = const { std::cell::OnceCell::new() };
+    }
+    GECKO.with(|g| {
+        *g.get_or_init(|| {
+            let Some(nav) = web_sys::window().map(|w| w.navigator()) else {
+                return false;
+            };
+            ua_is_gecko(&nav.user_agent().unwrap_or_default())
+        })
+    })
+}
+
+/// The deltas CM5's `onScrollWheel` applies to a wheel with `dx != 0` outside Gecko
+/// (src/display/scroll_events.js:91): the wheel is handled in JS, not by the
+/// browser's scroll, so each axis goes through the `< 2px` threshold of
+/// `updateScrollTop` (on the raw, floored-at-0 target) and `setScrollLeft` (on the
+/// clamped one), and `dy` is ignored when the editor cannot scroll vertically at all
+/// (`canScrollY`). The vertical compare is on the RAW target, as CM5's: at the bottom a
+/// further `dy` is kept, and `Input::Wheel` then clamps it to no change (recorded
+/// `d_10_100_at_max_top`); clamping the compare, as a reviewer suggested, would drop
+/// it, which only differs in CM5's skipped `updateDisplaySimple`. Recorded in
+/// `tests/data/cm5-wheel-dx.json`. Offsets are `(top, left)`, `max` the same.
+fn wheel_with_dx(
+    (top, left): (f64, f64),
+    (max_top, max_left): (f64, f64),
+    (dx, dy): (f64, f64),
+) -> (f64, f64) {
+    let (can_x, can_y) = (max_left > 0.0, max_top > 0.0);
+    let dy = if dy != 0.0 && can_y && (top - (top + dy).max(0.0)).abs() >= 2.0 {
+        dy
+    } else {
+        0.0
+    };
+    let target = (left + dx).max(0.0).min(max_left);
+    let dx = if dx != 0.0 && can_x && (left - target).abs() >= 2.0 {
+        dx
+    } else {
+        0.0
+    };
+    (dx, dy)
+}
+
+/// `/gecko\/\d/i.test(userAgent)`.
+fn ua_is_gecko(ua: &str) -> bool {
+    let ua = ua.to_ascii_lowercase();
+    ua.match_indices("gecko/")
+        .any(|(i, m)| ua[i + m.len()..].starts_with(|c: char| c.is_ascii_digit()))
+}
+
+/// What `onScrollWheel` leaves to the editor for a wheel of `(dx, dy)` pixels.
+#[derive(Debug, PartialEq)]
+enum WheelAction {
+    /// The browser scrolls the scroller (Gecko with `dx != 0`: CM5 does not handle the
+    /// event and does not cancel it), and the `scroll` event syncs the editor.
+    Native,
+    /// The editor scrolls by these deltas through `Input::Wheel`; the default is cancelled.
+    /// This is the thresholded JS path for `dx != 0` outside Gecko, and also every
+    /// vertical-only wheel: CM5 leaves that one to the browser, and cm-web applies
+    /// `deltaY` itself instead (KNOWN_GAPS.md G5, unchanged here).
+    Editor(f64, f64),
+}
+
+fn wheel_action(ed: &cm_view::Editor, gecko: bool, (dx, dy): (f64, f64)) -> WheelAction {
+    if dx == 0.0 {
+        return WheelAction::Editor(dx, dy);
+    }
+    if gecko {
+        return WheelAction::Native;
+    }
+    let (max_top, max_left) = ed.max_scroll();
+    let (dx, dy) = wheel_with_dx(
+        (ed.display.scroll_top, ed.display.scroll_left),
+        (max_top, max_left),
+        (dx, dy),
+    );
+    WheelAction::Editor(dx, dy)
+}
+
 fn on_wheel(inner: &mut Inner, e: &WheelEvent) -> Post {
     if e.ctrl_key() {
         return Post::default();
@@ -996,12 +1078,14 @@ fn on_wheel(inner: &mut Inner, e: &WheelEvent) -> Post {
         1 => ed.metrics.text_height,
         _ => ed.display.height,
     };
+    let delta = (e.delta_x() * unit, e.delta_y() * unit);
+    let WheelAction::Editor(dx, dy) = wheel_action(ed, is_gecko(), delta) else {
+        // Native scrolling: neither cancelled nor applied here.
+        return Post::default();
+    };
     // The editor scrolls; the browser's default scroll would move it a second time.
     e.prevent_default();
-    inner.session.handle(Input::Wheel {
-        dx: e.delta_x() * unit,
-        dy: e.delta_y() * unit,
-    });
+    inner.session.handle(Input::Wheel { dx, dy });
     inner.after_scroll();
     Post::default()
 }
@@ -1107,6 +1191,120 @@ mod tests {
     use cm_core::Pos;
     use cm_modes::Spec;
     use cm_view::{CoordSys, Editor, EditorOptions};
+
+    /// Every recorded wheel (CM5 5.65.21, Chromium 151, Firefox and WebKit) through the
+    /// decision `on_wheel` makes (`wheel_action`) and the editor's own `Input::Wheel`.
+    /// Gecko with `dx != 0` is left to the browser (`Native`); its recorded offsets are the
+    /// browser's and are checked by the browser harness, not here.
+    #[test]
+    fn wheel_action_through_input_wheel_matches_the_recorded_browsers() {
+        use cm_view::app::{App, AppOptions, Input, MemClipboard};
+        let rec: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/data/cm5-wheel-dx.json")).unwrap();
+        assert_eq!(rec["version"], "5.65.21");
+        for (browser, b) in rec["browsers"].as_object().unwrap() {
+            assert_eq!(
+                b["gecko"].as_bool().unwrap(),
+                ua_is_gecko(b["ua"].as_str().unwrap()),
+                "{browser}: the recorded user agent and the production rule agree"
+            );
+            assert_eq!(b["gecko"].as_bool().unwrap(), browser == "firefox");
+        }
+        let f = |v: &serde_json::Value| v.as_f64().unwrap();
+        let text = vec!["x".repeat(150); 60].join("\n");
+        let (mut replayed, mut native) = (0, 0);
+        for (name, c) in rec["cases"].as_object().unwrap() {
+            let (dx, dy) = (f(&c["dx"]), f(&c["dy"]));
+            for (browser, r) in c["by"].as_object().unwrap() {
+                let gecko = rec["browsers"][browser]["gecko"].as_bool().unwrap();
+                let mut app = App::new(
+                    &text,
+                    None,
+                    Metrics::oracle(),
+                    &AppOptions {
+                        no_line_numbers: true,
+                        ..AppOptions::default()
+                    },
+                    Box::new(MemClipboard::default()),
+                );
+                app.handle(Input::Resize {
+                    width: 600.0,
+                    height: 300.0,
+                });
+                // The browser's scroller ranges are whole pixels; the editor's are not.
+                let (mt, ml) = app.editor.max_scroll();
+                assert!(
+                    (mt - f(&c["maxTop"])).abs() < 1.0 && (ml - f(&c["maxLeft"])).abs() < 1.0,
+                    "{name}: the recorded ranges"
+                );
+                let (top, left) = (f(&r["before"]["top"]), f(&r["before"]["left"]));
+                app.editor.scroll_to(Some(left), Some(top));
+                assert_eq!(
+                    (
+                        app.editor.display.scroll_top,
+                        app.editor.display.scroll_left
+                    ),
+                    (top, left),
+                    "{name} in {browser}: start"
+                );
+                match wheel_action(&app.editor, gecko, (dx, dy)) {
+                    WheelAction::Native => {
+                        assert!(gecko && dx != 0.0, "{name} in {browser}");
+                        native += 1;
+                    }
+                    WheelAction::Editor(ax, ay) => {
+                        assert!(!(gecko && dx != 0.0), "{name} in {browser}");
+                        app.handle(Input::Wheel { dx: ax, dy: ay });
+                        assert_eq!(
+                            (
+                                app.editor.display.scroll_top.floor(),
+                                app.editor.display.scroll_left.floor()
+                            ),
+                            (f(&r["after"]["top"]), f(&r["after"]["left"])),
+                            "{name} in {browser}"
+                        );
+                        replayed += 1;
+                    }
+                }
+            }
+        }
+        // 20 cases x 3 browsers; Firefox leaves the 18 with dx != 0 to the browser.
+        assert_eq!((replayed, native), (42, 18));
+    }
+
+    /// The vertical compare is on the raw target (CM5's `updateScrollTop`): at the bottom a
+    /// further `dy` is kept (the editor then clamps it to no move); the horizontal compare
+    /// is on the clamped target, so the same request at the right edge is dropped.
+    #[test]
+    fn wheel_with_dx_compares_vertical_raw_and_horizontal_clamped() {
+        assert_eq!(
+            wheel_with_dx((1988.0, 0.0), (1988.0, 500.0), (0.0, 100.0)),
+            (0.0, 100.0)
+        );
+        assert_eq!(
+            wheel_with_dx((1988.0, 500.0), (1988.0, 500.0), (100.0, 100.0)),
+            (0.0, 100.0)
+        );
+        // One pixel short of the right edge: the clamped change is under 2px.
+        assert_eq!(
+            wheel_with_dx((800.0, 499.0), (1988.0, 500.0), (1.0, 0.0)),
+            (0.0, 0.0)
+        );
+    }
+
+    #[test]
+    fn wheel_with_dx_ignores_axes_that_cannot_scroll() {
+        // No vertical range: dy is dropped, the horizontal move stands.
+        assert_eq!(
+            wheel_with_dx((0.0, 100.0), (0.0, 500.0), (10.0, 50.0)),
+            (10.0, 0.0)
+        );
+        // No horizontal range: dx is dropped.
+        assert_eq!(
+            wheel_with_dx((100.0, 0.0), (500.0, 0.0), (10.0, 50.0)),
+            (0.0, 50.0)
+        );
+    }
 
     fn measured(char_width: f64, text_height: f64) -> Measured {
         Measured {

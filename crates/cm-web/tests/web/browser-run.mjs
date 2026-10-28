@@ -124,7 +124,7 @@ const BROWSERS = ["chromium", "firefox", "webkit", ...Object.keys(MOBILE)];
 // The CM5 comparisons each run must make, by section (60 in all). A section may run
 // fewer only when the environment cannot perform its action, which is recorded as
 // UNSUPPORTED; any other shortfall fails the run.
-const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 21, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2 };
+const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 39, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2 };
 
 // One browser run. It always returns a result with a status, and it closes the
 // browser on every path (normal end, failed check, thrown error, rejected promise,
@@ -370,7 +370,7 @@ async function runChecks(name, res, own) {
     await make(kind, LONG, "text/plain", { lineNumbers: true });
     await clickAt(0, 0);
     const seq = [];
-    const snap = async l => { await page.waitForTimeout(150); seq.push([l, await E(E => ({ ...E.scroll(), cursor: E.cursor(), first: E.lines()[0]?.map(p => p[0]).join("") }))]); };
+    const snap = async (l, ms = 150) => { await page.waitForTimeout(ms); seq.push([l, await E(E => ({ ...E.scroll(), cursor: E.cursor(), first: E.lines()[0]?.map(p => p[0]).join("") }))]); };
     const box = await E(E => { const r = E.root.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
     await page.mouse.move(box.x, box.y);
     const w1 = await wheel(0, 500); await snap("wheel_500");
@@ -381,19 +381,46 @@ async function runChecks(name, res, own) {
     await page.keyboard.press(`${mod}+Home`); await snap("ctrl_home");
     await E(E => { E.scroller().scrollTop = 2000; }); await snap("scrollbar_2000");
     await page.keyboard.press("End"); await snap("end_long_line");
+    // A wheel with dx != 0 is handled in JS outside Gecko, so a 1px move is dropped (issue #66).
+    await E(E => { E.scroller().scrollTop = 800; E.scroller().scrollLeft = 300; }); await snap("scroller_800_300");
+    const w3 = await wheel(1, 1); await snap("wheel_dx1_dy1");
+    const w4 = await wheel(10, 10); await snap("wheel_dx10_dy10");
+    // Boundaries and a large delta. Outside Gecko the wheel goes through the editor (2px applies, 1px is dropped,
+    // -2000 ends at 0); Gecko scrolls natively, so its large-delta result is the browser's own (recorded:
+    // d_1_neg_big_to_zero 800 -> 485), which the editor's own scroll (0) cannot produce.
+    const reset = async () => { await E(E => { E.scroller().scrollTop = 800; E.scroller().scrollLeft = 300; }); await page.waitForTimeout(150); };
+    await reset(); const w5 = await wheel(2, 0); await snap("wheel_dx2_dy0", 400);
+    await reset(); const w6 = await wheel(1, 0); await snap("wheel_dx1_dy0", 400);
+    await reset(); const w7 = await wheel(1, -2000); await snap("wheel_dx1_dyneg_big", 800);
+    if (w3 || w4 || w5 || w6 || w7) res[`wheel_dx_unsupported_${kind}`] = w3 || w4 || w5 || w6 || w7;
     scrollSeq[kind] = seq;
   }
   res.scroll = scrollSeq;
   const sw = scrollSeq["cm-web"];
+  {
+    // cm-web's own detection (`gecko` from src/util/browser.js) must agree with the profile, and the large wheel must
+    // take the path CM5 takes: native in Firefox (the offset is the browser's), the editor's elsewhere (ends at 0).
+    const gecko = await page.evaluate(() => /gecko\/\d/i.test(navigator.userAgent));
+    check("scroll.gecko_detected_only_in_firefox", name === "firefox", gecko);
+    const big = sw.find(([l]) => l === "wheel_dx1_dyneg_big")?.[1];
+    if (big && !res["wheel_dx_unsupported_cm-web"] && !name.endsWith("-mobile")) check("scroll.dx_wheel_path", gecko ? "native" : "editor", gecko ? (big.top > 0 && big.top < 800 ? "native" : "editor") : (big.top === 0 ? "editor" : "native"));
+  }
   if (res["wheel_unsupported_cm-web"]) res.checks.push({ name: "scroll.wheel", ok: true, exact: false, unsupported: res["wheel_unsupported_cm-web"] });
   else check("scroll.wheel_moves_dom_and_editor", true, sw[0][1].top > 0 && Math.abs(sw[0][1].top - sw[0][1].editorTop) < 1);
   check("scroll.native_scrollbar_syncs_editor", true, Math.abs(sw[5][1].editorTop - sw[5][1].top) < 2 && sw[5][1].top > 1000);
   if (haveCm5) scrollSeq.cm5.forEach(([l, want], i) => {
     const got = sw[i][1];
     dcheck(`scroll.${l}.cursor`, want.cursor, got.cursor);
-    if (KNOWN[`scroll.${l}.top`]) dcheck(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top));
+    // Firefox scrolls these natively (CM5 and cm-web alike), so the amount is the browser's and varies from run to run
+    // (recorded 485 vs 530 for the same wheel); only the direction is compared there, and `scroll.dx_wheel_path` pins the path.
+    if (name === "firefox" && (l === "wheel_dx10_dy10" || l === "wheel_dx1_dyneg_big")) dcheck(`scroll.${l}.top`, Math.sign(want.top - 800), Math.sign(got.top - 800));
+    else if (KNOWN[`scroll.${l}.top`] || l.startsWith("wheel_dx")) dcheck(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top));
     else dnear(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top), 1);
-    dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 1);
+    // Horizontally these steps stay inside the range (the editor's left range is 111px), so Firefox's native move is the clamp;
+    // a 2px tolerance covers its animation and rounding without hiding a Rust-managed move (which is exact elsewhere).
+    if (name === "firefox" && (l === "wheel_dx10_dy10" || l === "wheel_dx1_dyneg_big")) dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 2);
+    else if (l.startsWith("wheel_dx")) dcheck(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left));
+    else dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 1);
   });
 
   // --- Focus and blink -------------------------------------------------------
