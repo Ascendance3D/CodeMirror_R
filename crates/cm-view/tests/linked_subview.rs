@@ -39,35 +39,13 @@ const RECORDING: &str = include_str!("data/cm5-linked-subview.json");
 const TAGS: [&str; 4] = ["A:", "B:", "C:", "D:"];
 
 /// `(case, steps, editor tag, reason)`.
-const KNOWN: &[(&str, &[&str], &str, &str)] = &[
-    (
-        "c19_detach_and_reattach",
-        &["b_attach"],
-        "B:",
-        "construction start range: a new editor first renders at the default height, \
+const KNOWN: &[(&str, &[&str], &str, &str)] = &[(
+    "c19_detach_and_reattach",
+    &["b_attach"],
+    "B:",
+    "construction start range: a new editor first renders at the default height, \
          so the scroll to 400 stays inside it (no update); CM5 renders at 600x300",
-    ),
-    (
-        "c21_undo_redo",
-        &["a_undo", "a_redo", "b_edit", "b_undo", "b_undo_again"],
-        "A:",
-        "N3 (pre-existing on master): undo/redo does not scroll the cursor into \
-         view as makeChangeFromHistory -> ensureCursorVisible does in CM5",
-    ),
-    (
-        "c21b_undo_redo_parent_at_top",
-        &[
-            "a_undo",
-            "a_redo",
-            "a_delete_across_first",
-            "a_undo_delete",
-            "b_undo_insert_above",
-            "b_redo",
-        ],
-        "A:",
-        "N3 (pre-existing on master), as in c21_undo_redo",
-    ),
-];
+)];
 
 fn lines(n: usize) -> String {
     (0..n)

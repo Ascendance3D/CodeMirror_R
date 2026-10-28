@@ -3322,16 +3322,7 @@ fn check(ids: &[&str]) {
             cm.get_value().encode_utf16().count(),
             (h.undo, h.redo),
         );
-        // After the undo of S14 and S15 CM5 scrolls the restored cursor into view
-        // (top 4); that is the undo path, not `setValue`, and is not compared.
-        let after_undo = id.starts_with("S14") || id.starts_with("S15");
-        let want = (
-            (ml, mt),
-            (fl, if after_undo { got.1.1 } else { ft }),
-            vec![s],
-            len,
-            ud,
-        );
+        let want = ((ml, mt), (fl, ft), vec![s], len, ud);
         if got != want {
             bad.push(format!(
                 "{id} {doc:?} wrap {wrap}: got {got:?} want {want:?}"

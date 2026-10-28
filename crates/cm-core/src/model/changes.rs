@@ -3,7 +3,7 @@
 
 use std::rc::Rc;
 
-use super::change_measurement::compute_sel_after_change;
+use super::change_measurement::{change_end, compute_sel_after_change};
 use super::doc::{BeforeChangeHandler, Doc};
 use super::document_data::update_doc;
 use super::history::{
@@ -416,6 +416,11 @@ pub(crate) fn make_change_from_history(doc: &Doc, undo: bool, allow_selection_on
         };
         let spans = merge_old_spans(doc, hchange, &change);
         make_change_single_doc(doc, &change, after, spans);
+        if i == 0 && doc.has_editor() {
+            // `if (!i && doc.cm) doc.cm.scrollIntoView({from, to: changeEnd(change)})`,
+            // applied by the view when the operation ends.
+            doc.request_scroll_into_view(change.from, change_end(&change));
+        }
 
         // Propagate to the linked documents.
         let mut rebased: Vec<HistRef> = Vec::new();
