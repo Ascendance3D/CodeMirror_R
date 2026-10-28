@@ -897,6 +897,11 @@ impl Editor {
             let from = self.doc.clip_pos(from);
             let to = self.doc.clip_pos(to);
             ensure = Some((from.line, to.line));
+            // `scrollPosIntoView` reads the DOM scroller, which the browser has
+            // already clamped to the content after a change that shortened it.
+            let (mh, mw) = self.max_scroll();
+            self.display.scroll_top = self.display.scroll_top.min(mh);
+            self.display.scroll_left = self.display.scroll_left.min(mw);
             self.scroll_pos_into_view(from, to, margin);
         }
         // regChange (view_tracking.js:13) and regLineChange (:78), in order, without
@@ -1170,16 +1175,49 @@ impl Editor {
     fn take_sel_scroll(&mut self) {
         let requests = self.doc.take_scroll_requests();
         let mut resets = self.doc.take_scroll_resets().into_iter().peekable();
+        let mut ranges = self.doc.take_scroll_into_view().into_iter().peekable();
+        // `done` counts the cursor requests and resets replayed so far, the unit of the
+        // marks of `ranges`.
+        let mut done = 0;
         for (n, cur) in requests.into_iter().enumerate() {
             while resets.next_if(|&at| at <= n).is_some() {
+                self.flush_scroll_ranges(&mut ranges, done);
+                done += 1;
                 self.reset_scroll_queued();
             }
+            self.flush_scroll_ranges(&mut ranges, done);
+            done += 1;
             self.resolve_scroll_to_pos_raw();
             self.op.scroll_to_pos = Some((cur, cur, self.options.cursor_scroll_margin));
         }
         for _ in resets {
+            self.flush_scroll_ranges(&mut ranges, done);
+            done += 1;
             self.reset_scroll_queued();
         }
+        self.flush_scroll_ranges(&mut ranges, done);
+        for (_, from, to) in ranges {
+            self.scroll_range_queued(from, to);
+        }
+    }
+
+    /// Replays the `scrollIntoView` calls made after `done` earlier requests and
+    /// before the next one ([`Doc::take_scroll_into_view`]).
+    fn flush_scroll_ranges(
+        &mut self,
+        ranges: &mut std::iter::Peekable<std::vec::IntoIter<(usize, Pos, Pos)>>,
+        done: usize,
+    ) {
+        while let Some((_, from, to)) = ranges.next_if(|&(at, _, _)| at <= done) {
+            self.scroll_range_queued(from, to);
+        }
+    }
+
+    /// `scrollIntoView({from, to})` of `makeChangeFromHistory` (margin 0): resolve the
+    /// previous target, then queue this range.
+    fn scroll_range_queued(&mut self, from: Pos, to: Pos) {
+        self.resolve_scroll_to_pos_raw();
+        self.op.scroll_to_pos = Some((from, to, 0.0));
     }
 
     /// `scrollToCoords(cm, 0, 0)` for a `setValue` the document recorded

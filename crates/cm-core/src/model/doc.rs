@@ -155,6 +155,10 @@ pub(crate) struct DocInner {
     /// `scroll_requests` made before it; taken by the view
     /// ([`Doc::take_scroll_resets`]).
     pub scroll_resets: Vec<usize>,
+    /// Each `scrollIntoView({from, to})` of `makeChangeFromHistory`, as the number of
+    /// `scroll_requests` and `scroll_resets` entries made before it; taken by the view
+    /// ([`Doc::take_scroll_into_view`]).
+    pub scroll_into_view: Vec<(usize, Pos, Pos)>,
     /// `cm.display.shift` (see [`Doc::set_display_shift`]).
     pub display_shift: bool,
 }
@@ -252,6 +256,7 @@ impl Doc {
             display_shift: false,
             scroll_requests: Vec::new(),
             scroll_resets: Vec::new(),
+            scroll_into_view: Vec::new(),
             before_selection_change: Listeners::default(),
             change: Listeners::default(),
             cursor_activity: Listeners::default(),
@@ -581,6 +586,7 @@ impl Doc {
         // without detaching.
         i.scroll_requests.clear();
         i.scroll_resets.clear();
+        i.scroll_into_view.clear();
         drop(i);
         // The `undoDepth` option handler runs when the editor is created.
         self.set_undo_depth(undo_depth);
@@ -593,6 +599,7 @@ impl Doc {
         // CM5 writes each request into the old editor's `curOp`; none outlives it.
         i.scroll_requests.clear();
         i.scroll_resets.clear();
+        i.scroll_into_view.clear();
     }
     /// The same as [`Doc::detach_editor`].
     pub fn detach_editor_semantics(&self) {
@@ -655,6 +662,20 @@ impl Doc {
     /// it (take both together to replay them in call order). Only with an editor.
     pub fn take_scroll_resets(&self) -> Vec<usize> {
         std::mem::take(&mut self.inner_mut().scroll_resets)
+    }
+    /// The `scrollIntoView({from, to})` calls of `makeChangeFromHistory` (an undo or
+    /// redo) since the last call, in order, each as `(n, from, to)` where `n` is the
+    /// number of [`Doc::take_scroll_requests`] and [`Doc::take_scroll_resets`] entries
+    /// made before it (take all three together to replay them in call order). The
+    /// margin is 0. Only with an editor.
+    pub fn take_scroll_into_view(&self) -> Vec<(usize, Pos, Pos)> {
+        std::mem::take(&mut self.inner_mut().scroll_into_view)
+    }
+    /// `doc.cm.scrollIntoView({from, to})`: record the range for the view.
+    pub(crate) fn request_scroll_into_view(&self, from: Pos, to: Pos) {
+        let mut i = self.inner_mut();
+        let at = i.scroll_requests.len() + i.scroll_resets.len();
+        i.scroll_into_view.push((at, from, to));
     }
     /// `scrollToCoords(doc.cm, 0, 0)`: record the reset for the view.
     fn request_scroll_reset(&self) {

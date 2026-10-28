@@ -103,12 +103,9 @@ fn run(cm: &mut Editor, marks: &mut Vec<Marker>, s: &Value) -> Option<String> {
             let (text, from, to) = (s["text"].as_str().unwrap(), pos(&s["from"]), pos(&s["to"]));
             cm.run_op(|cm| cm.doc.replace_range(text, from, Some(to), None));
         }
-        // Not part of the longest-line behavior: cm-core's history replay does not
-        // port `doc.cm.scrollIntoView({from, to})` (changes.js:144), and
-        // `Editor::set_value` does not port `scrollToCoords(cm, 0, 0)` (Doc.js:78).
-        // Both are done here in the same operation, so the rendered range matches.
+        // `makeChangeFromHistory` queues its own `scrollIntoView({from, to})`
+        // (changes.js:144), applied when the operation ends.
         "undo" | "redo" => {
-            let (from, to) = (pos(&s["scroll"][0]), pos(&s["scroll"][1]));
             let undo = s["op"] == "undo";
             cm.run_op(|cm| {
                 if undo {
@@ -116,7 +113,6 @@ fn run(cm: &mut Editor, marks: &mut Vec<Marker>, s: &Value) -> Option<String> {
                 } else {
                     cm.doc.redo();
                 }
-                cm.scroll_into_view(from, to, 0.0);
             });
         }
         "setValue" => {
