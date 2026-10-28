@@ -124,3 +124,40 @@ fn w01_inside_an_open_operation() {
         true,
     );
 }
+
+/// w01 through `App::idle`, the call the desktop frame loop makes: the idle slices fire
+/// the same final `update` count as the recording.
+#[test]
+fn w01_through_app_idle() {
+    use cm_view::app::{App, AppOptions, MemClipboard};
+    let rec = &data()["cases"]["w01_comment_started_above_viewport"];
+    let opts = AppOptions {
+        mode: Some("javascript".into()),
+        no_line_numbers: true,
+        ..AppOptions::default()
+    };
+    let text = format!("/*\n{}\n*/\nvar y;", body(3000));
+    let mut app = App::new(
+        &text,
+        None,
+        Metrics::oracle(),
+        &opts,
+        Box::new(MemClipboard::default()),
+    );
+    app.editor.set_size(600.0, 300.0);
+    let updates = Rc::new(Cell::new(0u64));
+    let u = updates.clone();
+    app.editor.on_update(move |_| u.set(u.get() + 1));
+    app.editor
+        .scroll_to(None, Some(rec["line"].as_i64().unwrap() as f64 * 38.0));
+    assert_eq!(
+        updates.get(),
+        rec["synchronous"]["updates"].as_u64().unwrap()
+    );
+    let mut slices = 0;
+    while app.idle() {
+        slices += 1;
+        assert!(slices < 10_000, "idle never finished");
+    }
+    assert_eq!(updates.get(), rec["final"]["updates"].as_u64().unwrap());
+}
