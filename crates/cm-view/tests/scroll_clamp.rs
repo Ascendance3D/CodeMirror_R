@@ -500,7 +500,7 @@ fn recorded_thresholds_at_the_boundaries() {
         let first = Pos::new(0, 0);
         let end = Pos::new(0, 150);
         let last = Pos::new(59, 150);
-        let mut into = |cm: &mut Editor, p: Pos| cm.scroll_pos_into_view(p, p, 0.0);
+        let into = |cm: &mut Editor, p: Pos| cm.scroll_pos_into_view(p, p, 0.0);
         if name.starts_with("up_") || name.starts_with("down_") {
             cm.scroll_to(Some(bl), Some(bt));
             into(&mut cm, at);
