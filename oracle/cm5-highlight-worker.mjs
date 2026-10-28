@@ -8,7 +8,7 @@
 import { createServer } from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { extname, isAbsolute, join, normalize, relative } from "node:path";
+import { extname, isAbsolute, join, normalize, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 if (!process.env.CM5_BUILD_DIR) throw new Error("set CM5_BUILD_DIR");
@@ -24,12 +24,15 @@ const server = createServer(async (req, res) => {
   try { rel = decodeURIComponent(new URL(req.url, "http://x").pathname); } catch { res.writeHead(400); return res.end(); }
   if (rel === "/__harness.html") { res.writeHead(200, { "Content-Type": "text/html" }); return res.end(HARNESS); }
   const path = normalize(join(ROOT, rel)), r = relative(ROOT, path);
-  if (r === ".." || r.startsWith("../") || isAbsolute(r)) { res.writeHead(403); return res.end(); }
+  if (r === ".." || r.startsWith(".." + sep) || isAbsolute(r)) { res.writeHead(403); return res.end(); }
   try { const body = await readFile(path); res.writeHead(200, { "Content-Type": { ".js": "text/javascript", ".css": "text/css" }[extname(path)] || "application/octet-stream" }); res.end(body); }
   catch { res.writeHead(404); res.end(); }
 });
 await new Promise(r => server.listen(0, "127.0.0.1", r));
-const browser = await chromium.launch({ headless: true });
+let browser;
+let out;
+try {
+browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
 await page.goto(`http://127.0.0.1:${server.address().port}/__harness.html`);
 await page.addScriptTag({ url: "/lib/codemirror.js" });
@@ -37,7 +40,7 @@ await page.addScriptTag({ url: "/mode/javascript/javascript.js" });
 await page.waitForFunction(() => window.CodeMirror);
 await page.evaluate(() => document.fonts.ready);
 
-const out = await page.evaluate(async () => {
+out = await page.evaluate(async () => {
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const results = { version: CodeMirror.version, cases: {} };
   // The visible line's style spans as [length-pairs]: line.styles is [from?, to, style, ...] with the leading mode info.
@@ -63,7 +66,9 @@ const out = await page.evaluate(async () => {
   await run("w02_no_style_difference", body(3000), 2000);
   return results;
 });
-await browser.close();
-server.close();
+} finally {
+  await browser?.close();
+  server.close();
+}
 console.log(JSON.stringify(out, null, 1));
 if (OUT) await writeFile(OUT, JSON.stringify(out, null, 1) + "\n");

@@ -28,6 +28,16 @@ fn body(n: usize) -> String {
     vec!["var x = 1;"; n].join("\n")
 }
 
+/// Runs worker slices until the worker has nothing left; bounded so a stuck worker fails.
+fn drain(cm: &mut Editor, name: &str) {
+    for _ in 0..10_000 {
+        if !cm.highlight_work(200) {
+            return;
+        }
+    }
+    panic!("{name}: highlight worker did not finish");
+}
+
 fn replay(name: &str, value: &str, nested: bool) {
     let rec = &data()["cases"][name];
     let mut cm = Editor::new(
@@ -65,10 +75,16 @@ fn replay(name: &str, value: &str, nested: bool) {
     );
     if nested {
         // `runInOp` inside an operation joins it: one display update at its end.
-        cm.run_op(|cm| while cm.highlight_work(200) {});
+        cm.run_op(|cm| drain(cm, name));
     } else {
-        while cm.highlight_work(200) {}
+        drain(&mut cm, name);
     }
+    // The recording waits until CM5's frontier passes the viewport; the Rust worker has to
+    // finish (it runs to the end of the document), which includes the viewport.
+    assert!(
+        rec["final"]["frontier_reached"].as_bool().unwrap(),
+        "{name}: fixture frontier"
+    );
     assert_eq!(
         updates.get(),
         rec["final"]["updates"].as_u64().unwrap(),
