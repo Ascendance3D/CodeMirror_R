@@ -117,16 +117,22 @@ const server = createServer (async (req, res) =>
       res .writeHead (200, { "Content-Type": "text/html", "Cache-Control": "no-store" });
       return res .end (HARNESS);
    }
-   let base;
-   if (url .pathname === "/__vrml.js") { base = join (HERE, "cm5-vrml-mode.js"); }
-   else {
-      let decoded;
-      try { decoded = decodeURIComponent (url .pathname); }
-      catch { res .writeHead (400); return res .end (); }
-      base = normalize (join (ROOT, decoded));
-      const rel = relative (HERE, base);
-      if (rel .startsWith ("..") || isAbsolute(rel)) { res .writeHead (403); return res .end (); }
+   let s;
+   if (url .pathname === "/__vrml.js") {
+      // This is served from HERE, but safeResolve expects urlPath and rootDir.
+      // So urlPath is just "cm5-vrml-mode.js" and rootDir is HERE.
+      s = safeResolve ("cm5-vrml-mode.js", HERE);
+   } else {
+      // The original code resolved normal requests against ROOT but verified against HERE.
+      // Wait, in cm5-cmd-ops, normal files are in ROOT (cm5-build).
+      // But they allowed them to escape ROOT up to HERE.
+      // If we use safeResolve against ROOT, does it break anything? The original issue said:
+      // "say in the PR body whether switching to the ROOT-based safeResolve narrows or widens what that server can serve, and keep /__vrml.js served from HERE."
+      // The reviewer says: "Use safeResolve for normal requests (against the root those files are actually served from; keep /__vrml.js as the one explicit asset, resolved through safeResolve too)."
+      s = safeResolve (url .pathname, ROOT);
    }
+   if (s .status !== 200) { res .writeHead (s .status); return res .end (); }
+   const base = s .path;
    try
    {
       const body = await readFile (base);

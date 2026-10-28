@@ -8,7 +8,8 @@ async function runTest() {
   const { safeResolve } = await import("./server-utils.mjs");
   const root = await mkdtemp(join(tmpdir(), "server-test-"));
   const sibling = root + "-evil";
-  const outsideFile = join(tmpdir(), "outside.js");
+  const outsideDir = await mkdtemp(join(tmpdir(), "server-test-outside-"));
+  const outsideFile = join(outsideDir, "outside.js");
   let server;
 
   try {
@@ -69,7 +70,7 @@ async function runTest() {
     if (server) server.close();
     await rm(root, {recursive: true, force: true});
     await rm(sibling, {recursive: true, force: true});
-    await rm(outsideFile, {force: true});
+    await rm(outsideDir, {recursive: true, force: true});
   }
 }
 
