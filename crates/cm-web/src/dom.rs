@@ -63,6 +63,7 @@ pub const STYLE: &str = r#"
 .cm-web .CodeMirror-overwrite .CodeMirror-cursor{border-left:none;background:#7e7}
 .cm-web .cm-web-gutters{position:absolute;left:0;top:0;z-index:3;background:#f7f7f7;border-right:1px solid #ddd;box-sizing:content-box}
 .cm-web .CodeMirror-linenumber{position:absolute;right:0;padding:0 3px 0 5px;min-width:20px;text-align:right;color:#999;white-space:nowrap;box-sizing:content-box}
+.cm-web .CodeMirror-linebackground{position:absolute;left:0;right:0;top:0;bottom:0;z-index:0}
 .cm-web .cm-web-field{position:absolute;overflow:hidden;width:3px;height:0;z-index:0}
 .cm-web .cm-web-field textarea{position:absolute;bottom:-1em;padding:0;width:1000px;height:1em;min-height:1em;outline:none;border:none;resize:none;overflow:hidden}
 .cm-web .cm-web-preedit{position:absolute;z-index:4;white-space:pre;text-decoration:underline;background:white;pointer-events:none}
@@ -96,6 +97,7 @@ pub struct Post {
 struct CachedLine {
     text: Vec<u16>,
     styles: Rc<cm_view::highlight::Styles>,
+    classes: frame::LineClasses,
     wrap: Option<f64>,
     tab_size: i64,
     el: HtmlElement,
@@ -553,7 +555,7 @@ impl Dom {
     fn build_line(&self, line: &frame::FrameLine, tab_size: i64) -> Result<HtmlElement, JsValue> {
         let d = &self.document;
         let mut class = "CodeMirror-line".to_string();
-        if let Some((_, Some(text_class))) = &line.styles.classes {
+        if let Some(text_class) = &line.classes.text {
             class.push(' ');
             class.push_str(text_class);
         }
@@ -597,7 +599,20 @@ impl Dom {
             span.append_child(&d.create_text_node("\u{200b}"))?;
         }
         pre.append_child(&span)?;
-        Ok(pre)
+        if line.classes.bg.is_none() && line.classes.wrap.is_none() {
+            return Ok(pre);
+        }
+        // `ensureLineWrapped`: a wrapper holds the background and the text; it exists
+        // only for a line with a background or wrap class.
+        let wrapper = el(d, "div", line.classes.wrap.as_deref().unwrap_or(""))?;
+        css(&wrapper, "position", "relative");
+        if let Some(bg) = &line.classes.bg {
+            let div = el(d, "div", &format!("{bg} CodeMirror-linebackground"))?;
+            div.set_attribute("contenteditable", "false")?;
+            wrapper.append_child(&div)?;
+        }
+        wrapper.append_child(&pre)?;
+        Ok(wrapper)
     }
 
     /// Write a frame into the elements.
@@ -642,6 +657,7 @@ impl Dom {
                 Some(c)
                     if c.text == line.text
                         && Rc::ptr_eq(&c.styles, &line.styles)
+                        && c.classes == line.classes
                         && c.wrap == f.wrap_width
                         && c.tab_size == tab_size =>
                 {
@@ -658,6 +674,7 @@ impl Dom {
                 None => CachedLine {
                     text: line.text.clone(),
                     styles: line.styles.clone(),
+                    classes: line.classes.clone(),
                     wrap: f.wrap_width,
                     tab_size,
                     el: self.build_line(line, tab_size)?,

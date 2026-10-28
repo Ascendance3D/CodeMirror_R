@@ -23,6 +23,11 @@ pub(crate) struct Line {
     pub state_after: Option<Rc<dyn Any>>,
     /// `line.styles`, owned by a view; `updateLine` clears it.
     pub styles: Option<Rc<dyn Any>>,
+    /// `line.textClass`, `bgClass`, `wrapClass`, `gutterClass` (`addLineClass`).
+    pub text_class: Option<String>,
+    pub bg_class: Option<String>,
+    pub wrap_class: Option<String>,
+    pub gutter_class: Option<String>,
     /// Line handle listeners (`change`, `delete`), allocated on first use.
     pub events: Option<Box<LineEvents>>,
 }
@@ -80,6 +85,10 @@ pub(crate) fn new_line(text: Text, spans: Option<SpanArr>) -> LineRef {
         parent: None,
         state_after: None,
         styles: None,
+        text_class: None,
+        bg_class: None,
+        wrap_class: None,
+        gutter_class: None,
         events: None,
     }));
     attach_marked_spans(&line, spans);
@@ -91,6 +100,22 @@ pub(crate) fn new_line(text: Text, spans: Option<SpanArr>) -> LineRef {
 pub struct LineHandle(pub(crate) LineRef);
 
 impl LineHandle {
+    /// `line.textClass`: the classes `addLineClass(line, "text", ...)` set.
+    pub fn text_class(&self) -> Option<String> {
+        self.0.borrow().text_class.clone()
+    }
+    /// `line.bgClass` (`addLineClass(line, "background", ...)`).
+    pub fn bg_class(&self) -> Option<String> {
+        self.0.borrow().bg_class.clone()
+    }
+    /// `line.wrapClass` (`addLineClass(line, "wrap", ...)`).
+    pub fn wrap_class(&self) -> Option<String> {
+        self.0.borrow().wrap_class.clone()
+    }
+    /// `line.gutterClass` (`addLineClass(line, "gutter", ...)`).
+    pub fn gutter_class(&self) -> Option<String> {
+        self.0.borrow().gutter_class.clone()
+    }
     /// `on("change", f)`: the line's text or markers changed (delayed).
     pub fn on_change<F: Fn(&LineHandle, &ChangeObj) + 'static>(&self, f: F) -> ListenerId {
         let mut l = self.0.borrow_mut();
