@@ -986,14 +986,22 @@ fn on_mouse_up(inner: &mut Inner, e: &MouseEvent) -> Post {
     Post::default()
 }
 
-/// `gecko` from src/util/browser.js: `/gecko\/\d/i.test(navigator.userAgent)`.
+/// `gecko` from src/util/browser.js: `/gecko\/\d/i.test(navigator.userAgent)`. The user
+/// agent does not change during a page's life, so it is read once.
 fn is_gecko() -> bool {
-    let Some(nav) = web_sys::window().map(|w| w.navigator()) else {
-        return false;
-    };
-    let ua = nav.user_agent().unwrap_or_default().to_ascii_lowercase();
-    ua.match_indices("gecko/")
-        .any(|(i, m)| ua[i + m.len()..].starts_with(|c: char| c.is_ascii_digit()))
+    thread_local! {
+        static GECKO: std::cell::OnceCell<bool> = const { std::cell::OnceCell::new() };
+    }
+    GECKO.with(|g| {
+        *g.get_or_init(|| {
+            let Some(nav) = web_sys::window().map(|w| w.navigator()) else {
+                return false;
+            };
+            let ua = nav.user_agent().unwrap_or_default().to_ascii_lowercase();
+            ua.match_indices("gecko/")
+                .any(|(i, m)| ua[i + m.len()..].starts_with(|c: char| c.is_ascii_digit()))
+        })
+    })
 }
 
 /// The deltas CM5's `onScrollWheel` applies to a wheel with `dx != 0` outside Gecko
@@ -1024,6 +1032,32 @@ fn wheel_with_dx(
     (dx, dy)
 }
 
+/// What `onScrollWheel` leaves to the editor for a wheel of `(dx, dy)` pixels.
+#[derive(Debug, PartialEq)]
+enum WheelAction {
+    /// The browser scrolls the scroller (Gecko with `dx != 0`: CM5 does not handle the
+    /// event and does not cancel it), and the `scroll` event syncs the editor.
+    Native,
+    /// The editor scrolls by these deltas through `Input::Wheel`; the default is cancelled.
+    Editor(f64, f64),
+}
+
+fn wheel_action(ed: &cm_view::Editor, gecko: bool, (dx, dy): (f64, f64)) -> WheelAction {
+    if dx == 0.0 {
+        return WheelAction::Editor(dx, dy);
+    }
+    if gecko {
+        return WheelAction::Native;
+    }
+    let (max_top, max_left) = ed.max_scroll();
+    let (dx, dy) = wheel_with_dx(
+        (ed.display.scroll_top, ed.display.scroll_left),
+        (max_top, max_left),
+        (dx, dy),
+    );
+    WheelAction::Editor(dx, dy)
+}
+
 fn on_wheel(inner: &mut Inner, e: &WheelEvent) -> Post {
     if e.ctrl_key() {
         return Post::default();
@@ -1034,15 +1068,11 @@ fn on_wheel(inner: &mut Inner, e: &WheelEvent) -> Post {
         1 => ed.metrics.text_height,
         _ => ed.display.height,
     };
-    let (mut dx, mut dy) = (e.delta_x() * unit, e.delta_y() * unit);
-    if dx != 0.0 && !is_gecko() {
-        let (max_top, max_left) = ed.max_scroll();
-        (dx, dy) = wheel_with_dx(
-            (ed.display.scroll_top, ed.display.scroll_left),
-            (max_top, max_left),
-            (dx, dy),
-        );
-    }
+    let delta = (e.delta_x() * unit, e.delta_y() * unit);
+    let WheelAction::Editor(dx, dy) = wheel_action(ed, is_gecko(), delta) else {
+        // Native scrolling: neither cancelled nor applied here.
+        return Post::default();
+    };
     // The editor scrolls; the browser's default scroll would move it a second time.
     e.prevent_default();
     inner.session.handle(Input::Wheel { dx, dy });
@@ -1152,39 +1182,75 @@ mod tests {
     use cm_modes::Spec;
     use cm_view::{CoordSys, Editor, EditorOptions};
 
-    /// Every recorded wheel (CM5 5.65.21, Chromium 151 and WebKit 26.5: not Gecko):
-    /// the offsets after `Input::Wheel` with `wheel_with_dx`'s deltas are CM5's. Firefox
-    /// scrolls natively, so its wheels pass through unchanged; those are replayed where
-    /// the browser's own scrolling is one exact move (not the partial `d_1_neg_big_to_zero`).
+    /// Every recorded wheel (CM5 5.65.21, Chromium 151, Firefox and WebKit) through the
+    /// decision `on_wheel` makes (`wheel_action`) and the editor's own `Input::Wheel`.
+    /// Gecko with `dx != 0` is left to the browser (`Native`); its recorded offsets are the
+    /// browser's and are checked by the browser harness, not here.
     #[test]
-    fn wheel_with_dx_matches_the_recorded_browsers() {
+    fn wheel_action_through_input_wheel_matches_the_recorded_browsers() {
+        use cm_view::app::{App, AppOptions, Input, MemClipboard};
         let rec: serde_json::Value =
             serde_json::from_str(include_str!("../tests/data/cm5-wheel-dx.json")).unwrap();
-        let cases = rec["cases"].as_object().unwrap();
-        assert!(cases.len() >= 20);
-        let mut replayed = 0;
-        for (name, c) in cases {
-            let f = |v: &serde_json::Value| v.as_f64().unwrap();
+        let f = |v: &serde_json::Value| v.as_f64().unwrap();
+        let text = vec!["x".repeat(150); 60].join("\n");
+        let (mut replayed, mut native) = (0, 0);
+        for (name, c) in rec["cases"].as_object().unwrap() {
             let (dx, dy) = (f(&c["dx"]), f(&c["dy"]));
-            let max = (f(&c["maxTop"]), f(&c["maxLeft"]));
             for (browser, r) in c["by"].as_object().unwrap() {
                 let gecko = rec["browsers"][browser]["gecko"].as_bool().unwrap();
-                let at = (f(&r["before"]["top"]), f(&r["before"]["left"]));
-                let want = (f(&r["after"]["top"]), f(&r["after"]["left"]));
-                let (ax, ay) = if dx != 0.0 && !gecko {
-                    wheel_with_dx(at, max, (dx, dy))
-                } else {
-                    (dx, dy)
-                };
-                let got = ((at.0 + ay).clamp(0.0, max.0), (at.1 + ax).clamp(0.0, max.1));
-                if gecko && name == "d_1_neg_big_to_zero" {
-                    continue;
+                let mut app = App::new(
+                    &text,
+                    None,
+                    Metrics::oracle(),
+                    &AppOptions {
+                        no_line_numbers: true,
+                        ..AppOptions::default()
+                    },
+                    Box::new(MemClipboard::default()),
+                );
+                app.handle(Input::Resize {
+                    width: 600.0,
+                    height: 300.0,
+                });
+                // The browser's scroller ranges are whole pixels; the editor's are not.
+                let (mt, ml) = app.editor.max_scroll();
+                assert!(
+                    (mt - f(&c["maxTop"])).abs() < 1.0 && (ml - f(&c["maxLeft"])).abs() < 1.0,
+                    "{name}: the recorded ranges"
+                );
+                let (top, left) = (f(&r["before"]["top"]), f(&r["before"]["left"]));
+                app.editor.scroll_to(Some(left), Some(top));
+                assert_eq!(
+                    (
+                        app.editor.display.scroll_top,
+                        app.editor.display.scroll_left
+                    ),
+                    (top, left),
+                    "{name} in {browser}: start"
+                );
+                match wheel_action(&app.editor, gecko, (dx, dy)) {
+                    WheelAction::Native => {
+                        assert!(gecko && dx != 0.0, "{name} in {browser}");
+                        native += 1;
+                    }
+                    WheelAction::Editor(ax, ay) => {
+                        assert!(!(gecko && dx != 0.0), "{name} in {browser}");
+                        app.handle(Input::Wheel { dx: ax, dy: ay });
+                        assert_eq!(
+                            (
+                                app.editor.display.scroll_top.floor(),
+                                app.editor.display.scroll_left.floor()
+                            ),
+                            (f(&r["after"]["top"]), f(&r["after"]["left"])),
+                            "{name} in {browser}"
+                        );
+                        replayed += 1;
+                    }
                 }
-                assert_eq!(got, want, "{name} in {browser}");
-                replayed += 1;
             }
         }
-        assert_eq!(replayed, 59);
+        // 20 cases x 3 browsers; Firefox leaves the 18 with dx != 0 to the browser.
+        assert_eq!((replayed, native), (42, 18));
     }
 
     #[test]

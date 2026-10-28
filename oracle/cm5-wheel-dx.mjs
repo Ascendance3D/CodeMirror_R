@@ -10,7 +10,7 @@
 import { createServer } from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { extname, join, normalize } from "node:path";
+import { extname, isAbsolute, join, normalize, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 if (!process.env.CM5_BUILD_DIR) throw new Error("set CM5_BUILD_DIR");
@@ -21,11 +21,21 @@ const args = process.argv.slice(2);
 const OUT = args.includes("--out") ? args[args.indexOf("--out") + 1] : null;
 const HARNESS = `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/lib/codemirror.css">
 <style>body { margin: 0; padding-top: 200px } .CodeMirror { font-family: "DejaVu Sans Mono"; font-size: 32px; line-height: 38px } .CodeMirror-scroll { overflow-anchor: none }</style>`;
+// The file a request path names under `root`: a status (400 for a malformed %-escape, 403 outside the root) or the path.
+// Containment is by path component (`relative`), not by string prefix, so `<root>-other` is outside.
+function resolveUnder(root, pathname) {
+  let decoded;
+  try { decoded = decodeURIComponent(pathname); } catch { return 400; }
+  const path = normalize(join(root, decoded));
+  const rel = relative(root, path);
+  return rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel) ? 403 : path;
+}
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");
   if (url.pathname === "/__harness.html") { res.writeHead(200, { "Content-Type": "text/html" }); return res.end(HARNESS); }
-  const path = normalize(join(ROOT, decodeURIComponent(url.pathname)));
-  if (!path.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
+  const target = resolveUnder(ROOT, url.pathname);
+  if (typeof target === "number") { res.writeHead(target); return res.end(); }
+  const path = target;
   try { const body = await readFile(path); res.writeHead(200, { "Content-Type": { ".js": "text/javascript", ".css": "text/css" }[extname(path)] || "application/octet-stream" }); res.end(body); }
   catch { res.writeHead(404); res.end(); }
 });
