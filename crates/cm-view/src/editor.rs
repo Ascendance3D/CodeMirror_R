@@ -1757,7 +1757,7 @@ impl Editor {
         let mut hs = self.hs.borrow_mut();
         highlight::highlight_worker(&self.doc, &self.mode, &mut hs, max_lines).1
     }
-    /// `getStateAfter(line, precise)` without returning the state.
+    /// `getStateAfter(line, precise)`.
     pub fn get_state_after(&self, line: Option<i64>, precise: bool) -> cm_modes::State {
         let doc = &self.doc;
         let l = line.unwrap_or(doc.first_line() + doc.line_count() as i64 - 1);
