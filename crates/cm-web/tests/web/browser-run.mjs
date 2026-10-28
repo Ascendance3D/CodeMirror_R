@@ -35,7 +35,7 @@ const NO_CM5 = flag("--no-cm5");
 const OUT = resolve(opt("--out") ?? ".");
 const BROWSER_TIMEOUT = Number(opt("--browser-timeout") ?? 300) * 1000;
 const INJECT = opt("--inject");
-const FAULTS = ["launch-fail", "context-fail", "nav-fail", "page-throw", "reject", "compare-fail", "drop-section", "hang"];
+const FAULTS = ["launch-fail", "context-fail", "nav-fail", "page-throw", "reject", "compare-fail", "drop-section", "drop-web-check", "hang"];
 mkdirSync(OUT, { recursive: true });
 const EXIT = { PASS: 0, FAIL: 1, BLOCKED: 2, UNSUPPORTED: 2 };
 // Write the results and the summary, and set the exit status (0 only when every browser passed).
@@ -121,9 +121,12 @@ const LONG = Array.from({ length: 300 }, (_, i) => `line ${i} ${"x".repeat(i % 7
 const MOBILE = { "chromium-mobile": "Pixel 7", "webkit-mobile": "iPhone 15" };
 const BROWSERS = ["chromium", "firefox", "webkit", ...Object.keys(MOBILE)];
 
-// The CM5 comparisons each run must make, by section (60 in all). A section may run
+// The CM5 comparisons each run must make, by section (88 in all). A section may run
 // fewer only when the environment cannot perform its action, which is recorded as
 // UNSUPPORTED; any other shortfall fails the run.
+// REQUIRED counts comparisons with CM5 (needs the reference). REQUIRED_WEB counts the cm-web-only checks that
+// must run in every mode, with or without the reference; a run that skips one fails.
+const REQUIRED_WEB = { window_scroll: 2 };
 const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 39, window_scroll: 10, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2 };
 
 // One browser run. It always returns a result with a status, and it closes the
@@ -452,8 +455,10 @@ async function runChecks(name, res, own) {
     winSeq[kind] = rows;
   }
   res.window_scroll = winSeq;
-  check("window_scroll.inside_leaves_page", 0, winSeq["cm-web"].inside.wy);
-  check("window_scroll.top_moves_scroller_exactly", true, winSeq["cm-web"]["top_up_1"].top > 0 && winSeq["cm-web"]["top_up_30"].top > 0);
+  if (INJECT !== "drop-web-check") {
+    check("window_scroll.inside_leaves_page", 0, winSeq["cm-web"].inside.wy);
+    check("window_scroll.top_moves_scroller_exactly", true, winSeq["cm-web"]["top_up_1"].top > 0 && winSeq["cm-web"]["top_up_30"].top > 0);
+  }
   if (haveCm5) for (const [label] of WIN_CASES) {
     const want = winSeq.cm5[label], got = winSeq["cm-web"][label];
     dcheck(`window_scroll.${label}.top`, Math.round(want.top), Math.round(got.top));
@@ -689,17 +694,20 @@ async function runChecks(name, res, own) {
   // Firefox answers readText with a paste prompt that stays open; close it.
   await page.keyboard.press("Escape");
   await page.waitForTimeout(200);
-  // Every required comparison ran, or its section recorded why the environment cannot run it.
-  if (haveCm5) {
-    const sections = Object.fromEntries(Object.entries(REQUIRED).map(([sec, want]) => {
-      const mine = res.checks.filter(c => c.name.split(".")[0] === sec);
-      const ran = mine.filter(c => c.differential).length;
-      const unsupported = mine.filter(c => c.unsupported).map(c => `${c.name}: ${c.unsupported}`);
-      return [sec, { required: want, ran, ...(unsupported.length ? { unsupported } : {}), complete: ran === want || (ran < want && unsupported.length > 0) }];
-    }));
-    const incomplete = Object.keys(sections).filter(s => !sections[s].complete);
-    res.integrity = { reference: "loaded", sections, complete: incomplete.length === 0, ...(incomplete.length ? { incomplete } : {}) };
-  }
+  // Every required comparison ran, or its section recorded why the environment cannot run it. The cm-web-only
+  // checks (REQUIRED_WEB) are required with or without the reference.
+  const web = Object.fromEntries(Object.entries(REQUIRED_WEB).map(([sec, want]) => {
+    const ran = res.checks.filter(c => c.name.split(".")[0] === sec && !c.differential).length;
+    return [sec, { required: want, ran, complete: ran === want }];
+  }));
+  const sections = haveCm5 ? Object.fromEntries(Object.entries(REQUIRED).map(([sec, want]) => {
+    const mine = res.checks.filter(c => c.name.split(".")[0] === sec);
+    const ran = mine.filter(c => c.differential).length;
+    const unsupported = mine.filter(c => c.unsupported).map(c => `${c.name}: ${c.unsupported}`);
+    return [sec, { required: want, ran, ...(unsupported.length ? { unsupported } : {}), complete: ran === want || (ran < want && unsupported.length > 0) }];
+  })) : undefined;
+  const incomplete = [...Object.keys(web).filter(s => !web[s].complete).map(s => `${s} (cm-web only)`), ...Object.keys(sections ?? {}).filter(s => !sections[s].complete)];
+  res.integrity = { reference: haveCm5 ? "loaded" : "not supplied: comparisons not counted", web_only: web, ...(sections ? { sections } : {}), complete: incomplete.length === 0, ...(incomplete.length ? { incomplete } : {}) };
 }
 
 const out = [];
