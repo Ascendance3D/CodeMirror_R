@@ -193,7 +193,7 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
         let number = editor
             .options
             .line_numbers
-            .then(|| (line + editor.options.first_line_number - first).to_string());
+            .then(|| editor.line_number_for(line));
         let styles = editor.line_styles(line);
         lines.push(FrameLine {
             id: handle.id(),
@@ -251,7 +251,7 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
         if !r.empty() || r.head.line < from || r.head.line >= to {
             continue;
         }
-        cursors.push(editor.cursor_coords(r.head, CoordSys::Div));
+        cursors.push(editor.cursor_coords(r.head, CoordSys::Doc));
     }
 
     Frame {

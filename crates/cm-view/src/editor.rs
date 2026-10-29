@@ -20,6 +20,7 @@
 //! * bidi in measurement, cursors, selection drawing and clicks (left to right only;
 //!   `moveVisually` and `endOfLine` do use the ported bidi ordering).
 
+use std::any::Any;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
@@ -37,9 +38,10 @@ use cm_core::{
 use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_mode};
 
 use crate::events::{
-    ChangeHandler, ChangesHandler, Cx, DisplayEvent, EditorEvents, EditorHandler, EditorShared,
-    GutterHandler, InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler,
-    NameHandler, OpRecord, Parked, ViewChange, ViewportHandler, WidgetHandler, WithSelf, finish,
+    ChangeHandler, ChangesHandler, Cx, DisplayEvent, DomEvent, EditorEvents, EditorHandler,
+    EditorShared, GutterHandler, InputChange, InputReadHandler, LineHandler, MarkerClearedHandler,
+    MarkerHandler, NameHandler, NamedEditorHandler, OpRecord, Parked, ViewChange, ViewportHandler,
+    WidgetHandler, WithSelf, finish,
 };
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
@@ -70,6 +72,9 @@ pub struct EditorOptions {
     pub line_wise_copy_cut: bool,
     pub paste_lines_per_selection: bool,
     pub cursor_scroll_margin: f64,
+    /// `cursorBlinkRate` (ms): the cursor toggles at this period while focused; 0
+    /// shows it without blinking, a negative rate hides it ([`Editor::restart_blink`]).
+    pub cursor_blink_rate: f64,
     pub viewport_margin: i64,
     pub drag_drop: bool,
     pub undo_depth: f64,
@@ -84,6 +89,14 @@ pub struct EditorOptions {
     pub line_separator: Option<String>,
     /// The platform is a Mac (`mac`, `flipCtrlCmd`).
     pub mac: bool,
+    /// `lineNumberFormatter` (`None`: the number itself).
+    pub line_number_formatter: Option<crate::options::LineNumberFormatter>,
+    /// `phrases`: translations for [`Editor::phrase`].
+    pub phrases: Option<HashMap<String, String>>,
+    /// `autofocus`: focus the editor 20 ms after it is built ([`Editor::run_timers`]).
+    pub autofocus: bool,
+    /// `finishInit`: run at the end of the constructor, before the init hooks.
+    pub finish_init: Option<crate::options::InitHook>,
     /// `gutters`: gutter columns, left to right. `CodeMirror-linenumbers` places the
     /// line numbers (it is dropped without `lineNumbers`, and appended when absent).
     pub gutters: Vec<GutterSpec>,
@@ -172,6 +185,7 @@ impl Default for EditorOptions {
             line_wise_copy_cut: true,
             paste_lines_per_selection: true,
             cursor_scroll_margin: 0.0,
+            cursor_blink_rate: 530.0,
             viewport_margin: 10,
             drag_drop: true,
             undo_depth: 200.0,
@@ -182,20 +196,140 @@ impl Default for EditorOptions {
             add_mode_class: false,
             line_separator: None,
             mac: cfg!(target_os = "macos"),
+            line_number_formatter: None,
+            phrases: None,
+            autofocus: false,
+            finish_init: None,
             gutters: Vec::new(),
             gutter_class_widths: Vec::new(),
         }
     }
 }
 
-/// Coordinate systems (`intoCoordSystem` contexts): "line" (line-local), "div"
-/// (`display.lineDiv`, here: document y without the top padding) and "local"
-/// (the sizer, i.e. including `paddingTop`).
+/// Coordinate systems (`intoCoordSystem` / `fromCoordSystem` contexts,
+/// src/measurement/position_measurement.js:305-345).
+///
+/// The native "window" is the host's drawing surface: [`Display::window_origin`]
+/// is where the editor's top-left corner (`display.wrapper.getBoundingClientRect()`)
+/// sits in it, and [`Display::page_scroll`] is the host page's scroll offset
+/// (`pageXOffset`/`pageYOffset`), so "page" = "window" + `page_scroll`. Both
+/// default to (0, 0): a host that does not set them gets window = page = editor
+/// relative coordinates. The text area (`display.lineSpace`) starts at
+/// `window_origin + (gutter_width - scroll_left, paddingTop - scroll_top + viewOffset)`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CoordSys {
+    /// "line": relative to the top of the line.
     Line,
+    /// "div": relative to `display.lineSpace`, whose top is the top of the
+    /// rendered range (document y minus [`Editor::view_offset`]).
     Div,
+    /// "local": relative to the sizer (document y plus `paddingTop`).
     Local,
+    /// "page": the host window plus [`Display::page_scroll`]. The default of the
+    /// `*_in` methods, as in CM5.
+    Page,
+    /// "window": the host window ([`Display::window_origin`]).
+    Window,
+    /// The port's internal frame: document y without the top padding (CM5 "div"
+    /// with a `viewOffset` of 0). The renderer and vertical motion use it, with
+    /// [`Editor::coords_char`] and [`Editor::line_at_height`], which take document y.
+    Doc,
+}
+
+/// The `start` argument of `cm.cursorCoords(start, mode)`: `null` (the primary
+/// head), `true` (`from()`), `false` (`to()`) or a position (clipped).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum CoordsStart {
+    Head,
+    From,
+    To,
+    Pos(Pos),
+}
+
+impl From<Pos> for CoordsStart {
+    fn from(p: Pos) -> Self {
+        CoordsStart::Pos(p)
+    }
+}
+impl From<bool> for CoordsStart {
+    fn from(b: bool) -> Self {
+        if b {
+            CoordsStart::From
+        } else {
+            CoordsStart::To
+        }
+    }
+}
+impl From<Option<bool>> for CoordsStart {
+    fn from(b: Option<bool>) -> Self {
+        b.map_or(CoordsStart::Head, CoordsStart::from)
+    }
+}
+
+/// The `line` argument of `cm.heightAtLine(line, ...)`: a line number or a handle.
+#[derive(Clone, Debug)]
+pub enum LineArg {
+    Number(i64),
+    Handle(LineHandle),
+}
+
+impl From<i64> for LineArg {
+    fn from(n: i64) -> Self {
+        LineArg::Number(n)
+    }
+}
+impl From<LineHandle> for LineArg {
+    fn from(h: LineHandle) -> Self {
+        LineArg::Handle(h)
+    }
+}
+impl From<&LineHandle> for LineArg {
+    fn from(h: &LineHandle) -> Self {
+        LineArg::Handle(h.clone())
+    }
+}
+
+/// `cm.getScrollInfo()` (src/edit/methods.js:365): the scroll offsets, the size of
+/// the scrollable content (`scrollHeight`/`scrollWidth` less the scrollbar gap) and
+/// the visible size (`displayHeight` / `displayWidth`, gutters included).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ScrollInfo {
+    pub left: f64,
+    pub top: f64,
+    pub height: f64,
+    pub width: f64,
+    pub client_height: f64,
+    pub client_width: f64,
+}
+
+/// The `range` argument of `cm.scrollIntoView(range, margin)` (methods.js:373):
+/// `null` (the primary cursor, with `cursorScrollMargin` when no margin is given),
+/// a line number (its start), a position, a `{from, to}` range, a
+/// `{left, top, right, bottom}` box in "local" coordinates, or a range of two boxes.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ScrollTarget {
+    Cursor,
+    Line(i64),
+    Pos(Pos),
+    Range(Pos, Pos),
+    Coords(Rect),
+    CoordsRange(Rect, Rect),
+}
+
+impl From<i64> for ScrollTarget {
+    fn from(n: i64) -> Self {
+        ScrollTarget::Line(n)
+    }
+}
+impl From<Pos> for ScrollTarget {
+    fn from(p: Pos) -> Self {
+        ScrollTarget::Pos(p)
+    }
+}
+impl From<Rect> for ScrollTarget {
+    fn from(r: Rect) -> Self {
+        ScrollTarget::Coords(r)
+    }
 }
 
 /// The parts of `cm.display` the model needs.
@@ -208,6 +342,11 @@ pub struct Display {
     pub window_height: Option<f64>,
     pub scroll_top: f64,
     pub scroll_left: f64,
+    /// Where the editor's top-left corner sits in the host window, for the
+    /// "window" and "page" coordinate systems (see [`CoordSys`]). Set by the host.
+    pub window_origin: (f64, f64),
+    /// The host page's scroll offset (`pageXOffset`, `pageYOffset`), for "page".
+    pub page_scroll: (f64, f64),
     /// `display.shift`: shift is held during the current key/mouse event.
     pub shift: bool,
     pub view_from: i64,
@@ -365,6 +504,15 @@ pub struct Editor {
     pub(crate) force_update: bool,
     /// `state.focused`.
     focused: bool,
+    /// When `restartBlink` last ran (`display.blinker`), on the host clock; `None`
+    /// while blurred (`clearInterval(display.blinker)`).
+    blink_start: Option<f64>,
+    /// `onBlur`'s 150 ms timeout that resets `display.shift`.
+    blur_shift_at: Option<f64>,
+    /// The constructor's 20 ms `autofocus` timeout (`onFocus` unless focused).
+    autofocus_at: Option<f64>,
+    /// Values of options defined with [`crate::options::define_option`].
+    pub(crate) custom_options: Vec<(String, crate::options::OptionValue)>,
     op: OpState,
     /// The rect of the last end-of-operation `scrollToPos`, for `maybeScrollWindow`.
     window_scroll_rect: Option<Rect>,
@@ -538,6 +686,8 @@ impl Editor {
                 window_height: None,
                 scroll_top: 0.0,
                 scroll_left: 0.0,
+                window_origin: (0.0, 0.0),
+                page_scroll: (0.0, 0.0),
                 shift: false,
                 view_from: first,
                 view_to: first,
@@ -557,6 +707,10 @@ impl Editor {
             commands: crate::commands::builtin_commands(),
             force_update: false,
             focused: false,
+            blink_start: None,
+            blur_shift_at: None,
+            autofocus_at: None,
+            custom_options: Vec::new(),
             op: OpState::default(),
             window_scroll_rect: None,
             heights,
@@ -581,6 +735,12 @@ impl Editor {
         ed.measure_max_line(true);
         // The constructor's operation draws the display and reports its range.
         ed.display.reported_view = (ed.display.view_from, ed.display.view_to);
+        // `if (options.autofocus && !mobile) ... setTimeout(() => { if
+        // (this.hasFocus() && !this.state.focused) onFocus(this) }, 20)`.
+        if ed.options.autofocus {
+            ed.autofocus_at = Some(cm_core::clock::now() + 20.0);
+        }
+        ed.finish_init();
         Ok(ed)
     }
 
@@ -970,10 +1130,11 @@ impl Editor {
         self.shared.ls.borrow_mut().gutter_context_menu.on_rc(f)
     }
 
+    /// `lineNumberFor(cm.options, doc.first + doc.size - 1).length`
+    /// (line_numbers.js:34), with `lineNumberFormatter`.
     fn last_line_number_chars(&self) -> usize {
-        let last =
-            self.options.first_line_number + self.first_line() + self.doc.line_count() as i64 - 1;
-        last.to_string().len()
+        let last = self.first_line() + self.doc.line_count() as i64 - 1;
+        self.line_number_for(last).encode_utf16().count()
     }
 
     /// `maybeUpdateLineNumberWidth(cm)` (src/display/line_numbers.js:32): when the
@@ -1180,6 +1341,93 @@ impl Editor {
         let f: Rc<EditorHandler> = Rc::new(f);
         self.shared.ls.borrow_mut().blur.on_rc(f)
     }
+    /// `on("optionChange", f)`: `setOption` changed an option, with its name
+    /// (immediate, after the option's handler).
+    pub fn on_option_change(&self, f: impl Fn(&mut Cx, &str) + 'static) -> ListenerId {
+        let f: Rc<NameHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().option_change.on_rc(f)
+    }
+    /// `signal(cm, "optionChange", cm, name)`.
+    pub(crate) fn signal_option_change(&mut self, name: &str) {
+        let snap = self.shared.ls.borrow().option_change.snapshot();
+        for e in snap.iter() {
+            (e.f)(
+                &mut Cx {
+                    editor: self,
+                    others: &mut NoEditors,
+                },
+                name,
+            );
+        }
+    }
+    /// `on(cm, name, f)` for a string-named or custom event (addons signal
+    /// `"fold"`, `"startCompletion"`, ...): `f` gets the values of
+    /// [`Editor::signal_event`]. A name of a typed event (`"change"`, ...) is a
+    /// separate entry here and is reached only by `signal_event`. Remove it with
+    /// [`Editor::off`].
+    pub fn on_event(
+        &self,
+        name: &str,
+        f: impl Fn(&mut Cx, cm_core::Args<'_>) + 'static,
+    ) -> ListenerId {
+        self.on_event_rc(name, Rc::new(f))
+    }
+    /// [`Editor::on_event`] with a shared handler, for removal by identity
+    /// ([`Editor::off_event_fn`]).
+    pub fn on_event_rc(&self, name: &str, f: Rc<NamedEditorHandler>) -> ListenerId {
+        self.shared.ls.borrow_mut().named.on_rc(name, f)
+    }
+    /// `off(cm, name, f)`: remove the first handler of `name` that is `f`.
+    pub fn off_event_fn(&self, name: &str, f: &Rc<NamedEditorHandler>) -> bool {
+        let gone = self.shared.ls.borrow_mut().named.remove_fn(name, f);
+        gone.is_some()
+    }
+    /// `getHandlers(cm, name)`: the named handlers of `name` as of now (empty
+    /// when there are none); later `on`/`off` calls do not change it.
+    pub fn get_handlers(&self, name: &str) -> Rc<[cm_core::events::Entry<NamedEditorHandler>]> {
+        self.shared.ls.borrow().named.get_handlers(name)
+    }
+    /// `hasHandler(cm, name)` for the named table.
+    pub fn has_handler(&self, name: &str) -> bool {
+        self.shared.ls.borrow().named.has_handler(name)
+    }
+    /// `signal(cm, name, ...values)`: call the named handlers of `name` now, in
+    /// registration order, over the list as it was when the signal started.
+    pub fn signal_event(&mut self, name: &str, args: cm_core::Args<'_>) {
+        let hs = self.get_handlers(name);
+        for e in hs.iter() {
+            (e.f)(
+                &mut Cx {
+                    editor: self,
+                    others: &mut NoEditors,
+                },
+                args,
+            );
+        }
+    }
+    /// `on(cm, type, f)` for a DOM event the editor handles: `f` sees the event
+    /// before the editor and may pre-empt it ([`DomEvent::prevent_default`],
+    /// [`DomEvent::set_codemirror_ignore`]).
+    pub fn on_dom_event(&self, kind: &str, f: impl Fn(&mut Cx, &DomEvent) + 'static) -> ListenerId {
+        self.on_event(kind, move |cx, args| {
+            if let Some(e) = args.first().and_then(|a| a.downcast_ref::<DomEvent>()) {
+                f(cx, e)
+            }
+        })
+    }
+    /// `signalDOMEvent(cm, e, override)` (src/util/event.js:51): signal `e` to the
+    /// handlers of `override` (or `e.kind`); `true` when one of them called
+    /// `preventDefault` or set `codemirrorIgnore`, and the editor must leave the
+    /// event alone. The editor calls it at its input entry points (`key_down`,
+    /// `key_press`, `mouse_down`, `paste`) and before `maybeScrollWindow`
+    /// (`"scrollCursorIntoView"`); a host calls it for the events it handles itself.
+    pub fn signal_dom_event(&mut self, e: &DomEvent, override_: Option<&str>) -> bool {
+        let name = override_.unwrap_or(&e.kind).to_string();
+        if self.has_handler(&name) {
+            self.signal_event(&name, &[e as &dyn Any]);
+        }
+        e.default_prevented() || e.codemirror_ignore()
+    }
     /// `state.focused`.
     pub fn has_focus(&self) -> bool {
         self.focused
@@ -1187,24 +1435,112 @@ impl Editor {
     /// `onFocus`/`onBlur`: the host's window gained or lost focus. `focus`/`blur`
     /// handlers run immediately, only when the state changes (a `"nocursor"`
     /// read-only editor is not focused).
+    ///
+    /// Focusing restarts the cursor blink even when the editor was already focused
+    /// (`onFocus` ends with `restartBlink`). Blurring stops it and, 150 ms later
+    /// unless the editor is focused again, resets `display.shift` (a host timer:
+    /// [`Editor::run_timers`]).
     pub fn set_focused(&mut self, focused: bool) {
-        if focused == self.focused {
+        if focused != self.focused {
+            self.focused = focused;
+            let snap = {
+                let ls = self.shared.ls.borrow();
+                if focused {
+                    ls.focus.snapshot()
+                } else {
+                    ls.blur.snapshot()
+                }
+            };
+            for e in snap.iter() {
+                (e.f)(&mut Cx {
+                    editor: self,
+                    others: &mut NoEditors,
+                });
+            }
+        }
+        if focused {
+            self.restart_blink();
+        } else {
+            // `clearInterval(cm.display.blinker)`; `setTimeout(() => { if
+            // (!cm.state.focused) cm.display.shift = false }, 150)`.
+            self.blink_start = None;
+            self.blur_shift_at = Some(cm_core::clock::now() + 150.0);
+        }
+    }
+    /// `restartBlink(cm)` (src/display/selection.js:160): while focused, show the
+    /// cursor and start its blink period again now. The host draws the cursor when
+    /// [`Editor::cursor_blink_visible`] says so and wakes up after
+    /// [`Editor::next_blink_in`].
+    pub fn restart_blink(&mut self) {
+        if !self.focused {
             return;
         }
-        self.focused = focused;
-        let snap = {
-            let ls = self.shared.ls.borrow();
-            if focused {
-                ls.focus.snapshot()
-            } else {
-                ls.blur.snapshot()
-            }
+        self.blink_start = Some(cm_core::clock::now());
+    }
+    /// Whether the blinking cursor is shown now (`cursorDiv.style.visibility`;
+    /// unfocused, CM5's CSS hides the cursors). `cursorBlinkRate` > 0 toggles every
+    /// rate ms from the last [`Editor::restart_blink`], 0 always shows, < 0 hides.
+    /// With an unknown time (NaN) the cursor shows.
+    pub fn cursor_blink_visible(&self) -> bool {
+        let Some(start) = self.blink_start.filter(|_| self.focused) else {
+            return false;
         };
-        for e in snap.iter() {
-            (e.f)(&mut Cx {
-                editor: self,
-                others: &mut NoEditors,
-            });
+        let rate = self.options.cursor_blink_rate;
+        if rate < 0.0 {
+            return false;
+        }
+        if !(rate > 0.0) {
+            return true;
+        }
+        let elapsed = cm_core::clock::now() - start;
+        if !elapsed.is_finite() || elapsed < 0.0 {
+            return true;
+        }
+        ((elapsed / rate).floor() as i64) % 2 == 0
+    }
+    /// Milliseconds until the blinking cursor next toggles, `None` when it does
+    /// not blink (blurred, or `cursorBlinkRate` <= 0).
+    pub fn next_blink_in(&self) -> Option<f64> {
+        let start = self.blink_start.filter(|_| self.focused)?;
+        let rate = self.options.cursor_blink_rate;
+        if !(rate > 0.0) {
+            return None;
+        }
+        let elapsed = cm_core::clock::now() - start;
+        if !elapsed.is_finite() || elapsed < 0.0 {
+            return Some(rate);
+        }
+        Some(rate - elapsed % rate)
+    }
+    /// Milliseconds until [`Editor::run_timers`] has work (`onBlur`'s timeout).
+    pub fn next_timer_in(&self) -> Option<f64> {
+        let at = match (self.blur_shift_at, self.autofocus_at) {
+            (Some(a), Some(b)) => a.min(b),
+            (a, b) => a.or(b)?,
+        };
+        let d = at - cm_core::clock::now();
+        Some(if d.is_finite() { d.max(0.0) } else { 0.0 })
+    }
+    /// Run the editor's due timers: `onBlur`'s timeout resets `display.shift` when
+    /// the editor is still blurred.
+    pub fn run_timers(&mut self) {
+        if let Some(at) = self.autofocus_at {
+            let now = cm_core::clock::now();
+            if now >= at || !now.is_finite() {
+                self.autofocus_at = None;
+                if !self.focused {
+                    self.set_focused(true);
+                }
+            }
+        }
+        if let Some(at) = self.blur_shift_at {
+            let now = cm_core::clock::now();
+            if now >= at || !now.is_finite() {
+                self.blur_shift_at = None;
+                if !self.focused {
+                    self.display.shift = false;
+                }
+            }
         }
     }
     /// The host's `setTimeout(fireOrphanDelayed, 0)` for an editor on its own:
@@ -1287,7 +1623,11 @@ impl Editor {
             ensure = Some((from.line, to.line));
             // `maybeScrollWindow(cm, rect)` takes this rect; the engine has no window, so
             // an adapter that has one reads it with `take_window_scroll_rect`.
-            self.window_scroll_rect = Some(self.scroll_pos_into_view(from, to, margin));
+            let rect = self.scroll_pos_into_view(from, to, margin);
+            // maybeScrollWindow: `if (signalDOMEvent(cm, "scrollCursorIntoView")) return`.
+            if !self.signal_dom_event(&DomEvent::new("scrollCursorIntoView"), None) {
+                self.window_scroll_rect = Some(rect);
+            }
         }
         // regChange (view_tracking.js:13) and regLineChange (:78), in order, without
         // collapsed spans. The view array is not kept: `replaced` stands for
@@ -1516,7 +1856,7 @@ impl Editor {
 
     /// `clearCaches(cm)` (position_measurement.js:278): the longest line is measured
     /// again at the end of the operation when lines do not wrap.
-    fn clear_caches(&self) {
+    pub(crate) fn clear_caches(&self) {
         if !self.options.line_wrapping {
             self.heights.borrow_mut().max_line.changed = true;
         }
@@ -2014,7 +2354,7 @@ impl Editor {
         (t, l)
     }
 
-    fn invalidate_heights(&self) {
+    pub(crate) fn invalidate_heights(&self) {
         let mut h = self.heights.borrow_mut();
         h.heights.clear();
         h.prefix = None;
@@ -2227,19 +2567,169 @@ impl Editor {
         first + lo as i64
     }
 
-    fn into_coords(&self, line: i64, mut r: Rect, sys: CoordSys) -> Rect {
-        // intoCoordSystem without includeWidgets: below the widgets above the line.
-        let wt = self.widget_top_height(line);
-        r.top += wt;
-        r.bottom += wt;
-        let off = match sys {
-            CoordSys::Line => 0.0,
-            CoordSys::Div => self.height_at_line(line),
-            CoordSys::Local => self.height_at_line(line) + self.metrics.padding_top,
-        };
-        r.top += off;
-        r.bottom += off;
+    /// `display.viewOffset`: the height above the rendered range
+    /// (`heightAtLine(getLine(doc, display.viewFrom))`, update_display.js:128).
+    pub fn view_offset(&self) -> f64 {
+        self.height_at_line(self.display.view_from)
+    }
+
+    /// `display.lineSpace.getBoundingClientRect()`'s left/top in "window"
+    /// coordinates (see [`CoordSys`]).
+    fn line_space_origin(&self) -> (f64, f64) {
+        let (ox, oy) = self.display.window_origin;
+        (
+            ox + self.gutter_width - self.display.scroll_left,
+            oy + self.metrics.padding_top - self.display.scroll_top + self.view_offset(),
+        )
+    }
+
+    /// `intoCoordSystem(cm, lineObj, rect, context, includeWidgets)`
+    /// (position_measurement.js:308): a box relative to line `line` into `sys`.
+    /// Without `include_widgets` the box is moved below the widgets above the
+    /// line (`widgetTopHeight`), as CM5 does before the "line" early return.
+    pub fn into_coord_system(
+        &self,
+        line: i64,
+        mut r: Rect,
+        sys: CoordSys,
+        include_widgets: bool,
+    ) -> Rect {
+        if !include_widgets {
+            let wt = self.widget_top_height(line);
+            r.top += wt;
+            r.bottom += wt;
+        }
+        if sys == CoordSys::Line {
+            return r;
+        }
+        let mut y_off = self.height_at_line(line);
+        match sys {
+            CoordSys::Local => y_off += self.metrics.padding_top,
+            CoordSys::Doc => {}
+            _ => y_off -= self.view_offset(),
+        }
+        if matches!(sys, CoordSys::Page | CoordSys::Window) {
+            let (lx, ly) = self.line_space_origin();
+            let (px, py) = if sys == CoordSys::Page {
+                self.display.page_scroll
+            } else {
+                (0.0, 0.0)
+            };
+            y_off += ly + py;
+            r.left += lx + px;
+            r.right += lx + px;
+        }
+        r.top += y_off;
+        r.bottom += y_off;
         r
+    }
+
+    /// `fromCoordSystem(cm, coords, context)` (position_measurement.js:330): a
+    /// point in `sys` to CM5 "div" coordinates (relative to `display.lineSpace`).
+    /// As in CM5, "line" is taken as "window"; [`CoordSys::Doc`] subtracts the
+    /// view offset.
+    pub fn from_coord_system(&self, left: f64, top: f64, sys: CoordSys) -> (f64, f64) {
+        let (mut left, mut top) = (left, top);
+        match sys {
+            CoordSys::Div => return (left, top),
+            CoordSys::Doc => return (left, top - self.view_offset()),
+            CoordSys::Page => {
+                left -= self.display.page_scroll.0;
+                top -= self.display.page_scroll.1;
+            }
+            CoordSys::Local => {
+                // `display.sizer.getBoundingClientRect()`.
+                let (ox, oy) = self.display.window_origin;
+                left += ox + self.gutter_width - self.display.scroll_left;
+                top += oy - self.display.scroll_top;
+            }
+            CoordSys::Window | CoordSys::Line => {}
+        }
+        let (lx, ly) = self.line_space_origin();
+        (left - lx, top - ly)
+    }
+
+    /// The selection-free part of [`Editor::into_coord_system`] for the internal
+    /// measurement functions.
+    fn into_coords(&self, line: i64, r: Rect, sys: CoordSys) -> Rect {
+        self.into_coord_system(line, r, sys, false)
+    }
+
+    /// `cm.cursorCoords(start, mode)` (methods.js:184): `start` is the primary
+    /// head ([`CoordsStart::Head`], `null`), its `from()` (`true`), its `to()`
+    /// (`false`) or a position, clipped to the document. `mode` `None` is "page".
+    pub fn cursor_coords_in(&self, start: impl Into<CoordsStart>, mode: Option<CoordSys>) -> Rect {
+        let range = self.doc.selection().primary();
+        let pos = match start.into() {
+            CoordsStart::Head => range.head,
+            CoordsStart::Pos(p) => self.doc.clip_pos(p),
+            CoordsStart::From => range.from(),
+            CoordsStart::To => range.to(),
+        };
+        self.cursor_coords(pos, mode.unwrap_or(CoordSys::Page))
+    }
+    /// `cm.charCoords(pos, mode)` (methods.js:192): `pos` is clipped; `mode`
+    /// `None` is "page".
+    pub fn char_coords_in(&self, pos: Pos, mode: Option<CoordSys>) -> Rect {
+        self.char_coords(self.doc.clip_pos(pos), mode.unwrap_or(CoordSys::Page))
+    }
+    /// `cm.coordsChar(coords, mode)` (methods.js:196): `mode` `None` is "page".
+    pub fn coords_char_in(&self, left: f64, top: f64, mode: Option<CoordSys>) -> PosInfo {
+        let (x, y) = self.from_coord_system(left, top, mode.unwrap_or(CoordSys::Page));
+        // `coordsChar(cm, x, y)` adds `display.viewOffset`; ours takes document y.
+        self.coords_char(x, y + self.view_offset())
+    }
+    /// `cm.lineAtHeight(height, mode)` (methods.js:201): `mode` `None` is "page".
+    /// As in CM5, a height above the document gives the first line and one below
+    /// it gives `first + size` (one past the last line).
+    pub fn line_at_height_in(&self, height: f64, mode: Option<CoordSys>) -> i64 {
+        let (_, top) = self.from_coord_system(0.0, height, mode.unwrap_or(CoordSys::Page));
+        self.line_at_height(top + self.view_offset())
+    }
+    /// `cm.heightAtLine(line, mode, includeWidgets)` (methods.js:205): the top of
+    /// a line in `mode` (`None` = "page"). A number is clamped to the document; a
+    /// number past the last line gives the bottom of the document. A handle of a
+    /// line no longer in the document gives NaN. Line widgets are not ported, so
+    /// `include_widgets` changes nothing.
+    pub fn height_at_line_in(
+        &self,
+        line: impl Into<LineArg>,
+        mode: Option<CoordSys>,
+        include_widgets: bool,
+    ) -> f64 {
+        let mode = mode.unwrap_or(CoordSys::Page);
+        let mut end = false;
+        let n = match line.into() {
+            LineArg::Number(n) => {
+                let last = self.last_line();
+                if n < self.first_line() {
+                    self.first_line()
+                } else if n > last {
+                    end = true;
+                    last
+                } else {
+                    n
+                }
+            }
+            LineArg::Handle(h) => match self.doc.get_line_number(&h) {
+                Some(n) => n,
+                None => return f64::NAN,
+            },
+        };
+        let zero = Rect {
+            left: 0.0,
+            right: 0.0,
+            top: 0.0,
+            bottom: 0.0,
+        };
+        let top = self
+            .into_coord_system(n, zero, mode, include_widgets || end)
+            .top;
+        if end {
+            top + self.doc_height() - self.height_at_line(n)
+        } else {
+            top
+        }
     }
 
     /// `cursorCoords(cm, pos, context)` (left-to-right lines).
@@ -2523,7 +3013,7 @@ impl Editor {
         }
         let mut cur = (self.doc.clip_pos(from), false);
         for _ in 0..amount {
-            let mut coords = self.cursor_coords(cur.0, CoordSys::Div);
+            let mut coords = self.cursor_coords(cur.0, CoordSys::Doc);
             match x {
                 None => x = Some(coords.left),
                 Some(v) => coords.left = v,
@@ -2553,7 +3043,7 @@ impl Editor {
                     heads.push(if dir < 0 { range.from() } else { range.to() });
                     continue;
                 }
-                let mut head_pos = cm.cursor_coords(range.head, CoordSys::Div);
+                let mut head_pos = cm.cursor_coords(range.head, CoordSys::Doc);
                 if let Some(g) = goal_cols[i] {
                     head_pos.left = g;
                 }
@@ -2561,7 +3051,7 @@ impl Editor {
                 let (target, _) = find_pos_v(cm, head_pos, dir, unit);
                 let pos = target.pos();
                 if unit == UnitV::Page && i == primary {
-                    scroll_add = Some(cm.char_coords(pos, CoordSys::Div).top - head_pos.top);
+                    scroll_add = Some(cm.char_coords(pos, CoordSys::Doc).top - head_pos.top);
                 }
                 heads.push(pos);
             }
@@ -3041,6 +3531,14 @@ impl Editor {
 
     /// `handlePaste`: paste text from the clipboard.
     pub fn paste(&mut self, text: &str) {
+        // `if (signalDOMEvent(cm, e) || handlePaste(e, cm)) return` (TextareaInput.js:50).
+        let dom = DomEvent {
+            text: Some(text.to_string()),
+            ..DomEvent::new("paste")
+        };
+        if self.signal_dom_event(&dom, None) {
+            return;
+        }
         if text.is_empty() || self.is_read_only() {
             return;
         }
@@ -3151,6 +3649,9 @@ impl Editor {
                 self.shared.later(move |cx| f(cx, &name));
             }
         }
+        if matches!(result, Some(Lookup::Handled | Lookup::Multi)) {
+            self.restart_blink();
+        }
         result.is_some()
     }
 
@@ -3186,6 +3687,14 @@ impl Editor {
     pub fn key_down(&mut self, e: &KeyEvent) -> bool {
         // input.js: `on(d.input, "keydown", operation(cm, onKeyDown))`
         self.run_op(|cm| {
+            // `if (signalDOMEvent(cm, e)) return` (key_events.js:111).
+            let dom = DomEvent {
+                key: Some(e.clone()),
+                ..DomEvent::new("keydown")
+            };
+            if cm.signal_dom_event(&dom, None) {
+                return false;
+            }
             cm.display.shift = e.key == "Shift" || e.shift;
             cm.handle_key_binding(e)
         })
@@ -3197,6 +3706,16 @@ impl Editor {
         self.run_op(|cm| cm.key_press_in_op(ch, e))
     }
     fn key_press_in_op(&mut self, ch: &str, e: &KeyEvent) -> bool {
+        // `if (... || signalDOMEvent(cm, e) || e.ctrlKey && !e.altKey || ...) return`
+        // (key_events.js:154).
+        let dom = DomEvent {
+            key: Some(e.clone()),
+            ch: Some(ch.to_string()),
+            ..DomEvent::new("keypress")
+        };
+        if self.signal_dom_event(&dom, None) {
+            return false;
+        }
         if e.ctrl && !e.alt || self.options.mac && e.meta {
             return false;
         }
@@ -3251,6 +3770,78 @@ impl Editor {
             cm.resolve_scroll_to_pos();
             cm.op.scroll_to_pos = Some((from, to, margin));
         });
+    }
+    /// `cm.scrollIntoView(range, margin)` (src/edit/methods.js:373, a methodOp)
+    /// with every form of `range` ([`ScrollTarget`]). A position form queues
+    /// `op.scrollToPos` (`scrollToRange`), resolved at the end of the operation; a
+    /// box form computes the scroll position now (`scrollToCoordsRange`,
+    /// scrolling.js:149) and sets `op.scrollLeft`/`op.scrollTop`. `margin` `None`
+    /// is 0, except for [`ScrollTarget::Cursor`], where it is `cursorScrollMargin`.
+    pub fn scroll_into_view_target(
+        &mut self,
+        target: impl Into<ScrollTarget>,
+        margin: Option<f64>,
+    ) {
+        let target = target.into();
+        self.run_op(|cm| {
+            let margin = match target {
+                ScrollTarget::Cursor => margin.unwrap_or(cm.options.cursor_scroll_margin),
+                _ => margin.unwrap_or(0.0),
+            };
+            // `range.margin = margin || 0`.
+            let margin = if margin.is_nan() { 0.0 } else { margin };
+            let (from, to) = match target {
+                ScrollTarget::Cursor => {
+                    let h = cm.doc.selection().primary().head;
+                    (h, h)
+                }
+                ScrollTarget::Line(n) => (Pos::new(n, 0), Pos::new(n, 0)),
+                ScrollTarget::Pos(p) => (p, p),
+                ScrollTarget::Range(a, b) => (a, b),
+                ScrollTarget::Coords(r) => return cm.scroll_to_coords_range(r, r, margin),
+                ScrollTarget::CoordsRange(a, b) => return cm.scroll_to_coords_range(a, b, margin),
+            };
+            cm.resolve_scroll_to_pos();
+            cm.op.scroll_to_pos = Some((from, to, margin));
+        });
+    }
+    /// `scrollToCoordsRange(cm, from, to, margin)` (src/display/scrolling.js:149):
+    /// boxes in "local" coordinates.
+    fn scroll_to_coords_range(&mut self, from: Rect, to: Rect, margin: f64) {
+        let (st, sl) = self.calculate_scroll_pos(Rect {
+            left: from.left.min(to.left),
+            top: from.top.min(to.top) - margin,
+            right: from.right.max(to.right),
+            bottom: from.bottom.max(to.bottom) + margin,
+        });
+        self.scroll_to_coords(sl, st);
+    }
+    /// `scrollIntoView(cm, rect)` (src/display/scrolling.js:70): scroll a box in
+    /// "local" coordinates into view at once, through the thresholded
+    /// `updateScrollTop` / `setScrollLeft` (a change under 2 px is dropped). Runs as
+    /// an operation, so the rendered range follows (`updateDisplaySimple`).
+    pub fn scroll_rect_into_view(&mut self, rect: Rect) {
+        self.run_op(|cm| {
+            let (st, sl) = cm.calculate_scroll_pos(rect);
+            if let Some(v) = st {
+                cm.update_scroll_top(v);
+            }
+            if let Some(v) = sl {
+                cm.update_scroll_left(v);
+            }
+        });
+    }
+    /// `cm.getScrollInfo()` (src/edit/methods.js:365).
+    pub fn get_scroll_info(&self) -> ScrollInfo {
+        let (mh, mw) = self.max_scroll();
+        ScrollInfo {
+            left: self.display.scroll_left,
+            top: self.display.scroll_top,
+            height: mh + self.display_height(),
+            width: mw + self.display.width,
+            client_height: self.display_height(),
+            client_width: self.display.width,
+        }
     }
     /// `removeKeyMap(name)`.
     pub fn remove_key_map(&mut self, name: &str) -> bool {
