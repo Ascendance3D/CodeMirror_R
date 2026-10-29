@@ -127,7 +127,22 @@ const BROWSERS = ["chromium", "firefox", "webkit", ...Object.keys(MOBILE)];
 // REQUIRED counts comparisons with CM5 (needs the reference). REQUIRED_WEB counts the cm-web-only checks that
 // must run in every mode, with or without the reference; a run that skips one fails.
 const REQUIRED_WEB = { window_scroll: 3 };
-const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 39, window_scroll: 10, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2 };
+const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 39, window_scroll: 10, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2, lineclass: 50 };
+
+// Line-class scenarios of the "lineclass" section. Each is five comparisons (classes and errors, node structure,
+// coordinates, hit-testing and selection, line boxes) per scenario.
+const LINE_CLASS_SCENARIOS = [
+  ["plain", []],
+  ["text", [["add", 1, "text", "tx"]]],
+  ["background", [["add", 1, "background", "bg"]]],
+  ["wrap", [["add", 1, "wrap", "wr"]]],
+  ["all_three", [["add", 1, "text", "tx"], ["add", 1, "background", "bg"], ["add", 1, "wrap", "wr"], ["add", 2, "background", "bg2"]]],
+  ["background_then_removed", [["add", 1, "background", "bg"], ["rm", 1, "background", "bg"]]],
+  ["wrap_then_removed", [["add", 1, "wrap", "wr"], ["rm", 1, "wrap", "wr"]]],
+  ["empty_classes", [["add", 1, "background", ""], ["add", 1, "wrap", ""], ["add", 1, "text", ""], ["add", 2, "text", "a"], ["add", 2, "text", ""]]],
+  ["regex_class_names", [["add", 1, "text", "foo"], ["add", 1, "text", "f.o"], ["add", 1, "text", "bar|foo"], ["add", 2, "background", "x y"], ["rm", 2, "background", "x|y"], ["add", 3, "text", "a"], ["add", 3, "text", "("], ["rm", 3, "text", "["]]],
+  ["clear_all", [["add", 0, "background", "b"], ["add", 0, "text", "t"], ["add", 0, "wrap", "w"], ["rm", 0, "background", null], ["rm", 0, "text", null], ["rm", 0, "wrap", null]]],
+];
 
 // One browser run. It always returns a result with a status, and it closes the
 // browser on every path (normal end, failed check, thrown error, rejected promise,
@@ -365,6 +380,37 @@ async function runChecks(name, res, own) {
     }],
     ["triple_click_line", async () => { const p = await E(E => E.point(6, 5)); await page.mouse.click(p.x, p.y, { clickCount: 3 }); }],
   ]);
+
+  // --- Line classes (addLineClass / removeLineClass, update_line.js) ----------
+  // The same class steps on CM5 and cm-web: the class properties and thrown errors, the structure of the line nodes
+  // (a wrapper only for a background or wrap class), measurement, and real mouse hit-testing and selection through the
+  // lines. A step is [op, line, where, cls].
+  progress("Line classes");
+  const LC_DOC = "alpha beta\ngamma\ndelta epsilon\nzeta\neta";
+  for (const [lc, steps] of LINE_CLASS_SCENARIOS) {
+    const rec = {};
+    for (const kind of haveCm5 ? ["cm5", "cm-web"] : ["cm-web"]) {
+      await make(kind, LC_DOC, "text/plain", {});
+      await settle();
+      const errors = [];
+      for (const [op, l, w, c] of steps) errors.push(await E((E, op, l, w, c) => op === "add" ? E.addClass(l, w, c) : E.rmClass(l, w, c), op, l, w, c));
+      await settle();
+      const r = { classes: await E(E => [0, 1, 2, 3, 4].map(l => E.classes(l))), errors, nodes: await E(E => E.nodes()), coords: await E(E => [0, 1, 2, 3].flatMap(l => [E.local(l, 0), E.local(l, 4)])) };
+      await clickAt(1, 3); await settle();
+      await clickAt(3, 2, { modifiers: ["Shift"] }); await settle();
+      r.sels = await E(E => E.sels());
+      r.boxes = await E(E => E.boxes());
+      rec[kind] = r;
+    }
+    res[`lineclass_${lc}`] = rec;
+    if (!haveCm5) { res.checks.push({ name: `lineclass.${lc}.classes`, ok: true, exact: false, note: "CM5 build not supplied: no differential", actual: rec["cm-web"].classes }); continue; }
+    const [a, b] = [rec.cm5, rec["cm-web"]];
+    dcheck(`lineclass.${lc}.classes`, { classes: a.classes, errors: a.errors }, { classes: b.classes, errors: b.errors });
+    dcheck(`lineclass.${lc}.nodes`, a.nodes, b.nodes);
+    dnear(`lineclass.${lc}.coords`, a.coords, b.coords, 1);
+    dcheck(`lineclass.${lc}.hit_test_selection`, a.sels, b.sels);
+    dnear(`lineclass.${lc}.line_boxes`, a.boxes, b.boxes, 1);
+  }
 
   // --- Scrolling -------------------------------------------------------------
   progress("Scrolling");

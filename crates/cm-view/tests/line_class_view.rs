@@ -37,10 +37,12 @@ fn editor() -> (Editor, Rc<Cell<u32>>) {
 #[test]
 fn class_change_on_a_rendered_line_updates() {
     let (mut cm, updates) = editor();
-    cm.doc.add_line_class(2, LineWhere::Wrap, "foo");
+    cm.doc.add_line_class(2, LineWhere::Wrap, "foo").unwrap();
     deliver(&mut cm);
     assert_eq!(updates.get(), 1);
-    cm.doc.remove_line_class(2, LineWhere::Wrap, Some("foo"));
+    cm.doc
+        .remove_line_class(2, LineWhere::Wrap, Some("foo"))
+        .unwrap();
     deliver(&mut cm);
     assert_eq!(updates.get(), 2);
 }
@@ -48,16 +50,18 @@ fn class_change_on_a_rendered_line_updates() {
 #[test]
 fn no_op_and_offscreen_changes_do_not_update() {
     let (mut cm, updates) = editor();
-    cm.doc.add_line_class(2, LineWhere::Text, "foo");
+    cm.doc.add_line_class(2, LineWhere::Text, "foo").unwrap();
     deliver(&mut cm);
     let n = updates.get();
     assert_eq!(n, 1);
-    cm.doc.add_line_class(2, LineWhere::Text, "foo");
-    cm.doc.remove_line_class(2, LineWhere::Text, Some("absent"));
+    cm.doc.add_line_class(2, LineWhere::Text, "foo").unwrap();
+    cm.doc
+        .remove_line_class(2, LineWhere::Text, Some("absent"))
+        .unwrap();
     deliver(&mut cm);
     assert_eq!(updates.get(), n, "no change, no redraw");
     // Line 250 is far below the rendered range: the class is stored, nothing redraws.
-    cm.doc.add_line_class(250, LineWhere::Text, "far");
+    cm.doc.add_line_class(250, LineWhere::Text, "far").unwrap();
     deliver(&mut cm);
     assert_eq!(updates.get(), n);
     assert_eq!(
@@ -70,9 +74,11 @@ fn no_op_and_offscreen_changes_do_not_update() {
 fn several_calls_in_one_operation_update_once() {
     let (mut cm, updates) = editor();
     cm.run_op(|cm| {
-        cm.doc.add_line_class(0, LineWhere::Wrap, "foo");
-        cm.doc.add_line_class(1, LineWhere::Background, "bar");
-        cm.doc.add_line_class(2, LineWhere::Text, "baz");
+        cm.doc.add_line_class(0, LineWhere::Wrap, "foo").unwrap();
+        cm.doc
+            .add_line_class(1, LineWhere::Background, "bar")
+            .unwrap();
+        cm.doc.add_line_class(2, LineWhere::Text, "baz").unwrap();
     });
     deliver(&mut cm);
     assert_eq!(updates.get(), 1);

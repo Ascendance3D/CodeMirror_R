@@ -4,6 +4,7 @@
 use super::doc::Doc;
 use super::line::{Line, LineHandle};
 use crate::operation_group::LineChange;
+use crate::util::regexp::{RegExp, RegExpError};
 
 /// The `where` argument. CM5 maps `"text"`, `"background"` and `"gutter"` to their
 /// property and every other string to `wrapClass`.
@@ -54,54 +55,54 @@ impl From<&LineHandle> for LineSel {
     }
 }
 
-/// The match of `new RegExp("(^|\\s)" + cls + "(?:$|\\s)\\s*")` in `s`, as a byte
-/// range. `cls` is matched literally; CM5 builds the expression unescaped, which only
-/// differs for a class name with regular-expression syntax in it.
-fn class_match(s: &str, cls: &str) -> Option<(usize, usize)> {
-    let mut from = 0;
-    while let Some(p) = s[from..].find(cls) {
-        let i = from + p;
-        let end = i + cls.len();
-        let before = s[..i].chars().next_back();
-        let after = s[end..].chars().next();
-        if before.is_none_or(char::is_whitespace) && after.is_none_or(char::is_whitespace) {
-            let start = i - before.map_or(0, char::len_utf8);
-            let tail = s[end..].len() - s[end..].trim_start().len();
-            return Some((start, end + tail));
-        }
-        from = i + s[i..].chars().next().map_or(1, char::len_utf8);
-    }
-    None
+/// `classTest(cls)` (src/util/dom.js:3): `new RegExp("(^|\\s)" + cls + "(?:$|\\s)\\s*")`.
+/// `cls` is spliced in unescaped, so regular-expression syntax in it keeps its meaning
+/// and an invalid pattern is the `SyntaxError` the JS constructor throws.
+fn class_test(cls: &str) -> Result<RegExp, RegExpError> {
+    RegExp::new(&format!("(^|\\s){cls}(?:$|\\s)\\s*"), "")
 }
 
-fn add_class(slot: &mut Option<String>, cls: &str) -> bool {
+/// `addLineClass`'s `op`. The expression is built only for a non-empty property, as
+/// in CM5 (`if (!line[prop]) line[prop] = cls`), so an empty property accepts any
+/// `cls`, even one that is not a valid pattern.
+fn add_class(slot: &mut Option<String>, cls: &str) -> Result<bool, RegExpError> {
     match slot.as_deref() {
         None | Some("") => *slot = Some(cls.to_string()),
-        Some(cur) if class_match(cur, cls).is_some() => return false,
-        Some(cur) => *slot = Some(format!("{cur} {cls}")),
+        Some(cur) => {
+            if class_test(cls)?.test_str(cur) {
+                return Ok(false);
+            }
+            *slot = Some(format!("{cur} {cls}"));
+        }
     }
-    true
+    Ok(true)
 }
 
-fn remove_class(slot: &mut Option<String>, cls: Option<&str>) -> bool {
+/// `removeLineClass`'s `op`; `cls` of `None` clears the property. Indices are UTF-16
+/// code units, as in JS.
+fn remove_class(slot: &mut Option<String>, cls: Option<&str>) -> Result<bool, RegExpError> {
     let Some(cur) = slot.as_deref().filter(|c| !c.is_empty()) else {
-        return false;
+        return Ok(false);
     };
     let Some(cls) = cls else {
         *slot = None;
-        return true;
+        return Ok(true);
     };
-    let Some((start, end)) = class_match(cur, cls) else {
-        return false;
+    let units: Vec<u16> = cur.encode_utf16().collect();
+    let Some(found) = class_test(cls)?.exec(&units) else {
+        return Ok(false);
     };
-    let sep = if start == 0 || end == cur.len() {
-        ""
+    let (start, end) = (found.index(), found.end());
+    let sep: &[u16] = if start == 0 || end == units.len() {
+        &[]
     } else {
-        " "
+        &[b' ' as u16]
     };
-    let next = format!("{}{sep}{}", &cur[..start], &cur[end..]);
-    *slot = (!next.is_empty()).then_some(next);
-    true
+    let mut next = units[..start].to_vec();
+    next.extend_from_slice(sep);
+    next.extend_from_slice(&units[end..]);
+    *slot = (!next.is_empty()).then(|| String::from_utf16_lossy(&next));
+    Ok(true)
 }
 
 impl Doc {
@@ -112,30 +113,35 @@ impl Doc {
         &self,
         sel: &LineSel,
         kind: LineChange,
-        op: impl FnOnce(&mut Line) -> bool,
-    ) -> Option<LineHandle> {
+        op: impl FnOnce(&mut Line) -> Result<bool, RegExpError>,
+    ) -> Result<Option<LineHandle>, RegExpError> {
         let (line, no) = match sel {
             LineSel::No(n) => {
                 let n = (*n).min(self.last_line()).max(self.first_line());
                 (self.get_line_ref(n), n)
             }
-            LineSel::Handle(h) => (h.0.clone(), self.line_no(&h.0)?),
+            LineSel::Handle(h) => match self.line_no(&h.0) {
+                Some(no) => (h.0.clone(), no),
+                None => return Ok(None),
+            },
         };
-        let changed = op(&mut line.borrow_mut());
+        let changed = op(&mut line.borrow_mut())?;
         if changed && let Some(sink) = self.sink() {
             sink.line_changed(self, no, kind);
         }
-        Some(LineHandle(line))
+        Ok(Some(LineHandle(line)))
     }
 
     /// `addLineClass(handle, where, cls)`. Returns the line, even when it already had
-    /// the class; `None` for a removed line.
+    /// the class; `Ok(None)` for a removed line. `Err` is the `SyntaxError` CM5 throws
+    /// when `cls` is not a valid regular expression and the property is not empty; the
+    /// line is then unchanged and not redrawn.
     pub fn add_line_class(
         &self,
         line: impl Into<LineSel>,
         place: LineWhere,
         cls: &str,
-    ) -> Option<LineHandle> {
+    ) -> Result<Option<LineHandle>, RegExpError> {
         let sel = line.into();
         self.in_op(|| self.change_line(&sel, kind_of(place), |l| add_class(place.slot(l), cls)))
     }
@@ -146,7 +152,7 @@ impl Doc {
         line: impl Into<LineSel>,
         place: LineWhere,
         cls: Option<&str>,
-    ) -> Option<LineHandle> {
+    ) -> Result<Option<LineHandle>, RegExpError> {
         let sel = line.into();
         self.in_op(|| self.change_line(&sel, kind_of(place), |l| remove_class(place.slot(l), cls)))
     }

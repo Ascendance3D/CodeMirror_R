@@ -136,7 +136,14 @@ pub type BeforeSelectionChangeFn = dyn Fn(&Doc, &mut BeforeSelectionChange);
 /// listener tables. Every method is called without any document borrow held, and
 /// implementations do not hold their own borrows across a call into user code.
 /// The `changeType` of `regLineChange(cm, line, type)` (src/display/view_tracking.js).
+///
+/// `Gutter` and `Class` are produced by `setGutterMarker`/`addLineClass`/`removeLineClass`
+/// (and `Class` is what the view redraws on). `Text` and `Widget` are reserved: CM5 reports
+/// them from `markText` and the line-widget API, which are not ported through this sink
+/// yet, so nothing produces or consumes them today. The enum is `non_exhaustive` so that
+/// adding their producers is not a breaking change.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum LineChange {
     Text,
     Gutter,

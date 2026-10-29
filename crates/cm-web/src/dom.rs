@@ -100,6 +100,9 @@ struct CachedLine {
     classes: frame::LineClasses,
     wrap: Option<f64>,
     tab_size: i64,
+    /// `el` is a wrapper div (`ensureLineWrapped`). CM5 keeps the wrapper for the life
+    /// of the line view, so it outlives the class that needed it.
+    wrapped: bool,
     el: HtmlElement,
 }
 
@@ -552,7 +555,12 @@ impl Dom {
         }
     }
 
-    fn build_line(&self, line: &frame::FrameLine, tab_size: i64) -> Result<HtmlElement, JsValue> {
+    fn build_line(
+        &self,
+        line: &frame::FrameLine,
+        tab_size: i64,
+        was_wrapped: bool,
+    ) -> Result<(HtmlElement, bool), JsValue> {
         let d = &self.document;
         let mut class = "CodeMirror-line".to_string();
         if let Some(text_class) = &line.classes.text {
@@ -599,20 +607,21 @@ impl Dom {
             span.append_child(&d.create_text_node("\u{200b}"))?;
         }
         pre.append_child(&span)?;
-        if line.classes.bg.is_none() && line.classes.wrap.is_none() {
-            return Ok(pre);
+        if !was_wrapped && line.classes.bg.is_none() && line.classes.wrap.is_none() {
+            return Ok((pre, false));
         }
-        // `ensureLineWrapped`: a wrapper holds the background and the text; it exists
-        // only for a line with a background or wrap class.
+        // `ensureLineWrapped`: a wrapper holds the background and the text; it is made
+        // for a line with a background or wrap class and then kept (`was_wrapped`).
         let wrapper = el(d, "div", line.classes.wrap.as_deref().unwrap_or(""))?;
         css(&wrapper, "position", "relative");
         if let Some(bg) = &line.classes.bg {
+            // `setUneditable` only marks the node with the contenteditable input style;
+            // the textarea input style (the only one here) leaves it alone.
             let div = el(d, "div", &format!("{bg} CodeMirror-linebackground"))?;
-            div.set_attribute("contenteditable", "false")?;
             wrapper.append_child(&div)?;
         }
         wrapper.append_child(&pre)?;
-        Ok(wrapper)
+        Ok((wrapper, true))
     }
 
     /// Write a frame into the elements.
@@ -653,6 +662,7 @@ impl Dom {
         let mut keep = HashMap::with_capacity(f.lines.len());
         let mut order = Vec::with_capacity(f.lines.len());
         for line in &f.lines {
+            let mut was_wrapped = false;
             let reuse = match self.cache.remove(&line.id) {
                 Some(c)
                     if c.text == line.text
@@ -665,20 +675,25 @@ impl Dom {
                 }
                 Some(c) => {
                     c.el.remove();
+                    was_wrapped = c.wrapped;
                     None
                 }
                 None => None,
             };
             let entry = match reuse {
                 Some(c) => c,
-                None => CachedLine {
-                    text: line.text.clone(),
-                    styles: line.styles.clone(),
-                    classes: line.classes.clone(),
-                    wrap: f.wrap_width,
-                    tab_size,
-                    el: self.build_line(line, tab_size)?,
-                },
+                None => {
+                    let (el, wrapped) = self.build_line(line, tab_size, was_wrapped)?;
+                    CachedLine {
+                        text: line.text.clone(),
+                        styles: line.styles.clone(),
+                        classes: line.classes.clone(),
+                        wrap: f.wrap_width,
+                        tab_size,
+                        wrapped,
+                        el,
+                    }
+                }
             };
             css(&entry.el, "height", &px(line.height));
             order.push(line.id);
