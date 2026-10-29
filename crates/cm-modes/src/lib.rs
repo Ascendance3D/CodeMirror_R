@@ -429,6 +429,19 @@ pub struct Registry {
     dependencies: HashMap<String, Vec<String>>,
     /// `registerHelper` / `registerGlobalHelper` tables.
     pub helpers: Helpers,
+    /// The tables as the JS globals hold them now. Every clone of a registry shares
+    /// them, and each definition through any clone updates them, so a mode that
+    /// looks a mode up at token time (`CodeMirror.getMode` inside htmlmixed's
+    /// `html`) sees definitions made after it was created. See [`Registry::current`].
+    live: Rc<std::cell::RefCell<LiveTables>>,
+}
+
+/// The shared tables behind [`Registry::current`].
+#[derive(Clone, Default)]
+struct LiveTables {
+    modes: HashMap<String, ModeFactory>,
+    mime_modes: HashMap<String, MimeTarget>,
+    mode_extensions: HashMap<String, HashMap<String, ConfigValue>>,
 }
 
 impl Default for Registry {
@@ -650,6 +663,7 @@ impl Registry {
             mode_extensions: HashMap::new(),
             dependencies: HashMap::new(),
             helpers: Helpers::default(),
+            live: Rc::default(),
         };
         r.define_mode(
             "null",
@@ -683,6 +697,10 @@ impl Registry {
         for (k, v) in properties {
             exts.insert(k, v);
         }
+        self.live
+            .borrow_mut()
+            .mode_extensions
+            .insert(mode.to_string(), exts.clone());
     }
     pub fn has_mime(&self, mime: &str) -> bool {
         self.mime_modes.contains_key(mime)
@@ -690,7 +708,11 @@ impl Registry {
     /// `defineMode(name, factory)`. Redefining a name replaces the factory, as the
     /// JS assignment does; the dependencies of the old definition are dropped.
     pub fn define_mode(&mut self, name: &str, factory: ModeFactory) {
-        self.modes.insert(name.to_string(), factory);
+        self.modes.insert(name.to_string(), factory.clone());
+        self.live
+            .borrow_mut()
+            .modes
+            .insert(name.to_string(), factory);
         self.dependencies.remove(name);
     }
     /// `defineMode(name, factory, dep1, dep2, ...)`: the extra arguments become
@@ -715,7 +737,27 @@ impl Registry {
     }
     /// `defineMIME(mime, spec)`.
     pub fn define_mime(&mut self, mime: &str, spec: MimeTarget) {
-        self.mime_modes.insert(mime.to_string(), spec);
+        self.mime_modes.insert(mime.to_string(), spec.clone());
+        self.live
+            .borrow_mut()
+            .mime_modes
+            .insert(mime.to_string(), spec);
+    }
+    /// The registry as the JS globals are now: the modes, MIME types and mode
+    /// extensions last defined through this registry or any clone of it (a clone
+    /// shares them, as every JS caller shares `CodeMirror.modes`). A mode keeps a
+    /// clone of the registry it was made with; `current()` on that clone is what a
+    /// JS `CodeMirror.getMode` call at token time sees.
+    pub fn current(&self) -> Registry {
+        let live = self.live.borrow();
+        Registry {
+            modes: live.modes.clone(),
+            mime_modes: live.mime_modes.clone(),
+            mode_extensions: live.mode_extensions.clone(),
+            dependencies: self.dependencies.clone(),
+            helpers: self.helpers.clone(),
+            live: self.live.clone(),
+        }
     }
     pub fn has_mode(&self, name: &str) -> bool {
         self.modes.contains_key(name)
