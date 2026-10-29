@@ -1328,7 +1328,12 @@ mod tests {
                     (mt - f(&c["maxTop"])).abs() < 1.0 && (ml - f(&c["maxLeft"])).abs() < 1.0,
                     "{name}: the recorded ranges"
                 );
-                let (top, left) = (f(&r["before"]["top"]), f(&r["before"]["left"]));
+                let (top, mut left) = (f(&r["before"]["top"]), f(&r["before"]["left"]));
+                // A case that starts at the browser's whole-pixel maximum starts at the
+                // editor's fractional one (op.maxScrollLeft, operations.js:102).
+                if left == f(&c["maxLeft"]) {
+                    left = ml;
+                }
                 app.editor.scroll_to(Some(left), Some(top));
                 assert_eq!(
                     (
@@ -1346,11 +1351,16 @@ mod tests {
                     WheelAction::Editor(ax, ay) => {
                         assert!(!(gecko && dx != 0.0), "{name} in {browser}");
                         app.handle(Input::Wheel { dx: ax, dy: ay });
+                        // At the right edge the browser is at its whole-pixel maximum,
+                        // the editor at its fractional one.
+                        let sl = app.editor.display.scroll_left;
+                        let sl = if sl == ml {
+                            f(&c["maxLeft"])
+                        } else {
+                            sl.floor()
+                        };
                         assert_eq!(
-                            (
-                                app.editor.display.scroll_top.floor(),
-                                app.editor.display.scroll_left.floor()
-                            ),
+                            (app.editor.display.scroll_top.floor(), sl),
                             (f(&r["after"]["top"]), f(&r["after"]["left"])),
                             "{name} in {browser}"
                         );

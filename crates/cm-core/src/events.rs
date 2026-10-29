@@ -13,9 +13,17 @@
 //! Dropping the last reference to a removed handler runs its destructor, which may
 //! use the same emitter again; owners of a list therefore take the entry out with
 //! [`Listeners::remove`] and drop it after they release the list ([`Removed`]).
+//!
+//! CM5's typed events are typed lists on each emitter. String-named and custom
+//! events (`on(emitter, "fold", f)`, `signal(emitter, "pick", data)`) use
+//! [`NamedListeners`]: one copy-on-write list per name, the same semantics. The
+//! document, the editor, line handles and markers have such a table next to their
+//! typed lists, and [`Emitter`] gives any other object one (`CodeMirror.on/off/
+//! signal` on arbitrary objects). A name of a typed event in the named table is
+//! only reached by a named `signal`; the typed event itself goes to typed handlers.
 
 use std::any::Any;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 /// The id of one registered handler. Ids are unique on the thread and never reused,
@@ -130,6 +138,134 @@ impl<H: ?Sized> Listeners<H> {
     }
     pub fn contains(&self, id: ListenerId) -> bool {
         self.0.iter().any(|e| e.id == id)
+    }
+}
+
+/// The arguments of a string-named event (`signal(emitter, type, ...values)`):
+/// each handler downcasts the values it expects.
+pub type Args<'a> = &'a [&'a dyn Any];
+
+/// A handler of a string-named event on an [`Emitter`].
+pub type NamedHandler = dyn Fn(Args<'_>);
+
+/// String-named and custom events (`on(emitter, type, f)`, `off`, `getHandlers`,
+/// `signal`, `hasHandler` of src/util/event.js for any object). `CodeMirror.on`,
+/// `CodeMirror.off` and `CodeMirror.signal` work on arbitrary objects in CM5 (an
+/// addon signals `"pick"` on its hint data, for example); a Rust object embeds an
+/// `Emitter` for the same. Each event type has its own copy-on-write list, so a
+/// running [`Emitter::signal`] keeps the handlers it started with.
+///
+/// `H` is the handler type: [`NamedHandler`] here; the document and the editor
+/// use their own (with `&Doc` / `&mut Cx`) through [`NamedListeners`].
+pub struct NamedListeners<H: ?Sized> {
+    map: Vec<(String, Listeners<H>)>,
+}
+
+impl<H: ?Sized> Default for NamedListeners<H> {
+    fn default() -> Self {
+        NamedListeners { map: Vec::new() }
+    }
+}
+
+impl<H: ?Sized> Clone for NamedListeners<H> {
+    fn clone(&self) -> Self {
+        NamedListeners {
+            map: self.map.clone(),
+        }
+    }
+}
+
+impl<H: ?Sized> NamedListeners<H> {
+    fn list_mut(&mut self, name: &str) -> &mut Listeners<H> {
+        let i = match self.map.iter().position(|(n, _)| n == name) {
+            Some(i) => i,
+            None => {
+                self.map.push((name.to_string(), Listeners::default()));
+                self.map.len() - 1
+            }
+        };
+        &mut self.map[i].1
+    }
+    /// `on(emitter, type, f)`: append `f` to the handlers of `name`.
+    pub fn on_rc(&mut self, name: &str, f: Rc<H>) -> ListenerId {
+        self.list_mut(name).on_rc(f)
+    }
+    /// Remove the handler registered as `id` (any name).
+    pub fn remove(&mut self, id: ListenerId) -> Option<Entry<H>> {
+        self.map.iter_mut().find_map(|(_, l)| l.remove(id))
+    }
+    pub fn off(&mut self, id: ListenerId) -> bool {
+        self.remove(id).is_some()
+    }
+    /// `off(emitter, type, f)`: remove the first handler of `name` with the same
+    /// function.
+    pub fn remove_fn(&mut self, name: &str, f: &Rc<H>) -> Option<Entry<H>> {
+        self.map
+            .iter_mut()
+            .find(|(n, _)| n == name)
+            .and_then(|(_, l)| l.remove_fn(f))
+    }
+    pub fn off_fn(&mut self, name: &str, f: &Rc<H>) -> bool {
+        self.remove_fn(name, f).is_some()
+    }
+    /// `getHandlers(emitter, type)`: the handlers of `name` as of now (empty for a
+    /// name nobody registered). Later `on`/`off` calls do not change the list.
+    pub fn get_handlers(&self, name: &str) -> Rc<[Entry<H>]> {
+        match self.map.iter().find(|(n, _)| n == name) {
+            Some((_, l)) => l.snapshot(),
+            None => Rc::from(Vec::<Entry<H>>::new()),
+        }
+    }
+    /// `hasHandler(emitter, type)`.
+    pub fn has_handler(&self, name: &str) -> bool {
+        self.map.iter().any(|(n, l)| n == name && !l.is_empty())
+    }
+}
+
+/// An object that string-named events can be registered on and signalled from
+/// (`eventMixin`; `CodeMirror.on/off/signal` on any object).
+#[derive(Default)]
+pub struct Emitter {
+    ls: RefCell<NamedListeners<NamedHandler>>,
+}
+
+impl Emitter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    /// `on(emitter, type, f)`.
+    pub fn on(&self, name: &str, f: impl Fn(Args<'_>) + 'static) -> ListenerId {
+        self.on_rc(name, Rc::new(f))
+    }
+    pub fn on_rc(&self, name: &str, f: Rc<NamedHandler>) -> ListenerId {
+        self.ls.borrow_mut().on_rc(name, f)
+    }
+    /// Remove a handler by id. The removed handler is dropped after the table is
+    /// released, so its destructor may use this emitter.
+    pub fn off(&self, id: ListenerId) -> bool {
+        let e = self.ls.borrow_mut().remove(id);
+        e.is_some()
+    }
+    /// `off(emitter, type, f)` by function identity.
+    pub fn off_fn(&self, name: &str, f: &Rc<NamedHandler>) -> bool {
+        let e = self.ls.borrow_mut().remove_fn(name, f);
+        e.is_some()
+    }
+    /// `getHandlers(emitter, type)`.
+    pub fn get_handlers(&self, name: &str) -> Rc<[Entry<NamedHandler>]> {
+        self.ls.borrow().get_handlers(name)
+    }
+    /// `hasHandler(emitter, type)`.
+    pub fn has_handler(&self, name: &str) -> bool {
+        self.ls.borrow().has_handler(name)
+    }
+    /// `signal(emitter, type, ...values)`: call the handlers of `name`, in
+    /// registration order, over the list as it was when the signal started.
+    pub fn signal(&self, name: &str, args: Args<'_>) {
+        let hs = self.get_handlers(name);
+        for e in hs.iter() {
+            (e.f)(args);
+        }
     }
 }
 

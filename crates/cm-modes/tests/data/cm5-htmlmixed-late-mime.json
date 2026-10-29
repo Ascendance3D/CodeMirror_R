@@ -1,0 +1,575 @@
+{
+ "version": "5.65.21",
+ "cases": {
+  "late_mime": {
+   "spec": {
+    "name": "htmlmixed",
+    "tags": {
+     "script": [
+      [
+       "type",
+       "^text/x-late$",
+       "text/x-late"
+      ],
+      [
+       null,
+       null,
+       "javascript"
+      ]
+     ]
+    }
+   },
+   "defs": [
+    [
+     "mime",
+     "text/x-late",
+     "javascript"
+    ]
+   ],
+   "lines": [
+    "<script type=\"text/x-late\">var a</script>"
+   ],
+   "before": [
+    [
+     [
+      "<",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "type",
+      "attribute"
+     ],
+     [
+      "=",
+      null
+     ],
+     [
+      "\"text/x-late\"",
+      "string"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ],
+     [
+      "var a",
+      null
+     ],
+     [
+      "",
+      null
+     ],
+     [
+      "</",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ]
+    ]
+   ],
+   "after": [
+    [
+     [
+      "<",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "type",
+      "attribute"
+     ],
+     [
+      "=",
+      null
+     ],
+     [
+      "\"text/x-late\"",
+      "string"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ],
+     [
+      "var",
+      "keyword"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "a",
+      "def"
+     ],
+     [
+      "",
+      null
+     ],
+     [
+      "</",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ]
+    ]
+   ]
+  },
+  "redefined_mime": {
+   "spec": {
+    "name": "htmlmixed",
+    "tags": {
+     "script": [
+      [
+       "type",
+       "^text/x-redef$",
+       "text/x-redef"
+      ]
+     ]
+    }
+   },
+   "defs": [
+    [
+     "mime",
+     "text/x-redef",
+     "css"
+    ],
+    [
+     "mime",
+     "text/x-redef",
+     "javascript"
+    ]
+   ],
+   "lines": [
+    "<script type=\"text/x-redef\">var b</script>"
+   ],
+   "before": [
+    [
+     [
+      "<",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "type",
+      "attribute"
+     ],
+     [
+      "=",
+      null
+     ],
+     [
+      "\"text/x-redef\"",
+      "string"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ],
+     [
+      "var b",
+      null
+     ],
+     [
+      "",
+      null
+     ],
+     [
+      "</",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ]
+    ]
+   ],
+   "after": [
+    [
+     [
+      "<",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "type",
+      "attribute"
+     ],
+     [
+      "=",
+      null
+     ],
+     [
+      "\"text/x-redef\"",
+      "string"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ],
+     [
+      "var",
+      "keyword"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "b",
+      "def"
+     ],
+     [
+      "",
+      null
+     ],
+     [
+      "</",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ]
+    ]
+   ]
+  },
+  "late_mode": {
+   "spec": {
+    "name": "htmlmixed",
+    "tags": {
+     "tpl": [
+      [
+       null,
+       null,
+       "latemode"
+      ]
+     ]
+    }
+   },
+   "defs": [
+    [
+     "mode",
+     "latemode"
+    ]
+   ],
+   "lines": [
+    "<tpl>x y</tpl>",
+    "<b>z</b>"
+   ],
+   "before": [
+    [
+     [
+      "<",
+      "tag bracket"
+     ],
+     [
+      "tpl",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ],
+     [
+      "x y",
+      null
+     ],
+     [
+      "",
+      null
+     ],
+     [
+      "</",
+      "tag bracket"
+     ],
+     [
+      "tpl",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ]
+    ],
+    [
+     [
+      "<",
+      "tag bracket"
+     ],
+     [
+      "b",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ],
+     [
+      "z",
+      null
+     ],
+     [
+      "</",
+      "tag bracket"
+     ],
+     [
+      "b",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ]
+    ]
+   ],
+   "after": [
+    [
+     [
+      "<",
+      "tag bracket"
+     ],
+     [
+      "tpl",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ],
+     [
+      "x y",
+      "late-latemode"
+     ],
+     [
+      "",
+      null
+     ],
+     [
+      "</",
+      "tag bracket"
+     ],
+     [
+      "tpl",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ]
+    ],
+    [
+     [
+      "<",
+      "tag bracket"
+     ],
+     [
+      "b",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ],
+     [
+      "z",
+      null
+     ],
+     [
+      "</",
+      "tag bracket"
+     ],
+     [
+      "b",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ]
+    ]
+   ]
+  },
+  "late_mime_to_late_mode": {
+   "spec": {
+    "name": "htmlmixed",
+    "tags": {
+     "script": [
+      [
+       "type",
+       "^text/x-two$",
+       "text/x-two"
+      ]
+     ]
+    }
+   },
+   "defs": [
+    [
+     "mode",
+     "secondmode"
+    ],
+    [
+     "mime",
+     "text/x-two",
+     "secondmode"
+    ]
+   ],
+   "lines": [
+    "<script type=\"text/x-two\">q</script>"
+   ],
+   "before": [
+    [
+     [
+      "<",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "type",
+      "attribute"
+     ],
+     [
+      "=",
+      null
+     ],
+     [
+      "\"text/x-two\"",
+      "string"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ],
+     [
+      "q",
+      null
+     ],
+     [
+      "",
+      null
+     ],
+     [
+      "</",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ]
+    ]
+   ],
+   "after": [
+    [
+     [
+      "<",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "type",
+      "attribute"
+     ],
+     [
+      "=",
+      null
+     ],
+     [
+      "\"text/x-two\"",
+      "string"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ],
+     [
+      "q",
+      "late-secondmode"
+     ],
+     [
+      "",
+      null
+     ],
+     [
+      "</",
+      "tag bracket"
+     ],
+     [
+      "script",
+      "tag"
+     ],
+     [
+      ">",
+      "tag bracket"
+     ]
+    ]
+   ]
+  }
+ }
+}

@@ -386,8 +386,11 @@ impl HtmlMixedMode {
             } else {
                 None
             };
+            // `CodeMirror.getMode(config, modeSpec)` runs now, on the registry as it
+            // is now: a MIME type defined after this mode was made applies.
             let mode = self
                 .registry
+                .current()
                 .get_mode(&self.options, &mode_spec.unwrap_or(Spec::Null));
             state.token = TokenFn::Local(name.to_vec());
             let base: JsArg = self.html_mode.indent(&state.html_state, &[], &[]).into();
