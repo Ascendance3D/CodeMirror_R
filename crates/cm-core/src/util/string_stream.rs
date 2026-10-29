@@ -74,20 +74,49 @@ impl<'a> StringStream<'a> {
         self.id
     }
 
+    /// `pos` as the JS number: a position before the start of the line is stored
+    /// in two's complement (see [`StringStream::back_up`]).
+    fn ipos(&self) -> isize {
+        self.pos as isize
+    }
+    /// `string.charAt(i)`: `None` where the JS returns `""` (out of range,
+    /// negative included).
+    fn char_at(&self, i: isize) -> Option<u16> {
+        if i < 0 {
+            None
+        } else {
+            self.string.get(i as usize).copied()
+        }
+    }
+    /// The begin offset of `string.slice(i)` / `string.substr(i)`: a negative `i`
+    /// counts from the end and clamps at 0.
+    fn js_from(&self, i: isize) -> usize {
+        let len = self.string.len() as isize;
+        if i < 0 {
+            (len + i).max(0) as usize
+        } else {
+            (i as usize).min(self.string.len())
+        }
+    }
+
     pub fn eol(&self) -> bool {
-        self.pos >= self.string.len()
+        self.ipos() >= self.string.len() as isize
     }
     pub fn sol(&self) -> bool {
         self.pos == self.line_start
     }
-    /// `peek()`: `undefined` (None) at the end of the line.
+    /// `peek()`: `undefined` (None) at the end of the line or before its start.
     pub fn peek(&self) -> Option<u16> {
-        self.string.get(self.pos).copied()
+        self.char_at(self.ipos())
     }
+    /// `next()`. Before the start of the line (after [`StringStream::back_up`] past
+    /// it) the JS returns `""` and still advances `pos`; that is `None` here too, but
+    /// `pos` moves as in CM5.
     pub fn next(&mut self) -> Option<u16> {
-        if self.pos < self.string.len() {
-            self.pos += 1;
-            Some(self.string[self.pos - 1])
+        if self.ipos() < self.string.len() as isize {
+            let c = self.char_at(self.ipos());
+            self.pos = self.pos.wrapping_add(1);
+            c
         } else {
             None
         }
@@ -96,62 +125,64 @@ impl<'a> StringStream<'a> {
     pub fn eat(&mut self, ch: u16) -> Option<u16> {
         match self.peek() {
             Some(c) if c == ch => {
-                self.pos += 1;
+                self.pos = self.pos.wrapping_add(1);
                 Some(c)
             }
             _ => None,
         }
     }
     /// `eat(string)`: compares the *single* next character to the whole string.
-    /// Quirk kept from the JS: `eat("")` at the end of the line succeeds and moves
-    /// `pos` past the end, because `charAt` returns `""` there.
+    /// Quirk kept from the JS: `eat("")` at the end of the line (or before its
+    /// start) succeeds and moves `pos` on, because `charAt` returns `""` there.
     pub fn eat_str(&mut self, m: &str) -> bool {
         let m: Vec<u16> = m.encode_utf16().collect();
-        let ch: &[u16] = match self.string.get(self.pos) {
+        let c = self.char_at(self.ipos());
+        let ch: &[u16] = match &c {
             Some(c) => std::slice::from_ref(c),
             None => &[],
         };
         if ch == m.as_slice() {
-            self.pos += 1;
+            self.pos = self.pos.wrapping_add(1);
             true
         } else {
             false
         }
     }
-    /// `eat(regexp | function)`: never called at the end of the line (`ch &&`).
+    /// `eat(regexp | function)`: never called where `charAt` is `""` (`ch &&`).
     pub fn eat_fn<F: Fn(u16) -> bool>(&mut self, f: F) -> Option<u16> {
         match self.peek() {
             Some(c) if f(c) => {
-                self.pos += 1;
+                self.pos = self.pos.wrapping_add(1);
                 Some(c)
             }
             _ => None,
         }
     }
     pub fn eat_while<F: Fn(u16) -> bool>(&mut self, f: F) -> bool {
-        let start = self.pos;
+        let start = self.ipos();
         while self.eat_fn(&f).is_some() {}
-        self.pos > start
+        self.ipos() > start
     }
     pub fn eat_while_char(&mut self, ch: u16) -> bool {
-        let start = self.pos;
+        let start = self.ipos();
         while self.eat(ch).is_some() {}
-        self.pos > start
+        self.ipos() > start
     }
-    /// `eatSpace()`: `/[\s ]/`.
+    /// `eatSpace()`: `/[\s ]/`.
     pub fn eat_space(&mut self) -> bool {
-        let start = self.pos;
+        let start = self.ipos();
         while self.peek().is_some_and(is_js_space) {
-            self.pos += 1;
+            self.pos = self.pos.wrapping_add(1);
         }
-        self.pos > start
+        self.ipos() > start
     }
     pub fn skip_to_end(&mut self) {
         self.pos = self.string.len();
     }
-    /// `skipTo(ch)`: `indexOf` from `pos` (works for multi-char strings too).
+    /// `skipTo(ch)`: `indexOf` from `pos` (works for multi-char strings too). A
+    /// negative `pos` searches from 0, as `indexOf` does.
     pub fn skip_to(&mut self, ch: &[u16]) -> bool {
-        match index_of(self.string, ch, self.pos) {
+        match index_of(self.string, ch, self.ipos().max(0) as usize) {
             Some(found) => {
                 self.pos = found;
                 true
@@ -162,11 +193,17 @@ impl<'a> StringStream<'a> {
     pub fn skip_to_char(&mut self, ch: u16) -> bool {
         self.skip_to(&[ch])
     }
+    /// `backUp(n)`: `this.pos -= n`. CM5 does not stop at 0: `pos` (and a `start`
+    /// copied from it) can go negative, and the readers then follow the JS string
+    /// semantics (`charAt` is `""`, `slice`/`substr` count from the end). A negative
+    /// position is stored in two's complement, so `pos as isize` is the JS value.
     pub fn back_up(&mut self, n: usize) {
-        self.pos -= n;
+        self.pos = self.pos.wrapping_sub(n);
     }
     pub fn column(&mut self) -> i64 {
-        if self.last_column_pos < self.start {
+        // `lastColumnPos` is never negative: it only takes `start` when `start` is
+        // greater, so a negative `start` keeps the last value, as in the JS.
+        if (self.last_column_pos as isize) < self.start as isize {
             self.last_column_value = count_column(
                 self.string,
                 Some(self.start),
@@ -191,11 +228,13 @@ impl<'a> StringStream<'a> {
                 0
             }
     }
-    /// `match(string, consume, caseInsensitive)`.
+    /// `match(string, consume, caseInsensitive)`: compares
+    /// `string.substr(pos, pattern.length)`.
     pub fn match_str(&mut self, pattern: &str, consume: bool, case_insensitive: bool) -> bool {
         let pat: Vec<u16> = pattern.encode_utf16().collect();
-        let end = (self.pos + pat.len()).min(self.string.len());
-        let substr = &self.string[self.pos.min(end)..end];
+        let begin = self.js_from(self.ipos());
+        let end = (begin + pat.len()).min(self.string.len());
+        let substr = &self.string[begin..end];
         let eq = if case_insensitive {
             String::from_utf16_lossy(substr).to_lowercase()
                 == String::from_utf16_lossy(&pat).to_lowercase()
@@ -204,27 +243,28 @@ impl<'a> StringStream<'a> {
         };
         if eq {
             if consume {
-                self.pos += pat.len();
+                self.pos = self.pos.wrapping_add(pat.len());
             }
             true
         } else {
             false
         }
     }
-    /// `match(regexp, consume)`. `f` runs the "regexp" on the rest of the line and
-    /// returns the match index and length. A match that does not start at the current
-    /// position counts as no match (the JS returns null).
+    /// `match(regexp, consume)`. `f` runs the "regexp" on the rest of the line
+    /// (`string.slice(pos)`) and returns the match index and length. A match that
+    /// does not start at the current position counts as no match (the JS returns
+    /// null).
     pub fn match_with<F: FnOnce(&[u16]) -> Option<RegexMatch>>(
         &mut self,
         f: F,
         consume: bool,
     ) -> Option<RegexMatch> {
-        let m = f(&self.string[self.pos.min(self.string.len())..])?;
+        let m = f(&self.string[self.js_from(self.ipos())..])?;
         if m.index > 0 {
             return None;
         }
         if consume {
-            self.pos += m.len;
+            self.pos = self.pos.wrapping_add(m.len);
         }
         Some(m)
     }
@@ -236,11 +276,11 @@ impl<'a> StringStream<'a> {
     /// its capture groups: `group(1)` is capture 1, where the JS array's `[1]` is
     /// the second whole match.
     pub fn match_regexp(&mut self, re: &RegExp, consume: bool) -> Option<Match> {
-        let rest = &self.string[self.pos.min(self.string.len())..];
+        let rest = &self.string[self.js_from(self.ipos())..];
         let m = re.exec(rest)?;
         if re.flags().global {
             if consume {
-                self.pos += m.len();
+                self.pos = self.pos.wrapping_add(m.len());
             }
             return Some(m);
         }
@@ -248,12 +288,16 @@ impl<'a> StringStream<'a> {
             return None;
         }
         if consume {
-            self.pos += m.len();
+            self.pos = self.pos.wrapping_add(m.len());
         }
         Some(m)
     }
+    /// `current()`: `string.slice(start, pos)`, with the JS `slice` rules for
+    /// negative bounds (from the end) and an end before the begin (empty).
     pub fn current(&self) -> &'a [u16] {
-        &self.string[self.start..self.pos.min(self.string.len()).max(self.start)]
+        let begin = self.js_from(self.start as isize);
+        let end = self.js_from(self.ipos()).max(begin);
+        &self.string[begin..end]
     }
     pub fn current_string(&self) -> String {
         String::from_utf16_lossy(self.current())

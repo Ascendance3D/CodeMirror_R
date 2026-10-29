@@ -8,7 +8,6 @@
 //! These tests record a difference; they do not approve it. When a fix lane changes
 //! the behavior, the test fails: replace it with a test of the CM5 value.
 
-use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::rc::Rc;
 
 use cm_core::{HistoryEventData, Pos, StringStream};
@@ -236,28 +235,6 @@ fn g13_8_drag_autoscroll_needs_move_events() {
     // one-line step of app.rs together), not 20px per 50ms on a timer.
     app.handle(below);
     assert!(app.editor.display.scroll_top > first);
-}
-
-/// G13 #12, scenario `stringStream_backUp`. CM5 lets `pos` go negative
-/// (`backUp(3)` at pos 1 -> -2) and keeps reading through the JS string semantics
-/// (`current()` = "bcd", `peek()` = undefined, `next()` = "" twice, then "a").
-/// Rust stores `pos` as `usize`: the subtraction overflows and panics in debug
-/// builds (wraps in release).
-#[test]
-fn g13_12_back_up_past_start_overflows() {
-    let s: Vec<u16> = "abcdef".encode_utf16().collect();
-    let r = catch_unwind(AssertUnwindSafe(|| {
-        let mut st = StringStream::new(&s, Some(4), None);
-        st.next();
-        st.start = st.pos;
-        st.back_up(3);
-        st.pos
-    }));
-    if cfg!(debug_assertions) {
-        assert!(r.is_err(), "CM5: pos -2");
-    } else {
-        assert_eq!(r.ok(), Some(usize::MAX - 1), "CM5: pos -2");
-    }
 }
 
 /// Tokens of one line with an existing mode object.
