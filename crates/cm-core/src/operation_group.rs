@@ -135,6 +135,22 @@ pub type BeforeSelectionChangeFn = dyn Fn(&Doc, &mut BeforeSelectionChange);
 /// What a document sees of its editor (`doc.cm`): the editor's operation state and
 /// listener tables. Every method is called without any document borrow held, and
 /// implementations do not hold their own borrows across a call into user code.
+/// The `changeType` of `regLineChange(cm, line, type)` (src/display/view_tracking.js).
+///
+/// `Gutter` and `Class` are produced by `setGutterMarker`/`addLineClass`/`removeLineClass`
+/// (and `Class` is what the view redraws on). `Text` and `Widget` are reserved: CM5 reports
+/// them from `markText` and the line-widget API, which are not ported through this sink
+/// yet, so nothing produces or consumes them today. The enum is `non_exhaustive` so that
+/// adding their producers is not a breaking change.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum LineChange {
+    Text,
+    Gutter,
+    Widget,
+    Class,
+}
+
 pub trait EditorSink {
     fn id(&self) -> EditorId;
     /// The model-level options of the editor.
@@ -186,6 +202,8 @@ pub trait EditorSink {
     /// `shiftDoc(doc, distance)` on a document with this editor, after `doc.first`
     /// and the selection moved: the `if (doc.cm)` part (changes.js:167-171).
     fn doc_shifted(&self, _doc: &Doc, _distance: i64) {}
+    /// `changeLine` on a document with this editor: `regLineChange(cm, line, kind)`.
+    fn line_changed(&self, _doc: &Doc, _line: i64, _kind: LineChange) {}
     /// `signalCursorActivity(cm)`.
     fn signal_cursor_activity(&self) {}
     /// `setSelectionInner` on a document with this editor: the selection changed.

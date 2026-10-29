@@ -31,7 +31,7 @@ use std::cell::{Cell, RefCell};
 use std::path::Path;
 use std::rc::Rc;
 
-use cm_core::Pos;
+use cm_core::{LineWhere, Pos};
 use cm_modes::{Registry, Spec};
 use cm_view::app::{App, AppOptions, Clipboard, Input};
 use cm_view::{Editor, EditorOptions, Indent, KeyEvent, Metrics};
@@ -94,6 +94,12 @@ impl Inner {
         if let Some(d) = self.dom.as_mut() {
             let _ = d.apply(&f, tab, pre.as_deref());
         }
+        // After the DOM is current: `maybeScrollWindow` measures it.
+        if let Some(rect) = self.session.app.editor.take_window_scroll_rect() {
+            if let Some(d) = self.dom.as_ref() {
+                d.maybe_scroll_window(rect);
+            }
+        }
     }
 
     /// Measure the font when the cache lacks a value (a hidden element measured 0,
@@ -139,7 +145,7 @@ impl Inner {
         let mut more = true;
         while more && js_sys::Date::now() < end {
             self.session.app.deliver_pending();
-            more = self.session.app.editor.highlight_step(20);
+            more = self.session.app.editor.highlight_work(20);
         }
         if let Some(d) = self.dom.as_mut() {
             d.schedule_frame();
@@ -718,6 +724,60 @@ impl WebEditor {
         self.with(|i| {
             let h = i.session.app.editor.doc.history_size();
             Array::of2(&JsValue::from(h.undo as f64), &JsValue::from(h.redo as f64))
+        })
+    }
+
+    /// `addLineClass(line, where, cls)`. An invalid class pattern throws a `SyntaxError`, as
+    /// in CM5 (the regular expression is built from `cls` unescaped).
+    #[wasm_bindgen(js_name = addLineClass)]
+    pub fn add_line_class(&self, line: f64, place: &str, cls: &str) -> Result<(), JsValue> {
+        let place = LineWhere::parse(place);
+        self.with(|i| {
+            i.session
+                .app
+                .editor
+                .doc
+                .add_line_class(line as i64, place, cls)
+        })?
+        .map(|_| ())
+        .map_err(|e| js_sys::SyntaxError::new(&e.0).into())
+    }
+
+    /// `removeLineClass(line, where, cls)`; a `null` or `undefined` class clears the property.
+    #[wasm_bindgen(js_name = removeLineClass)]
+    pub fn remove_line_class(
+        &self,
+        line: f64,
+        place: &str,
+        cls: Option<String>,
+    ) -> Result<(), JsValue> {
+        let place = LineWhere::parse(place);
+        self.with(|i| {
+            i.session
+                .app
+                .editor
+                .doc
+                .remove_line_class(line as i64, place, cls.as_deref())
+        })?
+        .map(|_| ())
+        .map_err(|e| js_sys::SyntaxError::new(&e.0).into())
+    }
+
+    /// The class properties of `lineInfo(line)`: `[textClass, bgClass, wrapClass, gutterClass]`,
+    /// each a string or `null` (CM5 also has `undefined` for a never-set property).
+    #[wasm_bindgen(js_name = lineClasses)]
+    pub fn line_classes(&self, line: f64) -> Result<Array, JsValue> {
+        self.with(|i| {
+            let h = i.session.app.editor.doc.get_line_handle(line as i64);
+            [
+                h.as_ref().and_then(|h| h.text_class()),
+                h.as_ref().and_then(|h| h.bg_class()),
+                h.as_ref().and_then(|h| h.wrap_class()),
+                h.as_ref().and_then(|h| h.gutter_class()),
+            ]
+            .into_iter()
+            .map(|c| c.map_or(JsValue::NULL, |c| JsValue::from_str(&c)))
+            .collect()
         })
     }
 
