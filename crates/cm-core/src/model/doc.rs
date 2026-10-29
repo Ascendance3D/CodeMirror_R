@@ -132,6 +132,9 @@ pub(crate) struct DocInner {
     pub extend: bool,
     pub direction: Direction,
     pub mode_option: Option<String>,
+    /// `doc.scrollLeft` / `doc.scrollTop`: where an editor showing the document
+    /// was scrolled when it let the document go (`swapDoc` restores it).
+    pub scroll: (f64, f64),
     /// `doc.cm`: the editor this document is attached to.
     pub sink: Option<Rc<dyn EditorSink>>,
     /// `op.markedSpans`: span arrays created by `addMarkedSpan` in the operation
@@ -249,6 +252,7 @@ impl Doc {
             extend: false,
             direction,
             mode_option: mode,
+            scroll: (0.0, 0.0),
             sink: None,
             op_span_arrays: (0, Vec::new()),
             before_change: Listeners::default(),
@@ -310,7 +314,8 @@ impl Doc {
     pub(crate) fn history_rc(&self) -> HistRef {
         self.inner().history.clone()
     }
-    pub(crate) fn has_editor(&self) -> bool {
+    /// Whether an editor (or editor semantics) is attached (`doc.cm`).
+    pub fn has_editor(&self) -> bool {
         self.inner().sink.is_some()
     }
     /// `hasHandler(doc, "beforeChange") || doc.cm && hasHandler(doc.cm, "beforeChange")`.
@@ -1508,6 +1513,19 @@ impl Doc {
                 );
             }
         })
+    }
+    /// `doc.modeOption = mode` (the `mode` option handler and the constructor
+    /// write it on the editor's document).
+    pub fn set_mode_option(&self, mode: Option<String>) {
+        self.inner_mut().mode_option = mode;
+    }
+    /// `(doc.scrollLeft, doc.scrollTop)`.
+    pub fn scroll_pos(&self) -> (f64, f64) {
+        self.inner().scroll
+    }
+    /// Set `(doc.scrollLeft, doc.scrollTop)`.
+    pub fn set_scroll_pos(&self, pos: (f64, f64)) {
+        self.inner_mut().scroll = pos;
     }
     pub fn mode_option(&self) -> Option<String> {
         self.inner().mode_option.clone()

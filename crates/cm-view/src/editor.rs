@@ -39,7 +39,7 @@ use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_m
 use crate::events::{
     ChangeHandler, ChangesHandler, Cx, DisplayEvent, EditorEvents, EditorHandler, EditorShared,
     InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler, NameHandler,
-    OpRecord, Parked, ViewChange, ViewportHandler, WithSelf, finish,
+    OpRecord, Parked, SwapDocHandler, ViewChange, ViewportHandler, WithSelf, finish,
 };
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
@@ -231,6 +231,15 @@ impl std::fmt::Debug for MaxLine {
             .field("changed", &self.changed)
             .field("sizer_width", &self.sizer_width)
             .finish_non_exhaustive()
+    }
+}
+
+/// The name a mode spec leaves in `doc.modeOption` (`None` for `null`).
+fn spec_name(spec: &Spec) -> Option<String> {
+    match spec {
+        Spec::Null => None,
+        Spec::Str(s) => Some(s.clone()),
+        Spec::Obj(m) => Some(m.name.clone()),
     }
 }
 
@@ -441,6 +450,9 @@ impl Editor {
         );
         let id = shared.id;
         doc.attach_editor(shared.clone())?;
+        if let Some(name) = spec_name(&mode) {
+            doc.set_mode_option(Some(name));
+        }
         let mut ed = Editor {
             id,
             shared,
@@ -511,6 +523,8 @@ impl Editor {
             highlight_non_standard_property_keywords: None,
         };
         self.run_op(|cm| {
+            // optionHandlers.mode: `cm.doc.modeOption = val`.
+            cm.doc.set_mode_option(spec_name(&spec));
             cm.mode = cm.registry.get_mode(&mode_opts, &spec);
             cm.mode_spec = spec;
             highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
@@ -552,11 +566,131 @@ impl Editor {
     pub fn set_metrics(&mut self, metrics: Metrics) {
         self.run_op(|cm| {
             cm.metrics = metrics;
+            cm.refresh();
+        });
+    }
+    /// `refresh()` (src/edit/methods.js:411, a methodOp): `regChange` over the
+    /// whole document, a forced update, `clearCaches`, the scroll position again
+    /// (`scrollToCoords(doc.scrollLeft, doc.scrollTop)`, which resolves a pending
+    /// scroll), `updateGutterSpace`, the line heights again (`estimateLineHeights`),
+    /// then the `refresh` event (immediate). Call it after the host's font or
+    /// layout changed; [`Editor::set_metrics`] runs it with new metrics.
+    pub fn refresh(&mut self) {
+        self.run_op(|cm| {
+            cm.shared.reg_change_all(&cm.doc);
+            cm.force_update = true;
+            cm.clear_caches();
+            let (l, t) = (cm.display.scroll_left, cm.display.scroll_top);
+            cm.scroll_to_coords(Some(l), Some(t));
             cm.update_gutter();
+            cm.invalidate_heights();
+            let snap = cm.shared.ls.borrow().refresh.snapshot();
+            for e in snap.iter() {
+                (e.f)(&mut Cx {
+                    editor: cm,
+                    others: &mut NoEditors,
+                });
+            }
+        });
+    }
+    /// `onResize(cm)` (src/edit/global_events.js:39): the host window resized,
+    /// possibly with a new zoom: the measurement caches are dropped (the host
+    /// measured `metrics` again; `cachedCharWidth = cachedTextHeight =
+    /// cachedPaddingH = null`) and `setSize` applies the new size. Unlike
+    /// [`Editor::refresh`], no `refresh` event.
+    pub fn on_resize(&mut self, width: f64, height: f64, metrics: Metrics) {
+        self.run_op(|cm| {
+            if cm.metrics != metrics {
+                cm.metrics = metrics;
+                cm.update_gutter();
+                cm.clear_caches();
+            }
+            cm.set_size(width, height);
+        });
+    }
+    /// `on("refresh", f)` (immediate).
+    pub fn on_refresh(&self, f: impl Fn(&mut Cx) + 'static) -> ListenerId {
+        let f: Rc<EditorHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().refresh.on_rc(f)
+    }
+    /// `on("swapDoc", f)`: `f` gets the document that was replaced (delayed).
+    pub fn on_swap_doc(&self, f: impl Fn(&mut Cx, &Doc) + 'static) -> ListenerId {
+        let f: Rc<SwapDocHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().swap_doc.on_rc(f)
+    }
+    /// `swapDoc(doc)` (src/edit/methods.js:423, a methodOp): show `doc` instead
+    /// of the current document and return the old one. The old document keeps the
+    /// scroll position it was shown at; `doc` is shown at its own (`doc.scrollLeft
+    /// / scrollTop`). The mode follows `doc.modeOption` (`attachDoc`: `loadMode`,
+    /// `cm.options.mode = doc.modeOption`); the highlight state, the line heights
+    /// and the longest line are computed for the new document. `swapDoc` fires
+    /// delayed with the old document. [`CmError::DocInUse`] when `doc` already has
+    /// an editor ("This document is already in use."); nothing changes then.
+    pub fn swap_doc(&mut self, doc: Doc) -> Result<Doc, CmError> {
+        if doc.has_editor() {
+            return Err(CmError::DocInUse);
+        }
+        self.run_op(|cm| {
+            // The old document keeps its scroll position (`doc.scrollTop` is
+            // updated as the scroller moves in CM5).
+            cm.doc
+                .set_scroll_pos((cm.display.scroll_left, cm.display.scroll_top));
+            // `old.cm = null`.
+            cm.doc.detach_editor();
+            doc.attach_editor(cm.shared.clone())
+                .expect("checked: the document has no editor");
+            let old = std::mem::replace(&mut cm.doc, doc);
+            let first = cm.first_line();
+            // attachDoc: estimateLineHeights, loadMode, findMaxLine, regChange.
+            {
+                let mut hs = cm.hs.borrow_mut();
+                let mut fresh = HighlightState::new(first);
+                fresh.tab_size = hs.tab_size;
+                fresh.max_highlight_length = hs.max_highlight_length;
+                fresh.flatten_spans = hs.flatten_spans;
+                fresh.mode_gen = hs.mode_gen + 1;
+                *hs = fresh;
+            }
+            let spec = match cm.doc.mode_option() {
+                Some(m) => Spec::Str(m),
+                None => Spec::Null,
+            };
+            let mode_opts = ModeOptions {
+                indent_unit: cm.options.indent_unit,
+                tab_size: cm.options.tab_size,
+                highlight_non_standard_property_keywords: None,
+            };
+            cm.mode = cm.registry.get_mode(&mode_opts, &spec);
+            cm.mode_spec = spec;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            {
+                let mut h = cm.heights.borrow_mut();
+                h.heights.clear();
+                h.prefix = None;
+                h.max_width = None;
+                h.max_line.wrapping = cm.options.line_wrapping;
+                if !cm.options.line_wrapping {
+                    find_max_line(&cm.doc, &mut h.max_line);
+                }
+                h.max_line.changed = !cm.options.line_wrapping;
+            }
+            cm.set_view(first, first);
+            cm.display.line_num_chars = None;
+            cm.update_gutter();
+            cm.shared.reg_change_all(&cm.doc);
             cm.clear_caches();
             cm.invalidate_heights();
             cm.force_update = true;
-        });
+            let (l, t) = cm.doc.scroll_pos();
+            cm.scroll_to_coords(Some(l), Some(t));
+            // `signalLater(this, "swapDoc", this, old)`.
+            let snap = cm.shared.ls.borrow().swap_doc.snapshot();
+            for e in snap.iter() {
+                let (f, o) = (e.f.clone(), old.clone());
+                cm.shared.later(move |cx| f(cx, &o));
+            }
+            Ok(old)
+        })
     }
     /// `setOption("lineWrapping", v)`.
     pub fn set_line_wrapping(&mut self, v: bool) {

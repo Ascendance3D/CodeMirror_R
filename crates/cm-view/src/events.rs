@@ -86,6 +86,7 @@ pub type MarkerClearedHandler = dyn Fn(&mut Cx<'_>, &TextMarker, Option<i64>, Op
 pub type NameHandler = dyn Fn(&mut Cx<'_>, &str);
 pub type LineHandler = dyn Fn(&mut Cx<'_>, i64);
 pub type InputReadHandler = dyn Fn(&mut Cx<'_>, &InputChange);
+pub type SwapDocHandler = dyn Fn(&mut Cx<'_>, &Doc);
 
 /// The `inputRead` payload: the change typed or pasted text asked for (before
 /// `beforeChange` handlers saw it).
@@ -127,6 +128,10 @@ pub struct EditorListeners {
     /// Immediate: the editor gained or lost focus.
     pub focus: Listeners<EditorHandler>,
     pub blur: Listeners<EditorHandler>,
+    /// Immediate: `refresh()` ran.
+    pub refresh: Listeners<EditorHandler>,
+    /// Delayed: `swapDoc` replaced the document (the old one).
+    pub swap_doc: Listeners<SwapDocHandler>,
 }
 
 impl EditorListeners {
@@ -151,6 +156,8 @@ impl EditorListeners {
             .or_else(|| removed(self.electric_input.remove(id)))
             .or_else(|| removed(self.focus.remove(id)))
             .or_else(|| removed(self.blur.remove(id)))
+            .or_else(|| removed(self.refresh.remove(id)))
+            .or_else(|| removed(self.swap_doc.remove(id)))
     }
 }
 
@@ -304,6 +311,18 @@ impl EditorShared {
         if let Some(op) = self.op.borrow_mut().as_mut() {
             f(op);
         }
+    }
+
+    /// `regChange(cm)` over the whole document.
+    pub(crate) fn reg_change_all(&self, doc: &Doc) {
+        let (from, to) = (doc.first_line(), doc.first_line() + doc.line_count() as i64);
+        self.with_op(|op| {
+            op.regs.push(ViewChange::Range {
+                from,
+                to,
+                lendiff: 0,
+            })
+        });
     }
 
     /// The `display.maxLine` bookkeeping of makeChangeSingleDocInEditor
