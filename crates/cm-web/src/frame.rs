@@ -199,8 +199,9 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
             id: handle.id(),
             line,
             number,
-            top: editor.height_at_line(line),
-            height: editor.line_height(line),
+            // The text below any widgets above it; the adapter draws no widget nodes.
+            top: editor.text_top(line),
+            height: editor.text_rows_height(line),
             text: handle.text_utf16(),
             classes: LineClasses::of(&styles, &handle),
             styles,
@@ -225,7 +226,7 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
         let (a, b) = (r.from(), r.to());
         for line in a.line.max(from)..=b.line.min(to - 1) {
             let (t, l) = editor.layout(line);
-            let top = editor.height_at_line(line);
+            let top = editor.text_top(line);
             let s_ch = if line == a.line { a.ch } else { 0 };
             let e_ch = if line == b.line { b.ch } else { t.len() as i64 };
             let lc = l.cursor_coords(&t, s_ch, Some(Sticky::After));
