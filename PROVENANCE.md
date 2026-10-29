@@ -1,6 +1,6 @@
 # Provenance
 
-CodeMirror_R was extracted from `Ascendance3D/X_ITE_R` (PRIVATE) on 2026-10-25, under the owner decision `CODEMIRROR_EXTRACTION_OPTION_A_AUTHORIZED`. X_ITE_R keeps its full Git history unchanged.
+CodeMirror_R was extracted from `Ascendance3D/X_ITE_R` on 2026-10-25, under the owner decision `CODEMIRROR_EXTRACTION_OPTION_A_AUTHORIZED`. X_ITE_R keeps its full Git history unchanged.
 
 | item | value |
 | --- | --- |
@@ -10,7 +10,7 @@ CodeMirror_R was extracted from `Ascendance3D/X_ITE_R` (PRIVATE) on 2026-10-25, 
 | CodeMirror files | 676, `docs/provenance/cm-files-ffe080b.sha256` (sha256, mode, blob id, size, path) |
 | shared test corpus | 859, `docs/provenance/corpus-items-ffe080b.sha256` |
 | CM5 reference | 5.65.21, commit `4ca3d0551cf9125114e0802877480599472dc186`, vendored digest `440 d2daa3a3a863163603b645e453e2ffc6c1a4277d228108a4d437c7627f0f911c` |
-| extraction plan | owner reports, `xite-rust-project-recovery/2026-10-25-codemirror-extraction-plan/REPORT.md` |
+| extraction plan | the owner's extraction plan of 2026-10-25 (not published) |
 
 ## Commits of the extraction PR
 
