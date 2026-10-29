@@ -352,6 +352,10 @@ pub(crate) fn editor_of(ed: &mut dyn Any) -> &mut Editor {
 /// `endOperation_finish`: marker `hide`/`unhide`, then `changes`, then the display
 /// events, with the handlers registered at this point.
 pub(crate) fn finish(cx: &mut Cx, rec: OpRecord) {
+    // endOperation_W2: `if (op.selectionChanged) restartBlink(cm)`.
+    if rec.selection_changed {
+        cx.editor.restart_blink();
+    }
     for m in &rec.maybe_hidden {
         if m.line_count() == 0 {
             m.signal_hidden(true);

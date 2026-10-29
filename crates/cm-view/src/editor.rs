@@ -70,6 +70,9 @@ pub struct EditorOptions {
     pub line_wise_copy_cut: bool,
     pub paste_lines_per_selection: bool,
     pub cursor_scroll_margin: f64,
+    /// `cursorBlinkRate` (ms): the cursor toggles at this period while focused; 0
+    /// shows it without blinking, a negative rate hides it ([`Editor::restart_blink`]).
+    pub cursor_blink_rate: f64,
     pub viewport_margin: i64,
     pub drag_drop: bool,
     pub undo_depth: f64,
@@ -101,6 +104,7 @@ impl Default for EditorOptions {
             line_wise_copy_cut: true,
             paste_lines_per_selection: true,
             cursor_scroll_margin: 0.0,
+            cursor_blink_rate: 530.0,
             viewport_margin: 10,
             drag_drop: true,
             undo_depth: 200.0,
@@ -288,6 +292,11 @@ pub struct Editor {
     pub(crate) force_update: bool,
     /// `state.focused`.
     focused: bool,
+    /// When `restartBlink` last ran (`display.blinker`), on the host clock; `None`
+    /// while blurred (`clearInterval(display.blinker)`).
+    blink_start: Option<f64>,
+    /// `onBlur`'s 150 ms timeout that resets `display.shift`.
+    blur_shift_at: Option<f64>,
     op: OpState,
     /// The rect of the last end-of-operation `scrollToPos`, for `maybeScrollWindow`.
     window_scroll_rect: Option<Rect>,
@@ -472,6 +481,8 @@ impl Editor {
             commands: crate::commands::builtin_commands(),
             force_update: false,
             focused: false,
+            blink_start: None,
+            blur_shift_at: None,
             op: OpState::default(),
             window_scroll_rect: None,
             heights,
@@ -820,24 +831,100 @@ impl Editor {
     /// `onFocus`/`onBlur`: the host's window gained or lost focus. `focus`/`blur`
     /// handlers run immediately, only when the state changes (a `"nocursor"`
     /// read-only editor is not focused).
+    ///
+    /// Focusing restarts the cursor blink even when the editor was already focused
+    /// (`onFocus` ends with `restartBlink`). Blurring stops it and, 150 ms later
+    /// unless the editor is focused again, resets `display.shift` (a host timer:
+    /// [`Editor::run_timers`]).
     pub fn set_focused(&mut self, focused: bool) {
-        if focused == self.focused {
+        if focused != self.focused {
+            self.focused = focused;
+            let snap = {
+                let ls = self.shared.ls.borrow();
+                if focused {
+                    ls.focus.snapshot()
+                } else {
+                    ls.blur.snapshot()
+                }
+            };
+            for e in snap.iter() {
+                (e.f)(&mut Cx {
+                    editor: self,
+                    others: &mut NoEditors,
+                });
+            }
+        }
+        if focused {
+            self.restart_blink();
+        } else {
+            // `clearInterval(cm.display.blinker)`; `setTimeout(() => { if
+            // (!cm.state.focused) cm.display.shift = false }, 150)`.
+            self.blink_start = None;
+            self.blur_shift_at = Some(cm_core::clock::now() + 150.0);
+        }
+    }
+    /// `restartBlink(cm)` (src/display/selection.js:160): while focused, show the
+    /// cursor and start its blink period again now. The host draws the cursor when
+    /// [`Editor::cursor_blink_visible`] says so and wakes up after
+    /// [`Editor::next_blink_in`].
+    pub fn restart_blink(&mut self) {
+        if !self.focused {
             return;
         }
-        self.focused = focused;
-        let snap = {
-            let ls = self.shared.ls.borrow();
-            if focused {
-                ls.focus.snapshot()
-            } else {
-                ls.blur.snapshot()
-            }
+        self.blink_start = Some(cm_core::clock::now());
+    }
+    /// Whether the blinking cursor is shown now (`cursorDiv.style.visibility`;
+    /// unfocused, CM5's CSS hides the cursors). `cursorBlinkRate` > 0 toggles every
+    /// rate ms from the last [`Editor::restart_blink`], 0 always shows, < 0 hides.
+    /// With an unknown time (NaN) the cursor shows.
+    pub fn cursor_blink_visible(&self) -> bool {
+        let Some(start) = self.blink_start.filter(|_| self.focused) else {
+            return false;
         };
-        for e in snap.iter() {
-            (e.f)(&mut Cx {
-                editor: self,
-                others: &mut NoEditors,
-            });
+        let rate = self.options.cursor_blink_rate;
+        if rate < 0.0 {
+            return false;
+        }
+        if !(rate > 0.0) {
+            return true;
+        }
+        let elapsed = cm_core::clock::now() - start;
+        if !elapsed.is_finite() || elapsed < 0.0 {
+            return true;
+        }
+        ((elapsed / rate).floor() as i64) % 2 == 0
+    }
+    /// Milliseconds until the blinking cursor next toggles, `None` when it does
+    /// not blink (blurred, or `cursorBlinkRate` <= 0).
+    pub fn next_blink_in(&self) -> Option<f64> {
+        let start = self.blink_start.filter(|_| self.focused)?;
+        let rate = self.options.cursor_blink_rate;
+        if !(rate > 0.0) {
+            return None;
+        }
+        let elapsed = cm_core::clock::now() - start;
+        if !elapsed.is_finite() || elapsed < 0.0 {
+            return Some(rate);
+        }
+        Some(rate - elapsed % rate)
+    }
+    /// Milliseconds until [`Editor::run_timers`] has work (`onBlur`'s timeout).
+    pub fn next_timer_in(&self) -> Option<f64> {
+        let at = self.blur_shift_at?;
+        let d = at - cm_core::clock::now();
+        Some(if d.is_finite() { d.max(0.0) } else { 0.0 })
+    }
+    /// Run the editor's due timers: `onBlur`'s timeout resets `display.shift` when
+    /// the editor is still blurred.
+    pub fn run_timers(&mut self) {
+        if let Some(at) = self.blur_shift_at {
+            let now = cm_core::clock::now();
+            if now >= at || !now.is_finite() {
+                self.blur_shift_at = None;
+                if !self.focused {
+                    self.display.shift = false;
+                }
+            }
         }
     }
     /// The host's `setTimeout(fireOrphanDelayed, 0)` for an editor on its own:
@@ -2615,6 +2702,9 @@ impl Editor {
                 let (f, name) = (e.f.clone(), name.to_string());
                 self.shared.later(move |cx| f(cx, &name));
             }
+        }
+        if matches!(result, Some(Lookup::Handled | Lookup::Multi)) {
+            self.restart_blink();
         }
         result.is_some()
     }
