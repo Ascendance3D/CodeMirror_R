@@ -21,8 +21,8 @@
 //! has `expressionAllowed` and `skipExpression` ([`Mode::expression_allowed`],
 //! [`Mode::skip_expression`]).
 //!
-//! Not supported (documented gap): `parserConfig.wordCharacters` (a custom
-//! regexp); it behaves as if absent. The
+//! `parserConfig.wordCharacters` is a [`crate::RegExp`] (`ConfigValue::Obj`); the
+//! tokenizer tests it on one character at a time, as the JS `wordRE` does. The
 //! `registerHelper("wordChars", "javascript", /[\w$]/)` call is ported.
 
 use std::cell::{Cell, RefCell};
@@ -595,6 +595,9 @@ pub struct JsMode {
     json_mode: bool,
     track_scope: bool,
     is_ts: bool,
+    /// `parserConfig.wordCharacters` when it is a regexp (`wordRE`); `None` is the
+    /// default `/[\w$\xa1-\uffff]/`.
+    word_re: Option<Rc<crate::RegExp>>,
     /// `parserConfig.doubleIndentSwitch != false`.
     double_indent_switch: bool,
     /// `parserConfig.localVars` as a list, and whether it is truthy (`context:
@@ -708,6 +711,10 @@ impl JsMode {
             json_mode: pc.truthy("json") || jsonld_mode,
             track_scope: pc.get("trackScope") != Some(&ConfigValue::Bool(false)),
             is_ts: pc.truthy("typescript"),
+            word_re: match pc.get("wordCharacters") {
+                Some(ConfigValue::Obj(o)) => o.clone().downcast::<crate::RegExp>().ok(),
+                _ => None,
+            },
             double_indent_switch: !double_off,
             local_vars: config_var_list(pc.get("localVars")),
             local_vars_truthy: pc.truthy("localVars"),
@@ -715,6 +722,25 @@ impl JsMode {
             global_vars: config_var_list(pc.get("globalVars")),
             ty: Cell::new(None),
             content: RefCell::new(None),
+        }
+    }
+
+    /// `wordRE.test(ch)` for one character: `parserConfig.wordCharacters`, else
+    /// `/[\w$\xa1-\uffff]/`.
+    fn is_word(&self, c: u16) -> bool {
+        match &self.word_re {
+            Some(re) => re.test(&[c]),
+            None => is_word_re(c),
+        }
+    }
+
+    /// `wordRE.test(ch)` where `ch` may be undefined (`stream.next()` at the end):
+    /// the regexp then tests the string "undefined".
+    fn word_test(&self, ch: Option<u16>) -> bool {
+        match (ch, &self.word_re) {
+            (Some(c), _) => self.is_word(c),
+            (None, Some(re)) => re.test(&u("undefined")),
+            (None, None) => true,
         }
     }
 
@@ -808,7 +834,7 @@ impl JsMode {
         } else if is(b'#') && stream.peek() == Some(b'!' as u16) {
             stream.skip_to_end();
             return self.ret("meta", "meta".into(), None);
-        } else if is(b'#') && stream.eat_while(is_word_re) {
+        } else if is(b'#') && stream.eat_while(|c| self.is_word(c)) {
             return self.ret("variable", "property".into(), None);
         } else if is(b'<') && stream.match_str("!--", true, false)
             || (is(b'-')
@@ -837,9 +863,9 @@ impl JsMode {
             }
             let cur = stream.current().to_vec();
             return self.ret("operator", "operator".into(), Some(cur));
-        } else if ch.is_none_or(is_word_re) {
-            // `wordRE.test(undefined)` tests the string "undefined": true.
-            stream.eat_while(is_word_re);
+        } else if self.word_test(ch) {
+            // `wordRE.test(undefined)` tests the string "undefined".
+            stream.eat_while(|c| self.is_word(c));
             let word = stream.current().to_vec();
             if state.last_type != Some(".") {
                 if let Some((t, s)) = keyword(&word) {
@@ -955,7 +981,7 @@ impl JsMode {
                 }
             } else if (3..6).contains(&bracket) {
                 depth += 1;
-            } else if is_word_re(ch) {
+            } else if self.is_word(ch) {
                 saw_something = true;
             } else if ch < 0x80 && b"\"'/`".contains(&(ch as u8)) {
                 loop {

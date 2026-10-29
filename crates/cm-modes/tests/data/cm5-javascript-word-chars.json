@@ -1,0 +1,2197 @@
+{
+ "version": "5.65.21",
+ "cases": {
+  "default": {
+   "spec": {
+    "name": "javascript"
+   },
+   "lines": [
+    {
+     "line": "var foo-bar = $x + café;",
+     "toks": [
+      [
+       "var",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "foo",
+       "def"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "bar",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "$x",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "+",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "café",
+       "variable"
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "let дом = a.b-c;",
+     "toks": [
+      [
+       "let",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "дом",
+       "def"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable"
+      ],
+      [
+       ".",
+       null
+      ],
+      [
+       "b",
+       "property"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "c",
+       "variable"
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "(a-b, c) => a-b",
+     "toks": [
+      [
+       "(",
+       null
+      ],
+      [
+       "a",
+       "def"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       "variable"
+      ],
+      [
+       ",",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       "variable"
+      ],
+      [
+       ")",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=>",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable-2"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "class K { #pri-v = 1 }",
+     "toks": [
+      [
+       "class",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "K",
+       "def"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "#pri",
+       "property"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "v",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "1",
+       "number"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "x#y @z",
+     "toks": [
+      [
+       "x",
+       "variable"
+      ],
+      [
+       "#y",
+       "property"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "@",
+       "operator"
+      ],
+      [
+       "z",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    }
+   ]
+  },
+  "dash": {
+   "spec": {
+    "name": "javascript",
+    "wordCharacters": "[\\w$\\-]"
+   },
+   "lines": [
+    {
+     "line": "var foo-bar = $x + café;",
+     "toks": [
+      [
+       "var",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "foo-bar",
+       "def"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "$x",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "+",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "caf",
+       "variable"
+      ],
+      [
+       "é",
+       null
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "let дом = a.b-c;",
+     "toks": [
+      [
+       "let",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "д",
+       null
+      ],
+      [
+       "о",
+       null
+      ],
+      [
+       "м",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable"
+      ],
+      [
+       ".",
+       null
+      ],
+      [
+       "b-c",
+       "property"
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "(a-b, c) => a-b",
+     "toks": [
+      [
+       "(",
+       null
+      ],
+      [
+       "a-b",
+       "def"
+      ],
+      [
+       ",",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       "def"
+      ],
+      [
+       ")",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=>",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a-b",
+       "variable-2"
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "class K { #pri-v = 1 }",
+     "toks": [
+      [
+       "class",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "K",
+       "def"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "#pri-v",
+       "property"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "1",
+       "number"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "x#y @z",
+     "toks": [
+      [
+       "x",
+       "variable"
+      ],
+      [
+       "#y",
+       "property"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "@",
+       "operator"
+      ],
+      [
+       "z",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    }
+   ]
+  },
+  "ascii_only": {
+   "spec": {
+    "name": "javascript",
+    "wordCharacters": "[\\w$]"
+   },
+   "lines": [
+    {
+     "line": "var foo-bar = $x + café;",
+     "toks": [
+      [
+       "var",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "foo",
+       "def"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "bar",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "$x",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "+",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "caf",
+       "variable"
+      ],
+      [
+       "é",
+       null
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "let дом = a.b-c;",
+     "toks": [
+      [
+       "let",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "д",
+       null
+      ],
+      [
+       "о",
+       null
+      ],
+      [
+       "м",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable"
+      ],
+      [
+       ".",
+       null
+      ],
+      [
+       "b",
+       "property"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "c",
+       "variable"
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "(a-b, c) => a-b",
+     "toks": [
+      [
+       "(",
+       null
+      ],
+      [
+       "a",
+       "def"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       "variable"
+      ],
+      [
+       ",",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       "variable"
+      ],
+      [
+       ")",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=>",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable-2"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "class K { #pri-v = 1 }",
+     "toks": [
+      [
+       "class",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "K",
+       "def"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "#pri",
+       "property"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "v",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "1",
+       "number"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "x#y @z",
+     "toks": [
+      [
+       "x",
+       "variable"
+      ],
+      [
+       "#y",
+       "property"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "@",
+       "operator"
+      ],
+      [
+       "z",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    }
+   ]
+  },
+  "letters_only": {
+   "spec": {
+    "name": "javascript",
+    "wordCharacters": "[a-zA-Z]"
+   },
+   "lines": [
+    {
+     "line": "var foo-bar = $x + café;",
+     "toks": [
+      [
+       "var",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "foo",
+       "def"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "bar",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "$",
+       null
+      ],
+      [
+       "x",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "+",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "caf",
+       "variable"
+      ],
+      [
+       "é",
+       null
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "let дом = a.b-c;",
+     "toks": [
+      [
+       "let",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "д",
+       null
+      ],
+      [
+       "о",
+       null
+      ],
+      [
+       "м",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable"
+      ],
+      [
+       ".",
+       null
+      ],
+      [
+       "b",
+       "property"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "c",
+       "variable"
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "(a-b, c) => a-b",
+     "toks": [
+      [
+       "(",
+       null
+      ],
+      [
+       "a",
+       "def"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       "variable"
+      ],
+      [
+       ",",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       "variable"
+      ],
+      [
+       ")",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=>",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable-2"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "class K { #pri-v = 1 }",
+     "toks": [
+      [
+       "class",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "K",
+       "def"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "#pri",
+       "property"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "v",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "1",
+       "number"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "x#y @z",
+     "toks": [
+      [
+       "x",
+       "variable"
+      ],
+      [
+       "#y",
+       "property"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "@",
+       "operator"
+      ],
+      [
+       "z",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    }
+   ]
+  },
+  "cyrillic": {
+   "spec": {
+    "name": "javascript",
+    "wordCharacters": "[\\u0400-\\u04ff]"
+   },
+   "lines": [
+    {
+     "line": "var foo-bar = $x + café;",
+     "toks": [
+      [
+       "v",
+       null
+      ],
+      [
+       "a",
+       null
+      ],
+      [
+       "r",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "f",
+       null
+      ],
+      [
+       "o",
+       null
+      ],
+      [
+       "o",
+       null
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       null
+      ],
+      [
+       "a",
+       null
+      ],
+      [
+       "r",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "$",
+       null
+      ],
+      [
+       "x",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "+",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       null
+      ],
+      [
+       "a",
+       null
+      ],
+      [
+       "f",
+       null
+      ],
+      [
+       "é",
+       null
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "let дом = a.b-c;",
+     "toks": [
+      [
+       "l",
+       null
+      ],
+      [
+       "e",
+       null
+      ],
+      [
+       "t",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "дом",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       null
+      ],
+      [
+       ".",
+       null
+      ],
+      [
+       "b",
+       null
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "c",
+       null
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "(a-b, c) => a-b",
+     "toks": [
+      [
+       "(",
+       null
+      ],
+      [
+       "a",
+       null
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       null
+      ],
+      [
+       ",",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       null
+      ],
+      [
+       ")",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=>",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       null
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       null
+      ]
+     ],
+     "indent": 2
+    },
+    {
+     "line": "class K { #pri-v = 1 }",
+     "toks": [
+      [
+       "c",
+       null
+      ],
+      [
+       "l",
+       null
+      ],
+      [
+       "a",
+       null
+      ],
+      [
+       "s",
+       null
+      ],
+      [
+       "s",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "K",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "#",
+       null
+      ],
+      [
+       "p",
+       null
+      ],
+      [
+       "r",
+       null
+      ],
+      [
+       "i",
+       null
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "v",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "1",
+       "number"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "x#y @z",
+     "toks": [
+      [
+       "x",
+       null
+      ],
+      [
+       "#",
+       null
+      ],
+      [
+       "y",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "@",
+       "operator"
+      ],
+      [
+       "z",
+       null
+      ]
+     ],
+     "indent": 0
+    }
+   ]
+  },
+  "hash_and_at": {
+   "spec": {
+    "name": "javascript",
+    "wordCharacters": "[\\w#@]"
+   },
+   "lines": [
+    {
+     "line": "var foo-bar = $x + café;",
+     "toks": [
+      [
+       "var",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "foo",
+       "def"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "bar",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "$",
+       null
+      ],
+      [
+       "x",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "+",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "caf",
+       "variable"
+      ],
+      [
+       "é",
+       null
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "let дом = a.b-c;",
+     "toks": [
+      [
+       "let",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "д",
+       null
+      ],
+      [
+       "о",
+       null
+      ],
+      [
+       "м",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable"
+      ],
+      [
+       ".",
+       null
+      ],
+      [
+       "b",
+       "property"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "c",
+       "variable"
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "(a-b, c) => a-b",
+     "toks": [
+      [
+       "(",
+       null
+      ],
+      [
+       "a",
+       "def"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       "variable"
+      ],
+      [
+       ",",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       "variable"
+      ],
+      [
+       ")",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=>",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable-2"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "class K { #pri-v = 1 }",
+     "toks": [
+      [
+       "class",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "K",
+       "def"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "#pri",
+       "property"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "v",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "1",
+       "number"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "x#y @z",
+     "toks": [
+      [
+       "x#y",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "@",
+       "operator"
+      ],
+      [
+       "z",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    }
+   ]
+  },
+  "empty_regexp": {
+   "spec": {
+    "name": "javascript",
+    "wordCharacters": ""
+   },
+   "lines": [
+    {
+     "line": "var foo-bar = $x + café;",
+     "toks": [
+      [
+       "var foo-bar = $x + café;",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "let дом = a.b-c;",
+     "toks": [
+      [
+       "let дом = a.b-c;",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "(a-b, c) => a-b",
+     "toks": [
+      [
+       "(",
+       null
+      ],
+      [
+       "a-b, c) => a-b",
+       "variable"
+      ]
+     ],
+     "indent": 1
+    },
+    {
+     "line": "class K { #pri-v = 1 }",
+     "toks": [
+      [
+       "class K { #pri-v = 1 }",
+       "variable"
+      ]
+     ],
+     "indent": 1
+    },
+    {
+     "line": "x#y @z",
+     "toks": [
+      [
+       "x#y @z",
+       "variable"
+      ]
+     ],
+     "indent": 1
+    }
+   ]
+  },
+  "falsy": {
+   "spec": {
+    "name": "javascript",
+    "wordCharacters": false
+   },
+   "lines": [
+    {
+     "line": "var foo-bar = $x + café;",
+     "toks": [
+      [
+       "var",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "foo",
+       "def"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "bar",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "$x",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "+",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "café",
+       "variable"
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "let дом = a.b-c;",
+     "toks": [
+      [
+       "let",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "дом",
+       "def"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable"
+      ],
+      [
+       ".",
+       null
+      ],
+      [
+       "b",
+       "property"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "c",
+       "variable"
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "(a-b, c) => a-b",
+     "toks": [
+      [
+       "(",
+       null
+      ],
+      [
+       "a",
+       "def"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       "variable"
+      ],
+      [
+       ",",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       "variable"
+      ],
+      [
+       ")",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=>",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a",
+       "variable-2"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "b",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "class K { #pri-v = 1 }",
+     "toks": [
+      [
+       "class",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "K",
+       "def"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "#pri",
+       "property"
+      ],
+      [
+       "-",
+       "operator"
+      ],
+      [
+       "v",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "1",
+       "number"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "x#y @z",
+     "toks": [
+      [
+       "x",
+       "variable"
+      ],
+      [
+       "#y",
+       "property"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "@",
+       "operator"
+      ],
+      [
+       "z",
+       "variable"
+      ]
+     ],
+     "indent": 0
+    }
+   ]
+  },
+  "typescript_dash": {
+   "spec": {
+    "name": "javascript",
+    "typescript": true,
+    "wordCharacters": "[\\w$\\-]"
+   },
+   "lines": [
+    {
+     "line": "let a-b: my-type = c-d;",
+     "toks": [
+      [
+       "let",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "a-b",
+       "def"
+      ],
+      [
+       ":",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "my-type",
+       "type"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c-d",
+       "variable"
+      ],
+      [
+       ";",
+       null
+      ]
+     ],
+     "indent": 0
+    },
+    {
+     "line": "type t-1 = x-y",
+     "toks": [
+      [
+       "type",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "t-1",
+       "type"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "=",
+       "operator"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "x-y",
+       "type"
+      ]
+     ],
+     "indent": 0
+    }
+   ]
+  }
+ }
+}
