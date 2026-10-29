@@ -1,0 +1,1557 @@
+{
+ "version": "5.65.21",
+ "cases": {
+  "get_token_type_at": {
+   "mode": "javascript",
+   "text": "1 + 'foo'",
+   "probes": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     6
+    ],
+    [
+     0,
+     7
+    ],
+    [
+     0,
+     9
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "foo"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "number",
+        2,
+        null,
+        3,
+        "operator",
+        4,
+        null,
+        5,
+        "string",
+        8,
+        "string overlay foo",
+        9,
+        "string"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "number",
+      "string",
+      "string",
+      "string"
+     ]
+    }
+   ]
+  },
+  "opaque": {
+   "mode": "javascript",
+   "text": "1 + 'foo' + foo",
+   "probes": [
+    [
+     0,
+     6
+    ],
+    [
+     0,
+     13
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "foo",
+      {
+       "opaque": true
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "number",
+        2,
+        null,
+        3,
+        "operator",
+        4,
+        null,
+        5,
+        "string",
+        8,
+        "overlay foo",
+        9,
+        "string",
+        10,
+        null,
+        11,
+        "operator",
+        12,
+        null,
+        15,
+        "overlay foo"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      null,
+      null
+     ]
+    }
+   ]
+  },
+  "base_token_comment": {
+   "mode": "javascript",
+   "text": "foo /* 100 */\nbar + 233;\nbaz",
+   "probes": [
+    [
+     1,
+     7
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "digits"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable",
+        4,
+        null,
+        13,
+        "comment"
+       ],
+       "classes": null
+      },
+      {
+       "styles": [
+        3,
+        "variable",
+        4,
+        null,
+        5,
+        "operator",
+        6,
+        null,
+        9,
+        "number overlay x",
+        10,
+        null
+       ],
+       "classes": null
+      },
+      {
+       "styles": [
+        3,
+        "variable"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "number"
+     ]
+    },
+    {
+     "step": [
+      "replace",
+      "",
+      [
+       {
+        "line": 0,
+        "ch": 4
+       },
+       {
+        "line": 0,
+        "ch": 6
+       }
+      ]
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable",
+        5,
+        null,
+        8,
+        "number overlay x",
+        9,
+        null,
+        10,
+        "operator",
+        11,
+        "string-2"
+       ],
+       "classes": null
+      },
+      {
+       "styles": [
+        3,
+        "variable",
+        4,
+        null,
+        5,
+        "operator",
+        6,
+        null,
+        9,
+        "number overlay x",
+        10,
+        null
+       ],
+       "classes": null
+      },
+      {
+       "styles": [
+        3,
+        "variable"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "number"
+     ]
+    }
+   ]
+  },
+  "non_opaque_splits": {
+   "mode": "javascript",
+   "text": "var abc = 'x y';",
+   "probes": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     12
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "word"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "keyword overlay w",
+        4,
+        null,
+        7,
+        "def overlay w",
+        8,
+        null,
+        9,
+        "operator",
+        10,
+        null,
+        11,
+        "string",
+        12,
+        "string overlay w",
+        13,
+        "string",
+        14,
+        "string overlay w",
+        15,
+        "string",
+        16,
+        null
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "keyword",
+      "string"
+     ]
+    }
+   ]
+  },
+  "priority_order": {
+   "mode": "javascript",
+   "text": "foo 12 bar",
+   "probes": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     5
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "word",
+      {
+       "priority": 2
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable overlay w",
+        4,
+        null,
+        6,
+        "number overlay w",
+        7,
+        null,
+        10,
+        "variable overlay w"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable",
+      "number"
+     ]
+    },
+    {
+     "step": [
+      "add",
+      "foo",
+      {
+       "priority": 1
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 2,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable overlay foo overlay w",
+        4,
+        null,
+        6,
+        "number overlay w",
+        7,
+        null,
+        10,
+        "variable overlay w"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable",
+      "number"
+     ]
+    },
+    {
+     "step": [
+      "add",
+      "digits"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 3,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable overlay foo overlay w",
+        4,
+        null,
+        6,
+        "number overlay x overlay w",
+        7,
+        null,
+        10,
+        "variable overlay w"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable",
+      "number"
+     ]
+    },
+    {
+     "step": [
+      "remove",
+      {
+       "name": "ovw"
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 2,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable overlay foo",
+        4,
+        null,
+        6,
+        "number overlay x",
+        7,
+        null,
+        10,
+        "variable"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable",
+      "number"
+     ]
+    },
+    {
+     "step": [
+      "remove",
+      "foo"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable",
+        4,
+        null,
+        6,
+        "number overlay x",
+        7,
+        null,
+        10,
+        "variable"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable",
+      "number"
+     ]
+    },
+    {
+     "step": [
+      "remove",
+      "digits"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 0,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable",
+        4,
+        null,
+        6,
+        "number",
+        7,
+        null,
+        10,
+        "variable"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable",
+      "number"
+     ]
+    }
+   ]
+  },
+  "equal_priority_insert_after": {
+   "mode": "javascript",
+   "text": "foo 12",
+   "probes": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     5
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "digits",
+      {
+       "priority": 1
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable",
+        4,
+        null,
+        6,
+        "number overlay x"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable",
+      "number"
+     ]
+    },
+    {
+     "step": [
+      "add",
+      "foo",
+      {
+       "priority": 1
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 2,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable overlay foo",
+        4,
+        null,
+        6,
+        "number overlay x"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable",
+      "number"
+     ]
+    },
+    {
+     "step": [
+      "add",
+      "word",
+      {
+       "priority": 1,
+       "opaque": true
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 3,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "overlay w",
+        4,
+        null,
+        6,
+        "overlay w"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      null,
+      null
+     ]
+    }
+   ]
+  },
+  "opaque_then_non_opaque": {
+   "mode": "javascript",
+   "text": "foo = 'foo';",
+   "probes": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     8
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "foo",
+      {
+       "opaque": true
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "overlay foo",
+        4,
+        null,
+        5,
+        "operator",
+        6,
+        null,
+        7,
+        "string",
+        10,
+        "overlay foo",
+        11,
+        "string",
+        12,
+        null
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      null,
+      null
+     ]
+    },
+    {
+     "step": [
+      "add",
+      "word"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 2,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "overlay foo overlay w",
+        4,
+        null,
+        5,
+        "operator",
+        6,
+        null,
+        7,
+        "string",
+        10,
+        "overlay foo overlay w",
+        11,
+        "string",
+        12,
+        null
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      null,
+      null
+     ]
+    }
+   ]
+  },
+  "spec_string_and_name": {
+   "mode": "javascript",
+   "text": "a1 b22",
+   "probes": [
+    [
+     0,
+     1
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      {
+       "spec": "ovl-digits"
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "variable",
+        2,
+        "variable overlay x",
+        3,
+        null,
+        4,
+        "variable",
+        6,
+        "variable overlay x"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    },
+    {
+     "step": [
+      "add",
+      {
+       "spec": {
+        "name": "ovl-word"
+       }
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 2,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "variable overlay w",
+        2,
+        "variable overlay x overlay w",
+        3,
+        null,
+        4,
+        "variable overlay w",
+        6,
+        "variable overlay x overlay w"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    },
+    {
+     "step": [
+      "remove",
+      {
+       "name": "nothing"
+      }
+     ],
+     "err": null,
+     "redraw": 0,
+     "overlays": 2,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "variable overlay w",
+        2,
+        "variable overlay x overlay w",
+        3,
+        null,
+        4,
+        "variable overlay w",
+        6,
+        "variable overlay x overlay w"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    },
+    {
+     "step": [
+      "remove",
+      {
+       "name": "ovl-word"
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "variable",
+        2,
+        "variable overlay x",
+        3,
+        null,
+        4,
+        "variable",
+        6,
+        "variable overlay x"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    },
+    {
+     "step": [
+      "remove",
+      {
+       "spec": "ovl-digits"
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 0,
+     "lines": [
+      {
+       "styles": [
+        2,
+        "variable",
+        3,
+        null,
+        6,
+        "variable"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    },
+    {
+     "step": [
+      "remove",
+      {
+       "spec": "ovl-digits"
+      }
+     ],
+     "err": null,
+     "redraw": 0,
+     "overlays": 0,
+     "lines": [
+      {
+       "styles": [
+        2,
+        "variable",
+        3,
+        null,
+        6,
+        "variable"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    }
+   ]
+  },
+  "base_token_size": {
+   "mode": "javascript",
+   "text": "x = 'abc' + \"de\";",
+   "probes": [
+    [
+     0,
+     6
+    ],
+    [
+     0,
+     14
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "instr"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "variable",
+        2,
+        null,
+        3,
+        "operator",
+        4,
+        null,
+        9,
+        "string overlay in-str",
+        10,
+        null,
+        11,
+        "operator",
+        12,
+        null,
+        16,
+        "string overlay in-str",
+        17,
+        null
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "string",
+      "string"
+     ]
+    }
+   ]
+  },
+  "line_classes": {
+   "mode": "javascript",
+   "text": "a TODO b\n\nTODO TODO",
+   "probes": [
+    [
+     0,
+     3
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "todo"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "variable",
+        2,
+        null,
+        6,
+        "variable overlay todo",
+        7,
+        null,
+        8,
+        "variable"
+       ],
+       "classes": {
+        "bgClass": "hl",
+        "textClass": "mark"
+       }
+      },
+      {
+       "styles": [],
+       "classes": null
+      },
+      {
+       "styles": [
+        4,
+        "variable overlay todo",
+        5,
+        null,
+        9,
+        "variable overlay todo"
+       ],
+       "classes": {
+        "bgClass": "hl",
+        "textClass": "mark"
+       }
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    },
+    {
+     "step": [
+      "add",
+      "lineonly"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 2,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "variable",
+        2,
+        null,
+        6,
+        "variable overlay todo",
+        7,
+        null,
+        8,
+        "variable"
+       ],
+       "classes": {
+        "bgClass": "hl",
+        "textClass": "mark whole"
+       }
+      },
+      {
+       "styles": [],
+       "classes": null
+      },
+      {
+       "styles": [
+        4,
+        "variable overlay todo",
+        5,
+        null,
+        9,
+        "variable overlay todo"
+       ],
+       "classes": {
+        "bgClass": "hl",
+        "textClass": "mark whole"
+       }
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    }
+   ]
+  },
+  "base_token_probe": {
+   "mode": "javascript",
+   "text": "if (a) 'b' // c",
+   "probes": [
+    [
+     0,
+     1
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "foo",
+      {
+       "opaque": true
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        2,
+        "keyword",
+        4,
+        null,
+        5,
+        "variable",
+        7,
+        null,
+        10,
+        "string",
+        11,
+        null,
+        15,
+        "comment"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "keyword"
+     ]
+    },
+    {
+     "step": [
+      "add",
+      "probe"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 2,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "keyword overlay p-keyword-2",
+        2,
+        "keyword overlay p-keyword-1",
+        3,
+        "overlay p-null-2",
+        4,
+        "overlay p-null-1",
+        5,
+        "variable overlay p-variable-1",
+        6,
+        "overlay p-null-2",
+        7,
+        "overlay p-null-1",
+        8,
+        "string overlay p-string-3",
+        9,
+        "string overlay p-string-2",
+        10,
+        "string overlay p-string-1",
+        11,
+        "overlay p-null-1",
+        12,
+        "comment overlay p-comment-4",
+        13,
+        "comment overlay p-comment-3",
+        14,
+        "comment overlay p-comment-2",
+        15,
+        "comment overlay p-comment-1"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "keyword"
+     ]
+    }
+   ]
+  },
+  "base_token_probe_after_opaque": {
+   "mode": "javascript",
+   "text": "foofoo 1",
+   "probes": [
+    [
+     0,
+     1
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "foo",
+      {
+       "opaque": true
+      }
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        6,
+        "overlay foo",
+        7,
+        null,
+        8,
+        "number"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      null
+     ]
+    },
+    {
+     "step": [
+      "add",
+      "probe"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 2,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "overlay foo overlay p-null-6",
+        2,
+        "overlay foo overlay p-null-5",
+        3,
+        "overlay foo overlay p-null-4",
+        4,
+        "overlay foo overlay p-null-3",
+        5,
+        "overlay foo overlay p-null-2",
+        6,
+        "overlay foo overlay p-null-1",
+        7,
+        "overlay p-null-1",
+        8,
+        "number overlay p-number-1"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      null
+     ]
+    }
+   ]
+  },
+  "stateful_rejected": {
+   "mode": "javascript",
+   "text": "x",
+   "probes": [
+    [
+     0,
+     0
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "stateful"
+     ],
+     "err": "Overlays may not be stateful.",
+     "redraw": 0,
+     "overlays": 0,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "variable"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    },
+    {
+     "step": [
+      "add",
+      {
+       "spec": "javascript"
+      }
+     ],
+     "err": "Overlays may not be stateful.",
+     "redraw": 0,
+     "overlays": 0,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "variable"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    }
+   ]
+  },
+  "keeps_overlays_on_set_mode": {
+   "mode": "javascript",
+   "text": "foo 1",
+   "probes": [
+    [
+     0,
+     1
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "foo"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "variable overlay foo",
+        4,
+        null,
+        5,
+        "number"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "variable"
+     ]
+    },
+    {
+     "step": [
+      "setMode",
+      "css"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "tag overlay foo",
+        4,
+        null,
+        5,
+        "number"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      "tag"
+     ]
+    }
+   ]
+  },
+  "null_mode_overlay": {
+   "mode": null,
+   "text": "foo bar foo",
+   "probes": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     5
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "foo"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        3,
+        "overlay foo",
+        8,
+        null,
+        11,
+        "overlay foo"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      null,
+      null
+     ]
+    }
+   ]
+  },
+  "html_overlay": {
+   "mode": "htmlmixed",
+   "text": "<b>foo</b><script>foo(1)</script>",
+   "probes": [
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     19
+    ]
+   ],
+   "steps": [
+    {
+     "step": [
+      "add",
+      "foo"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 1,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "tag bracket",
+        2,
+        "tag",
+        3,
+        "tag bracket",
+        6,
+        "overlay foo",
+        8,
+        "tag bracket",
+        9,
+        "tag",
+        11,
+        "tag bracket",
+        17,
+        "tag",
+        18,
+        "tag bracket",
+        21,
+        "variable overlay foo",
+        22,
+        null,
+        23,
+        "number",
+        24,
+        null,
+        26,
+        "tag bracket",
+        32,
+        "tag",
+        33,
+        "tag bracket"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      null,
+      "variable"
+     ]
+    },
+    {
+     "step": [
+      "add",
+      "probe"
+     ],
+     "err": null,
+     "redraw": 1,
+     "overlays": 2,
+     "lines": [
+      {
+       "styles": [
+        1,
+        "tag bracket overlay p-tag_bracket-1",
+        2,
+        "tag overlay p-tag-1",
+        3,
+        "tag bracket overlay p-tag_bracket-1",
+        4,
+        "overlay foo overlay p-null-3",
+        5,
+        "overlay foo overlay p-null-2",
+        6,
+        "overlay foo overlay p-null-1",
+        7,
+        "tag bracket overlay p-tag_bracket-2",
+        8,
+        "tag bracket overlay p-tag_bracket-1",
+        9,
+        "tag overlay p-tag-1",
+        10,
+        "tag bracket overlay p-tag_bracket-2",
+        11,
+        "tag bracket overlay p-tag_bracket-1",
+        12,
+        "tag overlay p-tag-6",
+        13,
+        "tag overlay p-tag-5",
+        14,
+        "tag overlay p-tag-4",
+        15,
+        "tag overlay p-tag-3",
+        16,
+        "tag overlay p-tag-2",
+        17,
+        "tag overlay p-tag-1",
+        18,
+        "tag bracket overlay p-tag_bracket-1",
+        19,
+        "variable overlay foo overlay p-variable-3",
+        20,
+        "variable overlay foo overlay p-variable-2",
+        21,
+        "variable overlay foo overlay p-variable-1",
+        22,
+        "overlay p-null-1",
+        23,
+        "number overlay p-number-1",
+        24,
+        "overlay p-null-1",
+        25,
+        "tag bracket overlay p-tag_bracket-2",
+        26,
+        "tag bracket overlay p-tag_bracket-1",
+        27,
+        "tag overlay p-tag-6",
+        28,
+        "tag overlay p-tag-5",
+        29,
+        "tag overlay p-tag-4",
+        30,
+        "tag overlay p-tag-3",
+        31,
+        "tag overlay p-tag-2",
+        32,
+        "tag overlay p-tag-1",
+        33,
+        "tag bracket overlay p-tag_bracket-1"
+       ],
+       "classes": null
+      }
+     ],
+     "types": [
+      null,
+      "variable"
+     ]
+    }
+   ]
+  }
+ }
+}

@@ -2,6 +2,8 @@
 //! ordering, plus its two helpers. `getOrder` caches on the line object in JS; here
 //! it is a pure function ([`bidi_ordering`]).
 
+use crate::model::selection::SelRange;
+use crate::pos::{Pos, Sticky, cmp};
 use crate::text::is_js_space;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -120,7 +122,15 @@ fn counts_as_num(t: u8) -> bool {
 /// `bidiOrdering(str, direction)`: `None` (JS `false`) when the text is plain
 /// left-to-right, otherwise the spans in visual order.
 pub fn bidi_ordering(s: &[u16], direction: Direction) -> Option<Vec<BidiSpan>> {
-    let outer_type = if direction == Direction::Ltr {
+    bidi_ordering_js(s, Some(direction))
+}
+
+/// `bidiOrdering(str, direction)` where `direction` may be undefined (`None`), as in
+/// `getOrder(line)` without a direction (`bidiSimplify`): neutrals then default to
+/// R like an RTL paragraph, but there is no plain-LTR shortcut, no LTR clean-up and
+/// no final reversal, so the result is neither the LTR nor the RTL order.
+pub fn bidi_ordering_js(s: &[u16], direction: Option<Direction>) -> Option<Vec<BidiSpan>> {
+    let outer_type = if direction == Some(Direction::Ltr) {
         b'L'
     } else {
         b'R'
@@ -130,7 +140,7 @@ pub fn bidi_ordering(s: &[u16], direction: Direction) -> Option<Vec<BidiSpan>> {
             || (0x0600..=0x06ff).contains(&c)
             || (0x0700..=0x08ac).contains(&c)
     };
-    if s.is_empty() || direction == Direction::Ltr && !s.iter().any(|&c| bidi_re(c)) {
+    if s.is_empty() || direction == Some(Direction::Ltr) && !s.iter().any(|&c| bidi_re(c)) {
         return None;
     }
     let len = s.len();
@@ -240,7 +250,11 @@ pub fn bidi_ordering(s: &[u16], direction: Direction) -> Option<Vec<BidiSpan>> {
         } else {
             let mut pos = i;
             let mut at = order.len();
-            let is_rtl = if direction == Direction::Rtl { 1 } else { 0 };
+            let is_rtl = if direction == Some(Direction::Rtl) {
+                1
+            } else {
+                0
+            };
             i += 1;
             while i < len && types[i] != b'L' {
                 i += 1;
@@ -290,7 +304,7 @@ pub fn bidi_ordering(s: &[u16], direction: Direction) -> Option<Vec<BidiSpan>> {
             }
         }
     }
-    if direction == Direction::Ltr {
+    if direction == Some(Direction::Ltr) {
         let lead = s.iter().take_while(|&&c| is_js_space(c)).count();
         if order[0].level == 1 && lead > 0 {
             order[0].from = lead;
@@ -314,8 +328,93 @@ pub fn bidi_ordering(s: &[u16], direction: Direction) -> Option<Vec<BidiSpan>> {
             });
         }
     }
-    if direction == Direction::Rtl {
+    if direction == Some(Direction::Rtl) {
         order.reverse();
     }
     Some(order)
+}
+
+/// `bidiSimplify(cm, range)` (src/edit/mouse_events.js:337): while mouse-selecting,
+/// moves an anchor that sits on a bidi boundary to the side of the jump that faces
+/// the head. `order` is `getOrder(anchorLine)` as the JS reads it: the line's cached
+/// order (an editor caches the order of its document direction while rendering), or,
+/// with nothing cached, `bidi_ordering_js(text, None)` (the call passes no
+/// direction). `doc_direction` is `cm.doc.direction`, used when the head
+/// is on another line. Returns `range` itself when nothing changes.
+///
+/// Where the JS would throw (no bidi part at the anchor: `order[null].from`), the
+/// range is returned unchanged.
+pub fn bidi_simplify(
+    range: SelRange,
+    order: Option<&[BidiSpan]>,
+    doc_direction: Direction,
+) -> SelRange {
+    let (anchor, head) = (range.anchor, range.head);
+    if cmp(&anchor, &head) == std::cmp::Ordering::Equal && anchor.sticky == head.sticky {
+        return range;
+    }
+    let Some(order) = order else {
+        return range;
+    };
+    let ach = anchor.ch.max(0) as usize;
+    let (Some(index), _) = get_bidi_part_at(order, ach, anchor.sticky == Some(Sticky::Before))
+    else {
+        return range;
+    };
+    let part = order[index];
+    if part.from != ach && part.to != ach {
+        return range;
+    }
+    let boundary = index + usize::from((part.from == ach) != (part.level != 1));
+    if boundary == 0 || boundary == order.len() {
+        return range;
+    }
+
+    // Compute the relative visual position of the head compared to the
+    // anchor (<0 is to the left, >0 to the right)
+    let left_side = if head.line != anchor.line {
+        (head.line - anchor.line)
+            * if doc_direction == Direction::Ltr {
+                1
+            } else {
+                -1
+            }
+            > 0
+    } else {
+        // `getBidiPartAt` may find nothing (null): `null - index` is `-index`, and
+        // null equals neither boundary index.
+        let head_index = get_bidi_part_at(
+            order,
+            head.ch.max(0) as usize,
+            head.sticky == Some(Sticky::Before),
+        )
+        .0
+        .map(|h| h as i64);
+        let mut dir = head_index.unwrap_or(0) - index as i64;
+        if dir == 0 {
+            dir = (head.ch - anchor.ch) * if part.level == 1 { -1 } else { 1 };
+        }
+        if head_index == Some(boundary as i64 - 1) || head_index == Some(boundary as i64) {
+            dir < 0
+        } else {
+            dir > 0
+        }
+    };
+
+    let use_part = order[if left_side { boundary - 1 } else { boundary }];
+    let from = left_side == (use_part.level == 1);
+    let ch = if from { use_part.from } else { use_part.to };
+    let sticky = if from { Sticky::After } else { Sticky::Before };
+    if ach == ch && anchor.sticky == Some(sticky) {
+        range
+    } else {
+        SelRange::new(
+            Pos {
+                line: anchor.line,
+                ch: ch as i64,
+                sticky: Some(sticky),
+            },
+            head,
+        )
+    }
 }

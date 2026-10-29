@@ -67,14 +67,14 @@ pub fn builtin_commands() -> HashMap<String, CommandFn> {
     });
     add("delWrappedLineLeft", |cm| {
         cm.delete_near_selection(|cm, range| {
-            let top = cm.char_coords(range.head, CoordSys::Div).top + 5.0;
+            let top = cm.char_coords(range.head, CoordSys::Doc).top + 5.0;
             let left = cm.coords_char(0.0, top).pos();
             (left, range.from())
         })
     });
     add("delWrappedLineRight", |cm| {
         cm.delete_near_selection(|cm, range| {
-            let top = cm.char_coords(range.head, CoordSys::Div).top + 5.0;
+            let top = cm.char_coords(range.head, CoordSys::Doc).top + 5.0;
             let right = cm.coords_char(line_div_width(cm) + 100.0, top).pos();
             (range.from(), right)
         })

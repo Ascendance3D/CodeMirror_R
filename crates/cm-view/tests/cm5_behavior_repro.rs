@@ -5,7 +5,7 @@
 //! headless chromium (DejaVu Sans Mono 32px / 38px lines, 900x500, no wrapping). The
 //! expected values below are copied from its output; each test names its scenario.
 
-use cm_core::{Pos, SelOptions};
+use cm_core::{Pos, SelOptions, StringStream};
 use cm_modes::Spec;
 use cm_view::{Editor, EditorOptions, Metrics};
 
@@ -277,4 +277,30 @@ fn g13_9_marker_clear_handlers_are_delayed() {
             "after clear2 outside operation"
         ]
     );
+}
+
+/// G13 #12, scenario `stringStream_backUp` (src/util/StringStream.js:47): CM5 lets
+/// `pos` go negative (`backUp(3)` at pos 1 -> -2) and keeps reading through the JS
+/// string semantics. The full trace, in all three engines, is replayed by
+/// `crates/cm-core/tests/string_stream_oracle.rs` (issue #61).
+#[test]
+fn g13_12_back_up_past_start() {
+    let s: Vec<u16> = "abcdef".encode_utf16().collect();
+    let mut st = StringStream::new(&s, Some(4), None);
+    st.next();
+    st.start = st.pos;
+    st.back_up(3);
+    assert_eq!(st.pos as isize, -2);
+    assert_eq!(st.current_string(), "bcd");
+    assert_eq!(st.peek(), None);
+    assert!(!st.eol() && !st.sol());
+    assert_eq!(st.column(), 1);
+    assert!(st.match_str("ef", false, false));
+    // `next()` is "" (None) twice while pos climbs to 0, then the text resumes.
+    assert_eq!((st.next(), st.pos as isize), (None, -1));
+    assert_eq!((st.next(), st.pos as isize), (None, 0));
+    assert_eq!(st.current_string(), "");
+    assert_eq!(st.eat(b'a' as u16), Some(b'a' as u16));
+    assert_eq!(st.next(), Some(b'b' as u16));
+    assert_eq!(st.current_string(), "b");
 }

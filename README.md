@@ -26,6 +26,7 @@ The host supplies these services:
 - **Time:** `cm_core::clock::set_override` / `set_host_clock`. On `wasm32-unknown-unknown` there is no system clock. Install `Date.now` there; without it the time is unknown, and `+`-origin edits do not merge in the history. See the `clock` module documentation.
 - **Files:** `cm_view::fileio::FileHost` (`StdFs`, `MemFiles`, or your own) through `App::open_with`. `read` returns `Ok(None)` only for a missing file, which opens empty. Every other failure is an `Err`, and `App::open_with` returns it without building an editor. `StdFs` treats only `NotFound` as missing. On `wasm32-unknown-unknown` every `StdFs` call returns `Unsupported`, so the browser supplies its own host (`cm-web`'s `JsFiles`).
 - **Clipboard:** `cm_view::app::Clipboard`.
+- **Window position:** `Editor::display.window_origin` (the editor's top-left in the host window) and `display.page_scroll` (the page scroll offset) for the "window" and "page" coordinate systems of `cursor_coords_in`, `char_coords_in`, `coords_char_in`, `line_at_height_in` and `height_at_line_in` (CM5's default is "page"). Both default to (0, 0), so without a host they are editor-relative. `crates/cm-view/tests/coord_systems.rs` compares all five methods in every system with `tests/data/cm5-coord-systems.json` (`oracle/cm5-coord-systems.mjs`).
 
 ## Reference
 
@@ -94,6 +95,8 @@ The clike mode (`mode/clike/clike.js`: C, C++, Java, C#, Scala, Kotlin, GLSL sha
 The longest line (`display.maxLine`) and the parser states its measurement leaves (`findMaxLine`, the change and collapsed-marker bookkeeping, the `endOperation_R2` measurement and the `updateHeightsInViewport` width check) are checked by `crates/cm-view/tests/maxline_state.rs` against `tests/data/cm5-maxline-state.json`. Record it again with `CM5_BUILD_DIR=<copy>/oracle/cm5-build node oracle/cm5-maxline-state.mjs`.
 
 ## C0 suite
+
+The oracle scripts serve the CM5 build through `oracle/server-utils.mjs` (`safeResolve`: decoded path must stay inside the root after `realpath`, malformed URIs get 400). `node oracle/server-utils.test.mjs` checks it; `cargo test -p cm-view --test oracle_server_utils` runs the same check in the workspace suite. A file swapped for a symlink between the check and the read is not prevented (time-of-check race); the servers bind 127.0.0.1 only.
 
 The upstream CM5 browser test suite (1483 tests) runs headless against a rollup build of the vendored tree. Build it in a **disposable copy**, so the reference tree stays unbuilt:
 
