@@ -32,6 +32,8 @@ pub(crate) struct Line {
     pub gutter_markers: Option<GutterMarkers>,
     /// Line handle listeners (`change`, `delete`), allocated on first use.
     pub events: Option<Box<LineEvents>>,
+    /// `line.widgets` (`addLineWidget`).
+    pub widgets: Option<Vec<super::line_widget::LineWidget>>,
 }
 
 /// A gutter marker value. CM5 stores any truthy value, in practice a DOM node; here it is
@@ -128,6 +130,7 @@ pub(crate) fn new_line(text: Text, spans: Option<SpanArr>) -> LineRef {
         gutter_class: None,
         gutter_markers: None,
         events: None,
+        widgets: None,
     }));
     attach_marked_spans(&line, spans);
     line

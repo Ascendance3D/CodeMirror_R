@@ -204,6 +204,29 @@ pub trait EditorSink {
     fn doc_shifted(&self, _doc: &Doc, _distance: i64) {}
     /// `changeLine` on a document with this editor: `regLineChange(cm, line, kind)`.
     fn line_changed(&self, _doc: &Doc, _line: i64, _kind: LineChange) {}
+    /// A line widget was added, cleared or changed height (line_widget.js): `diff` is
+    /// the change of the line's height (0 for a hidden line). The editor keeps the
+    /// visible text in place when the line is above the viewport
+    /// (`adjustScrollWhenAboveVisible`) and forces an update.
+    fn line_widget(
+        &self,
+        _doc: &Doc,
+        _line: &crate::LineHandle,
+        _line_no: i64,
+        _diff: f64,
+        _widget: &crate::LineWidget,
+        _event: crate::LineWidgetEvent,
+    ) {
+    }
+    /// `signalLater(cm, "lineWidgetAdded" | "lineWidgetCleared" | "lineWidgetChanged",
+    /// cm, widget, line)`.
+    fn signal_line_widget(
+        &self,
+        _widget: &crate::LineWidget,
+        _line_no: i64,
+        _event: crate::LineWidgetEvent,
+    ) {
+    }
     /// `signalCursorActivity(cm)`.
     fn signal_cursor_activity(&self) {}
     /// `setSelectionInner` on a document with this editor: the selection changed.

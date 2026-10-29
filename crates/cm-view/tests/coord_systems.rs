@@ -228,3 +228,46 @@ fn coord_system_round_trip_and_deleted_handle() {
     });
     assert!(cm.height_at_line_in(&h, None, false).is_nan());
 }
+
+/// `intoCoordSystem(..., includeWidgets)` (position_measurement.js:308): without
+/// `includeWidgets` the box moves below the widgets above the line
+/// (`widgetTopHeight`), in every system including "line"; with it, the box is
+/// the line's top, widgets included. `heightAtLine` counts the widget.
+#[test]
+fn into_coord_system_include_widgets() {
+    let mut cm = Editor::new(
+        &lines(10),
+        Spec::Null,
+        EditorOptions::default(),
+        Metrics::test_grid(),
+    );
+    cm.set_size(400.0, 300.0);
+    let th = Metrics::test_grid().text_height;
+    let above = cm_core::LineWidgetOptions {
+        above: true,
+        ..Default::default()
+    };
+    cm.add_line_widget(3, std::rc::Rc::new(()), 25.0, above);
+    cm.add_line_widget(3, std::rc::Rc::new(()), 7.0, Default::default());
+    let r = cm_view::measure::Rect {
+        left: 0.0,
+        right: 0.0,
+        top: 1.0,
+        bottom: 2.0,
+    };
+    let line = cm.into_coord_system(3, r, CoordSys::Line, false);
+    assert_eq!((line.top, line.bottom), (26.0, 27.0));
+    assert_eq!(cm.into_coord_system(3, r, CoordSys::Line, true).top, 1.0);
+    let with = cm.into_coord_system(3, r, CoordSys::Local, true);
+    let without = cm.into_coord_system(3, r, CoordSys::Local, false);
+    assert_eq!(with.top, 3.0 * th + cm.metrics.padding_top + 1.0);
+    assert_eq!(without.top - with.top, 25.0);
+    // The widget below line 3 moves line 4 down by its height too.
+    let l4 = cm.into_coord_system(4, r, CoordSys::Doc, false);
+    assert_eq!(l4.top, 4.0 * th + 25.0 + 7.0 + 1.0);
+    // charCoords goes through the no-widget path.
+    assert_eq!(
+        cm.char_coords(Pos::new(3, 0), CoordSys::Doc).top,
+        3.0 * th + 25.0
+    );
+}

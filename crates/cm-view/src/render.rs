@@ -53,6 +53,20 @@ pub struct Theme {
     pub selection_focused: Rgba,
     pub cursor: Rgba,
     pub scrollbar: Rgba,
+    /// `background` of a host CSS class (the page's style sheet), for line
+    /// `bgClass`/`gutterClass` properties: `(class, color)`, later entries win.
+    pub class_backgrounds: Vec<(String, Rgba)>,
+}
+
+impl Theme {
+    /// The background a class list gets from [`Theme::class_backgrounds`].
+    pub fn class_background(&self, classes: &str) -> Option<Rgba> {
+        self.class_backgrounds
+            .iter()
+            .rev()
+            .find(|(k, _)| classes.split_whitespace().any(|c| c == k))
+            .map(|(_, c)| *c)
+    }
 }
 
 impl Default for Theme {
@@ -67,6 +81,7 @@ impl Default for Theme {
             selection_focused: rgb(0xd7d4f0),
             cursor: rgb(0x000000),
             scrollbar: [0.0, 0.0, 0.0, 0.25],
+            class_backgrounds: Vec::new(),
         }
     }
 }
@@ -508,7 +523,7 @@ impl Renderer {
             let (a, b) = (r.from(), r.to());
             for line in a.line.max(from)..=b.line.min(to - 1) {
                 let (t, l) = editor.layout(line);
-                let top = editor.height_at_line(line);
+                let top = editor.text_top(line);
                 let s_ch = if line == a.line { a.ch } else { 0 };
                 let e_ch = if line == b.line { b.ch } else { t.len() as i64 };
                 let left_c = l.cursor_coords(&t, s_ch, Some(cm_core::Sticky::After));
@@ -627,7 +642,7 @@ impl Renderer {
                     }
                 }
             };
-            placed.push((id, wy(editor.height_at_line(line))));
+            placed.push((id, wy(editor.text_top(line))));
             keep.insert(id, entry);
         }
         self.lines = keep;
@@ -635,9 +650,49 @@ impl Renderer {
         // Line numbers (`lineNumberFor`).
         let mut numbers_keep: HashMap<i64, Buffer> = HashMap::new();
         let mut number_pos: Vec<(i64, f32, f32)> = Vec::new();
-        if editor.options.line_numbers {
+        let mut marker_pos: Vec<(String, f32, f32)> = Vec::new();
+        if !editor.gutter_columns.is_empty() {
             quads.push((full(0.0, 0.0, gutter - 1.0, h), theme.gutter));
             quads.push((full(gutter - 1.0, 0.0, gutter, h), theme.gutter_border));
+            // updateLineGutter (update_line.js:87): a `gutterClass` line property
+            // fills the whole gutter behind the line (CodeMirror-gutter-background).
+            for line in from..to {
+                // The gutter background spans the whole line wrapper, widgets
+                // included; markers sit beside the text.
+                let wrap_top = wy(editor.height_at_line(line));
+                let y = wy(editor.text_top(line));
+                let lh = editor.line_height(line) as f32;
+                let handle = editor.doc.get_line_handle(line);
+                if let Some(cls) = handle.as_ref().and_then(|l| l.gutter_class()) {
+                    if let Some(c) = theme.class_background(&cls) {
+                        quads.push((full(0.0, wrap_top, gutter - 1.0, wrap_top + lh), c));
+                    }
+                }
+                // A marker drawn as text (`String`/`&str`) in its column
+                // (`div.CodeMirror-gutter-elt`, left = gutterLeft[id]).
+                let markers = handle.and_then(|l| l.gutter_markers());
+                for (id, mk) in markers.iter().flatten() {
+                    let Some(mk) = mk else { continue };
+                    let Some(col) = editor.gutter_columns.iter().find(|c| &c.class_name == id)
+                    else {
+                        continue;
+                    };
+                    let text = mk
+                        .downcast_ref::<String>()
+                        .cloned()
+                        .or_else(|| mk.downcast_ref::<&'static str>().map(|s| s.to_string()));
+                    if let Some(t) = text {
+                        marker_pos.push((t, col.left as f32, y));
+                    }
+                }
+            }
+        }
+        let lnum_right = editor
+            .gutter_columns
+            .iter()
+            .find(|c| c.class_name == "CodeMirror-linenumbers")
+            .map(|c| (c.left + c.width) as f32);
+        if let (true, Some(lnum_right)) = (editor.options.line_numbers, lnum_right) {
             for line in from..to {
                 let n = line + editor.options.first_line_number - editor.first_line();
                 let b = match self.numbers.remove(&n) {
@@ -648,12 +703,16 @@ impl Renderer {
                     }
                 };
                 let digits = n.to_string().len() as f32;
-                let x = gutter - 1.0 - 3.0 - digits * m.char_width as f32;
-                number_pos.push((n, x, wy(editor.height_at_line(line))));
+                let x = lnum_right - 3.0 - digits * m.char_width as f32;
+                number_pos.push((n, x, wy(editor.text_top(line))));
                 numbers_keep.insert(n, b);
             }
         }
         self.numbers = numbers_keep;
+        let marker_buffers: Vec<Buffer> = marker_pos
+            .iter()
+            .map(|(t, _, _)| self.make_buffer(t, None, false, theme.line_number))
+            .collect();
 
         // Scrollbar thumb, above the text and the cursors
         // (`.CodeMirror-vscrollbar { z-index: 6 }`).
@@ -732,6 +791,17 @@ impl Renderer {
         for (n, x, y) in &number_pos {
             areas.push(TextArea {
                 buffer: &self.numbers[n],
+                left: *x,
+                top: *y,
+                scale: 1.0,
+                bounds: gutter_bounds,
+                default_color: text_color,
+                custom_glyphs: &[],
+            });
+        }
+        for (b, (_, x, y)) in marker_buffers.iter().zip(&marker_pos) {
+            areas.push(TextArea {
+                buffer: b,
                 left: *x,
                 top: *y,
                 scale: 1.0,
