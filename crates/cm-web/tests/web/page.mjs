@@ -39,6 +39,22 @@ function domLines(root) {
   });
 }
 
+
+// The structure of the rendered line nodes (`.CodeMirror-code` children): tag, sorted class tokens, inline position and
+// contenteditable, with the children of a wrapper; a `pre.CodeMirror-line` is a leaf. Both editors share it.
+function lineNodes(root) {
+  const ser = n => {
+    const o = { t: n.tagName.toLowerCase(), c: (n.getAttribute("class") ?? "").split(/\s+/).filter(Boolean).sort(), pos: n.style.position, ce: n.getAttribute("contenteditable") };
+    if (o.t !== "pre") o.k = Array.from(n.children).map(ser);
+    return o;
+  };
+  return Array.from(root.querySelector(".CodeMirror-code").children).map(ser);
+}
+// Window-relative top and height of each rendered `pre.CodeMirror-line`.
+function lineBoxes(root) {
+  return Array.from(root.querySelectorAll(".CodeMirror-code pre.CodeMirror-line")).map(p => { const r = p.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.height)]; });
+}
+
 function rustDriver(text, mode, opts) {
   host.textContent = "";
   const ed = new api.WebEditor(text, mode, opts);
@@ -64,6 +80,12 @@ function rustDriver(text, mode, opts) {
     },
     local: (line, ch) => { const c = ed.cursorCoords(line, ch); return { left: c.left, top: c.top, bottom: c.bottom }; },
     lines: () => domLines(root),
+    // CM5 redraws at the end of the call; cm-web draws on the next frame, so the driver draws now (a frame between two calls is browser timing).
+    addClass: (l, w, c) => { try { ed.addLineClass(l, w, c); ed.renderNow(); return null; } catch (e) { return e.name; } },
+    rmClass: (l, w, c) => { try { ed.removeLineClass(l, w, c); ed.renderNow(); return null; } catch (e) { return e.name; } },
+    classes: l => Array.from(ed.lineClasses(l)),
+    nodes: () => lineNodes(root),
+    boxes: () => lineBoxes(root),
     destroy: () => ed.destroy(),
   };
 }
@@ -86,6 +108,11 @@ function cm5Driver(text, mode, opts) {
     point: (line, ch) => { const c = cm.cursorCoords({ line, ch }, "window"); return { x: c.left, y: (c.top + c.bottom) / 2 }; },
     local: (line, ch) => { const c = cm.cursorCoords({ line, ch }, "local"); return { left: c.left, top: c.top, bottom: c.bottom }; },
     lines: () => domLines(root),
+    addClass: (l, w, c) => { try { cm.addLineClass(l, w, c); return null; } catch (e) { return e.name; } },
+    rmClass: (l, w, c) => { try { cm.removeLineClass(l, w, c); return null; } catch (e) { return e.name; } },
+    classes: l => { const h = cm.getLineHandle(l); return [h.textClass, h.bgClass, h.wrapClass, h.gutterClass].map(v => v ?? null); },
+    nodes: () => lineNodes(root),
+    boxes: () => lineBoxes(root),
     destroy: () => { root.remove(); },
   };
 }

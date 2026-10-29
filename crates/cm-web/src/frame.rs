@@ -28,6 +28,42 @@ pub enum Seg {
     Special { code: u16, class: Option<String> },
 }
 
+/// The class strings of a rendered line (`updateLineClasses`, `updateLineBackground`):
+/// the mode's `line-*` classes first, then those `addLineClass` set.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct LineClasses {
+    /// The class of the `pre.CodeMirror-line`.
+    pub text: Option<String>,
+    /// The class of the `div.CodeMirror-linebackground`, without that base class.
+    pub bg: Option<String>,
+    /// The class of the line's wrapper.
+    pub wrap: Option<String>,
+}
+
+/// `lineView.textClass + " " + line.textClass`, or whichever is set.
+fn join_classes(mode: Option<&String>, line: Option<String>) -> Option<String> {
+    let line = line.filter(|c| !c.is_empty());
+    match (mode.filter(|c| !c.is_empty()), line) {
+        (Some(m), Some(l)) => Some(format!("{m} {l}")),
+        (Some(m), None) => Some(m.clone()),
+        (None, l) => l,
+    }
+}
+
+impl LineClasses {
+    pub fn of(styles: &Styles, handle: &cm_core::LineHandle) -> LineClasses {
+        let (mode_bg, mode_text) = styles
+            .classes
+            .as_ref()
+            .map_or((None, None), |(b, t)| (b.as_ref(), t.as_ref()));
+        LineClasses {
+            text: join_classes(mode_text, handle.text_class()),
+            bg: join_classes(mode_bg, handle.bg_class()),
+            wrap: handle.wrap_class().filter(|c| !c.is_empty()),
+        }
+    }
+}
+
 /// One rendered line.
 #[derive(Clone, Debug)]
 pub struct FrameLine {
@@ -42,6 +78,7 @@ pub struct FrameLine {
     pub text: Text,
     /// The style array the segments come from (pointer-compared for reuse).
     pub styles: Rc<Styles>,
+    pub classes: LineClasses,
 }
 
 /// A frame of the editor.
@@ -157,6 +194,7 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
             .options
             .line_numbers
             .then(|| (line + editor.options.first_line_number - first).to_string());
+        let styles = editor.line_styles(line);
         lines.push(FrameLine {
             id: handle.id(),
             line,
@@ -164,7 +202,8 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
             top: editor.height_at_line(line),
             height: editor.line_height(line),
             text: handle.text_utf16(),
-            styles: editor.line_styles(line),
+            classes: LineClasses::of(&styles, &handle),
+            styles,
         });
     }
 
@@ -299,5 +338,25 @@ mod tests {
         let f = build(&cm, true);
         assert_eq!(f.cursors.len(), 1);
         assert_eq!((f.cursors[0].left, f.cursors[0].top), (34.0, 40.0));
+    }
+}
+
+#[cfg(test)]
+mod line_class_tests {
+    use super::*;
+
+    #[test]
+    fn mode_classes_come_before_line_classes() {
+        let a = Some("m".to_string());
+        assert_eq!(
+            join_classes(a.as_ref(), Some("l".into())).as_deref(),
+            Some("m l")
+        );
+        assert_eq!(join_classes(a.as_ref(), None).as_deref(), Some("m"));
+        assert_eq!(join_classes(None, Some("l".into())).as_deref(), Some("l"));
+        assert_eq!(
+            join_classes(Some(&String::new()), Some(String::new())),
+            None
+        );
     }
 }
