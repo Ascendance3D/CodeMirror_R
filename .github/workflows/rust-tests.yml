@@ -41,7 +41,17 @@ jobs:
       labels: [self-hosted, Linux, X64]
     timeout-minutes: 60
     steps:
+      # Only same-repository PR branches (authors with write access) run on the persistent self-hosted runners.
+      # A fork PR stops here, before checkout, so this required check fails closed instead of skipping.
+      - name: Same-repository branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::Fork pull requests do not run on the self-hosted runners."
+          exit 1
+
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       # The pinned upstream source (4ca3d05) that four cm-modes runmode tests read, then the
       # CodeMirror 5.65.21 reference: vendored tree, upstream commit, tree and content digest.

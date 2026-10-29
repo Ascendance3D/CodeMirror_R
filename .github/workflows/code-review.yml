@@ -10,6 +10,8 @@ permissions:
 jobs:
   review:
     name: Review
+    # Only same-repository PR branches (authors with write access) run on the persistent self-hosted runners.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on:
       group: xite-ci
       labels: [self-hosted, Linux, X64]
