@@ -8,6 +8,7 @@ import { createServer } from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { extname, join, normalize } from "node:path";
+import { safeResolve } from "./server-utils.mjs";
 import { fileURLToPath } from "node:url";
 
 const ROOT = normalize(process.env.CM5_BUILD_DIR || "");
@@ -21,8 +22,9 @@ const HARNESS = `<!doctype html><meta charset="utf-8"><link rel="stylesheet" hre
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");
   if (url.pathname === "/__harness.html") { res.writeHead(200, { "Content-Type": "text/html" }); return res.end(HARNESS); }
-  const path = normalize(join(ROOT, decodeURIComponent(url.pathname)));
-  if (!path.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
+  const s = safeResolve(url.pathname, ROOT);
+  if (s.status !== 200) { res.writeHead(s.status); return res.end(); }
+  const path = s.path;
   try { const body = await readFile(path); res.writeHead(200, { "Content-Type": { ".js": "text/javascript", ".css": "text/css" }[extname(path)] || "application/octet-stream" }); res.end(body); }
   catch { res.writeHead(404); res.end(); }
 });
