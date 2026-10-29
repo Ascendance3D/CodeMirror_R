@@ -116,9 +116,12 @@ impl Doc {
         op: impl FnOnce(&mut Line) -> Result<bool, RegExpError>,
     ) -> Result<Option<LineHandle>, RegExpError> {
         let (line, no) = match sel {
+            // The property is the clipped line's, but `changeLine` keeps the number it was
+            // given as `no` (`let no = handle`), so `regLineChange` gets the unclipped one:
+            // a line number outside the document redraws nothing.
             LineSel::No(n) => {
-                let n = (*n).min(self.last_line()).max(self.first_line());
-                (self.get_line_ref(n), n)
+                let clipped = (*n).min(self.last_line()).max(self.first_line());
+                (self.get_line_ref(clipped), *n)
             }
             LineSel::Handle(h) => match self.line_no(&h.0) {
                 Some(no) => (h.0.clone(), no),

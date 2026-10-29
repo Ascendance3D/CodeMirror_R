@@ -88,3 +88,59 @@ fn model_cases_match_cm5() {
         }
     }
 }
+
+/// A numeric line is clipped for the property but reported unclipped to the redraw
+/// (`changeLine`, changes.js:332), so a number outside the document updates nothing.
+#[test]
+fn numeric_lines_outside_the_document_redraw_nothing() {
+    let d = data();
+    for (name, steps) in d["lines"].as_object().unwrap() {
+        let mut cm = Editor::new(
+            "one\ntwo",
+            Spec::Null,
+            EditorOptions::default(),
+            Metrics::oracle(),
+        );
+        cm.set_size(600.0, 300.0);
+        let updates = Rc::new(Cell::new(0u32));
+        let u = updates.clone();
+        cm.on_update(move |_| u.set(u.get() + 1));
+        for (i, s) in steps.as_array().unwrap().iter().enumerate() {
+            let [op, line, place, cls] = s["step"].as_array().unwrap().as_slice() else {
+                panic!("{name}: bad step");
+            };
+            let here = format!("{name} step {i} {}", s["step"]);
+            let before = updates.get();
+            let (line, place) = (
+                line.as_i64().unwrap(),
+                LineWhere::parse(place.as_str().unwrap()),
+            );
+            if op == "add" {
+                cm.doc
+                    .add_line_class(line, place, cls.as_str().unwrap())
+                    .unwrap();
+            } else {
+                cm.doc.remove_line_class(line, place, cls.as_str()).unwrap();
+            }
+            cm.fire_orphan_delayed();
+            assert_eq!(
+                updates.get() - before,
+                s["redraw"].as_u64().unwrap() as u32,
+                "{here}: redraws"
+            );
+            for (n, want) in s["lines"].as_array().unwrap().iter().enumerate() {
+                let h = cm.doc.get_line_handle(n as i64).unwrap();
+                assert_eq!(
+                    h.text_class(),
+                    prop(&want["text"]),
+                    "{here}: line {n} textClass"
+                );
+                assert_eq!(
+                    h.wrap_class(),
+                    prop(&want["wrap"]),
+                    "{here}: line {n} wrapClass"
+                );
+            }
+        }
+    }
+}

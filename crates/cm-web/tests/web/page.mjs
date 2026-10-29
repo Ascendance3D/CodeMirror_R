@@ -80,8 +80,9 @@ function rustDriver(text, mode, opts) {
     },
     local: (line, ch) => { const c = ed.cursorCoords(line, ch); return { left: c.left, top: c.top, bottom: c.bottom }; },
     lines: () => domLines(root),
-    addClass: (l, w, c) => { try { ed.addLineClass(l, w, c); return null; } catch (e) { return e.name; } },
-    rmClass: (l, w, c) => { try { ed.removeLineClass(l, w, c); return null; } catch (e) { return e.name; } },
+    // CM5 redraws at the end of the call; cm-web draws on the next frame, so the driver draws now (a frame between two calls is browser timing).
+    addClass: (l, w, c) => { try { ed.addLineClass(l, w, c); ed.renderNow(); return null; } catch (e) { return e.name; } },
+    rmClass: (l, w, c) => { try { ed.removeLineClass(l, w, c); ed.renderNow(); return null; } catch (e) { return e.name; } },
     classes: l => Array.from(ed.lineClasses(l)),
     nodes: () => lineNodes(root),
     boxes: () => lineBoxes(root),

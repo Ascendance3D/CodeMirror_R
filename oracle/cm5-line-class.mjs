@@ -42,7 +42,7 @@ await page.waitForFunction(() => window.CodeMirror);
 await page.evaluate(() => document.fonts.ready);
 
 out = await page.evaluate(() => {
-  const results = { version: CodeMirror.version, model: {}, dom: {} };
+  const results = { version: CodeMirror.version, model: {}, lines: {}, dom: {} };
   // A step is [op, where, cls]: op "add", "rm" (cls null clears the property).
   const slot = v => v === undefined ? "undefined" : v;
   const info = cm => { const i = cm.lineInfo(0); return { text: slot(i.textClass), bg: slot(i.bgClass), wrap: slot(i.wrapClass), gutter: slot(cm.getLineHandle(0).gutterClass) }; }; // lineInfo has no gutterClass key; it is a property of the handle
@@ -93,6 +93,26 @@ out = await page.evaluate(() => {
   model("astral", [A(T, "\u{1F600}"), A(T, "\u{1F600}x"), R(T, "\u{1F600}"), R(T, "."), R(T, "..")]);
   model("where_variants", [A("text", "t"), A("background", "b"), A("wrap", "w"), A("gutter", "g"), A("other", "o"), A("", "e"), R("background", "b"), R("gutter", "g"), R("other", "o")]);
   model("add_after_clear_slot_empty_string", [A(T, ""), A(T, "foo"), R(T, "foo"), A(T, "")]);
+
+
+  // A numeric line is clipped into the document for the property, but `changeLine` (changes.js:332) hands the
+  // UNCLIPPED number to `regLineChange`, so a line number outside the document redraws nothing. Every line's
+  // classes and the redraw of each step; a step is [op, line, where, cls].
+  const lines = (name, steps) => {
+    const cm = CodeMirror(document.body, { value: "one\ntwo", lineNumbers: false });
+    cm.setSize(600, 300);
+    let updates = 0;
+    cm.on("update", () => updates++);
+    const recs = [];
+    for (const [op, line, where, cls] of steps) {
+      const before = updates;
+      if (op === "add") cm.addLineClass(line, where, cls); else cm.removeLineClass(line, where, cls);
+      recs.push({ step: [op, line, where, cls], redraw: updates - before, lines: [0, 1].map(n => { const h = cm.getLineHandle(n); return { text: slot(h.textClass), bg: slot(h.bgClass), wrap: slot(h.wrapClass) }; }) });
+    }
+    results.lines[name] = recs;
+    cm.getWrapperElement().remove();
+  };
+  lines("number_out_of_range", [["add", 99, "text", "hi"], ["add", -5, "text", "lo"], ["add", 1, "text", "in"], ["rm", 99, "text", "hi"], ["rm", -5, "text", "lo"], ["add", 2, "wrap", "w"]]);
 
   // ---- DOM structure and measurement --------------------------------------------------------------
   const code = cm => cm.getWrapperElement().querySelector(".CodeMirror-code");
