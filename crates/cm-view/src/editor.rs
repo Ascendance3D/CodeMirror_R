@@ -188,14 +188,87 @@ impl Default for EditorOptions {
     }
 }
 
-/// Coordinate systems (`intoCoordSystem` contexts): "line" (line-local), "div"
-/// (`display.lineDiv`, here: document y without the top padding) and "local"
-/// (the sizer, i.e. including `paddingTop`).
+/// Coordinate systems (`intoCoordSystem` / `fromCoordSystem` contexts,
+/// src/measurement/position_measurement.js:305-345).
+///
+/// The native "window" is the host's drawing surface: [`Display::window_origin`]
+/// is where the editor's top-left corner (`display.wrapper.getBoundingClientRect()`)
+/// sits in it, and [`Display::page_scroll`] is the host page's scroll offset
+/// (`pageXOffset`/`pageYOffset`), so "page" = "window" + `page_scroll`. Both
+/// default to (0, 0): a host that does not set them gets window = page = editor
+/// relative coordinates. The text area (`display.lineSpace`) starts at
+/// `window_origin + (gutter_width - scroll_left, paddingTop - scroll_top + viewOffset)`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CoordSys {
+    /// "line": relative to the top of the line.
     Line,
+    /// "div": relative to `display.lineSpace`, whose top is the top of the
+    /// rendered range (document y minus [`Editor::view_offset`]).
     Div,
+    /// "local": relative to the sizer (document y plus `paddingTop`).
     Local,
+    /// "page": the host window plus [`Display::page_scroll`]. The default of the
+    /// `*_in` methods, as in CM5.
+    Page,
+    /// "window": the host window ([`Display::window_origin`]).
+    Window,
+    /// The port's internal frame: document y without the top padding (CM5 "div"
+    /// with a `viewOffset` of 0). The renderer and vertical motion use it, with
+    /// [`Editor::coords_char`] and [`Editor::line_at_height`], which take document y.
+    Doc,
+}
+
+/// The `start` argument of `cm.cursorCoords(start, mode)`: `null` (the primary
+/// head), `true` (`from()`), `false` (`to()`) or a position (clipped).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum CoordsStart {
+    Head,
+    From,
+    To,
+    Pos(Pos),
+}
+
+impl From<Pos> for CoordsStart {
+    fn from(p: Pos) -> Self {
+        CoordsStart::Pos(p)
+    }
+}
+impl From<bool> for CoordsStart {
+    fn from(b: bool) -> Self {
+        if b {
+            CoordsStart::From
+        } else {
+            CoordsStart::To
+        }
+    }
+}
+impl From<Option<bool>> for CoordsStart {
+    fn from(b: Option<bool>) -> Self {
+        b.map_or(CoordsStart::Head, CoordsStart::from)
+    }
+}
+
+/// The `line` argument of `cm.heightAtLine(line, ...)`: a line number or a handle.
+#[derive(Clone, Debug)]
+pub enum LineArg {
+    Number(i64),
+    Handle(LineHandle),
+}
+
+impl From<i64> for LineArg {
+    fn from(n: i64) -> Self {
+        LineArg::Number(n)
+    }
+}
+impl From<LineHandle> for LineArg {
+    fn from(h: LineHandle) -> Self {
+        LineArg::Handle(h)
+    }
+}
+impl From<&LineHandle> for LineArg {
+    fn from(h: &LineHandle) -> Self {
+        LineArg::Handle(h.clone())
+    }
 }
 
 /// The parts of `cm.display` the model needs.
@@ -208,6 +281,11 @@ pub struct Display {
     pub window_height: Option<f64>,
     pub scroll_top: f64,
     pub scroll_left: f64,
+    /// Where the editor's top-left corner sits in the host window, for the
+    /// "window" and "page" coordinate systems (see [`CoordSys`]). Set by the host.
+    pub window_origin: (f64, f64),
+    /// The host page's scroll offset (`pageXOffset`, `pageYOffset`), for "page".
+    pub page_scroll: (f64, f64),
     /// `display.shift`: shift is held during the current key/mouse event.
     pub shift: bool,
     pub view_from: i64,
@@ -538,6 +616,8 @@ impl Editor {
                 window_height: None,
                 scroll_top: 0.0,
                 scroll_left: 0.0,
+                window_origin: (0.0, 0.0),
+                page_scroll: (0.0, 0.0),
                 shift: false,
                 view_from: first,
                 view_to: first,
@@ -2227,19 +2307,169 @@ impl Editor {
         first + lo as i64
     }
 
-    fn into_coords(&self, line: i64, mut r: Rect, sys: CoordSys) -> Rect {
-        // intoCoordSystem without includeWidgets: below the widgets above the line.
-        let wt = self.widget_top_height(line);
-        r.top += wt;
-        r.bottom += wt;
-        let off = match sys {
-            CoordSys::Line => 0.0,
-            CoordSys::Div => self.height_at_line(line),
-            CoordSys::Local => self.height_at_line(line) + self.metrics.padding_top,
-        };
-        r.top += off;
-        r.bottom += off;
+    /// `display.viewOffset`: the height above the rendered range
+    /// (`heightAtLine(getLine(doc, display.viewFrom))`, update_display.js:128).
+    pub fn view_offset(&self) -> f64 {
+        self.height_at_line(self.display.view_from)
+    }
+
+    /// `display.lineSpace.getBoundingClientRect()`'s left/top in "window"
+    /// coordinates (see [`CoordSys`]).
+    fn line_space_origin(&self) -> (f64, f64) {
+        let (ox, oy) = self.display.window_origin;
+        (
+            ox + self.gutter_width - self.display.scroll_left,
+            oy + self.metrics.padding_top - self.display.scroll_top + self.view_offset(),
+        )
+    }
+
+    /// `intoCoordSystem(cm, lineObj, rect, context, includeWidgets)`
+    /// (position_measurement.js:308): a box relative to line `line` into `sys`.
+    /// Without `include_widgets` the box is moved below the widgets above the
+    /// line (`widgetTopHeight`), as CM5 does before the "line" early return.
+    pub fn into_coord_system(
+        &self,
+        line: i64,
+        mut r: Rect,
+        sys: CoordSys,
+        include_widgets: bool,
+    ) -> Rect {
+        if !include_widgets {
+            let wt = self.widget_top_height(line);
+            r.top += wt;
+            r.bottom += wt;
+        }
+        if sys == CoordSys::Line {
+            return r;
+        }
+        let mut y_off = self.height_at_line(line);
+        match sys {
+            CoordSys::Local => y_off += self.metrics.padding_top,
+            CoordSys::Doc => {}
+            _ => y_off -= self.view_offset(),
+        }
+        if matches!(sys, CoordSys::Page | CoordSys::Window) {
+            let (lx, ly) = self.line_space_origin();
+            let (px, py) = if sys == CoordSys::Page {
+                self.display.page_scroll
+            } else {
+                (0.0, 0.0)
+            };
+            y_off += ly + py;
+            r.left += lx + px;
+            r.right += lx + px;
+        }
+        r.top += y_off;
+        r.bottom += y_off;
         r
+    }
+
+    /// `fromCoordSystem(cm, coords, context)` (position_measurement.js:330): a
+    /// point in `sys` to CM5 "div" coordinates (relative to `display.lineSpace`).
+    /// As in CM5, "line" is taken as "window"; [`CoordSys::Doc`] subtracts the
+    /// view offset.
+    pub fn from_coord_system(&self, left: f64, top: f64, sys: CoordSys) -> (f64, f64) {
+        let (mut left, mut top) = (left, top);
+        match sys {
+            CoordSys::Div => return (left, top),
+            CoordSys::Doc => return (left, top - self.view_offset()),
+            CoordSys::Page => {
+                left -= self.display.page_scroll.0;
+                top -= self.display.page_scroll.1;
+            }
+            CoordSys::Local => {
+                // `display.sizer.getBoundingClientRect()`.
+                let (ox, oy) = self.display.window_origin;
+                left += ox + self.gutter_width - self.display.scroll_left;
+                top += oy - self.display.scroll_top;
+            }
+            CoordSys::Window | CoordSys::Line => {}
+        }
+        let (lx, ly) = self.line_space_origin();
+        (left - lx, top - ly)
+    }
+
+    /// The selection-free part of [`Editor::into_coord_system`] for the internal
+    /// measurement functions.
+    fn into_coords(&self, line: i64, r: Rect, sys: CoordSys) -> Rect {
+        self.into_coord_system(line, r, sys, false)
+    }
+
+    /// `cm.cursorCoords(start, mode)` (methods.js:184): `start` is the primary
+    /// head ([`CoordsStart::Head`], `null`), its `from()` (`true`), its `to()`
+    /// (`false`) or a position, clipped to the document. `mode` `None` is "page".
+    pub fn cursor_coords_in(&self, start: impl Into<CoordsStart>, mode: Option<CoordSys>) -> Rect {
+        let range = self.doc.selection().primary();
+        let pos = match start.into() {
+            CoordsStart::Head => range.head,
+            CoordsStart::Pos(p) => self.doc.clip_pos(p),
+            CoordsStart::From => range.from(),
+            CoordsStart::To => range.to(),
+        };
+        self.cursor_coords(pos, mode.unwrap_or(CoordSys::Page))
+    }
+    /// `cm.charCoords(pos, mode)` (methods.js:192): `pos` is clipped; `mode`
+    /// `None` is "page".
+    pub fn char_coords_in(&self, pos: Pos, mode: Option<CoordSys>) -> Rect {
+        self.char_coords(self.doc.clip_pos(pos), mode.unwrap_or(CoordSys::Page))
+    }
+    /// `cm.coordsChar(coords, mode)` (methods.js:196): `mode` `None` is "page".
+    pub fn coords_char_in(&self, left: f64, top: f64, mode: Option<CoordSys>) -> PosInfo {
+        let (x, y) = self.from_coord_system(left, top, mode.unwrap_or(CoordSys::Page));
+        // `coordsChar(cm, x, y)` adds `display.viewOffset`; ours takes document y.
+        self.coords_char(x, y + self.view_offset())
+    }
+    /// `cm.lineAtHeight(height, mode)` (methods.js:201): `mode` `None` is "page".
+    /// As in CM5, a height above the document gives the first line and one below
+    /// it gives `first + size` (one past the last line).
+    pub fn line_at_height_in(&self, height: f64, mode: Option<CoordSys>) -> i64 {
+        let (_, top) = self.from_coord_system(0.0, height, mode.unwrap_or(CoordSys::Page));
+        self.line_at_height(top + self.view_offset())
+    }
+    /// `cm.heightAtLine(line, mode, includeWidgets)` (methods.js:205): the top of
+    /// a line in `mode` (`None` = "page"). A number is clamped to the document; a
+    /// number past the last line gives the bottom of the document. A handle of a
+    /// line no longer in the document gives NaN. Line widgets are not ported, so
+    /// `include_widgets` changes nothing.
+    pub fn height_at_line_in(
+        &self,
+        line: impl Into<LineArg>,
+        mode: Option<CoordSys>,
+        include_widgets: bool,
+    ) -> f64 {
+        let mode = mode.unwrap_or(CoordSys::Page);
+        let mut end = false;
+        let n = match line.into() {
+            LineArg::Number(n) => {
+                let last = self.last_line();
+                if n < self.first_line() {
+                    self.first_line()
+                } else if n > last {
+                    end = true;
+                    last
+                } else {
+                    n
+                }
+            }
+            LineArg::Handle(h) => match self.doc.get_line_number(&h) {
+                Some(n) => n,
+                None => return f64::NAN,
+            },
+        };
+        let zero = Rect {
+            left: 0.0,
+            right: 0.0,
+            top: 0.0,
+            bottom: 0.0,
+        };
+        let top = self
+            .into_coord_system(n, zero, mode, include_widgets || end)
+            .top;
+        if end {
+            top + self.doc_height() - self.height_at_line(n)
+        } else {
+            top
+        }
     }
 
     /// `cursorCoords(cm, pos, context)` (left-to-right lines).
@@ -2523,7 +2753,7 @@ impl Editor {
         }
         let mut cur = (self.doc.clip_pos(from), false);
         for _ in 0..amount {
-            let mut coords = self.cursor_coords(cur.0, CoordSys::Div);
+            let mut coords = self.cursor_coords(cur.0, CoordSys::Doc);
             match x {
                 None => x = Some(coords.left),
                 Some(v) => coords.left = v,
@@ -2553,7 +2783,7 @@ impl Editor {
                     heads.push(if dir < 0 { range.from() } else { range.to() });
                     continue;
                 }
-                let mut head_pos = cm.cursor_coords(range.head, CoordSys::Div);
+                let mut head_pos = cm.cursor_coords(range.head, CoordSys::Doc);
                 if let Some(g) = goal_cols[i] {
                     head_pos.left = g;
                 }
@@ -2561,7 +2791,7 @@ impl Editor {
                 let (target, _) = find_pos_v(cm, head_pos, dir, unit);
                 let pos = target.pos();
                 if unit == UnitV::Page && i == primary {
-                    scroll_add = Some(cm.char_coords(pos, CoordSys::Div).top - head_pos.top);
+                    scroll_add = Some(cm.char_coords(pos, CoordSys::Doc).top - head_pos.top);
                 }
                 heads.push(pos);
             }
