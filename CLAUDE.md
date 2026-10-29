@@ -1,13 +1,14 @@
 # CodeMirror_R — Agent Guide
 
-Native Rust port of CodeMirror 5.65.21 (`Ascendance3D/CodeMirror_R`, PRIVATE). It was extracted from `Ascendance3D/X_ITE_R`; `PROVENANCE.md` records the source commit and manifest.
+Native Rust port of CodeMirror 5.65.21 (`Ascendance3D/CodeMirror_R`, public). It was extracted from `Ascendance3D/X_ITE_R`; `PROVENANCE.md` records the source commit and manifest.
 
 ## Rules
 
-- Keep the repository PRIVATE. Never change its visibility.
+- The repository is public. Do not commit credentials, machine paths or private infrastructure details.
+- Pull request CI runs on GitHub-hosted runners. Do not move pull request jobs to self-hosted runners.
 - The CodeMirror 5.65.21 pin is in `tools/reference.lock`. Change it only with owner review.
 - Do not edit `oracle/cm5-build/`, `upstream/codemirror5/` or an `oracle/cm5-*-baseline.json` to make a test pass.
-- Do not run a rollup build inside `oracle/cm5-build/`. Build the C0 suite in a disposable copy (`README.md`).
+- Do not run a rollup build inside `oracle/cm5-build/`. Build the C0 suite in a disposable copy (`docs/TESTING.md`).
 - No X_ITE code belongs here. X_ITE_R does not depend on this repository.
 
 ## Checks

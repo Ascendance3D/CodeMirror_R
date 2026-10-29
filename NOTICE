@@ -1,8 +1,7 @@
 CodeMirror_R
 
-The Rust workspace declares the MIT License (Cargo.toml, [workspace.package]), as the
-Ascendance3D/X_ITE_R workspace it was extracted from did. A root LICENSE file with the copyright
-holder's name is not yet present; the owner adds it.
+Copyright (c) 2026 Ascendance3D. MIT License; the full text is in LICENSE. The Rust workspace
+declares the same license (Cargo.toml, [workspace.package]).
 
 This software ports the behavior of CodeMirror 5 (version 5.65.21, commit
 4ca3d0551cf9125114e0802877480599472dc186):
