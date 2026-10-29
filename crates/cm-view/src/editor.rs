@@ -1703,7 +1703,9 @@ impl Editor {
         let w = if self.options.line_wrapping {
             0.0
         } else {
-            (self.max_line_width() - self.text_area_width()).max(0.0)
+            // op.maxScrollLeft (operations.js:102): sizer.offsetLeft + adjustWidthTo -
+            // displayWidth, with the gutters left of the text area.
+            (self.sizer_width() - self.text_area_width()).max(0.0)
         };
         (h, w)
     }
@@ -1820,6 +1822,13 @@ impl Editor {
         let w = LineLayout::new(&self.metrics, &t, self.options.tab_size, None).width;
         self.heights.borrow_mut().max_width = Some(w);
         w
+    }
+
+    /// `op.adjustWidthTo` (operations.js:98), the sizer's `minWidth`:
+    /// `measureChar(cm, maxLine, maxLine.text.length).left + 3`, i.e. the left padding,
+    /// the text and 3 px (not the right padding).
+    pub fn sizer_width(&self) -> f64 {
+        self.max_line_width() - self.metrics.padding_h + 3.0
     }
 
     /// `visibleLines(display, doc)`: `[from, to)`.
