@@ -250,7 +250,7 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
         if !r.empty() || r.head.line < from || r.head.line >= to {
             continue;
         }
-        cursors.push(editor.cursor_coords(r.head, CoordSys::Div));
+        cursors.push(editor.cursor_coords(r.head, CoordSys::Doc));
     }
 
     Frame {

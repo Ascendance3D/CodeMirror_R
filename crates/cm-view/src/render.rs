@@ -582,7 +582,7 @@ impl Renderer {
                 if r.head.line < from || r.head.line >= to {
                     continue;
                 }
-                let c = editor.cursor_coords(r.head, CoordSys::Div);
+                let c = editor.cursor_coords(r.head, CoordSys::Doc);
                 let cw = if editor.overwrite {
                     (m.char_width as f32 / 4.0).max(2.0)
                 } else {
