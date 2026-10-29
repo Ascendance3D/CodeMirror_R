@@ -889,12 +889,17 @@ fn test_find_word_at_javascript() {
         wide_width: 20.0,
         astral_width: 20.0,
     };
-    let e = cm_view::Editor::new("let a$b = 1;\nlet á = 2;", cm_modes::Spec::from("javascript"), opts, metrics);
+    let e = cm_view::Editor::new(
+        "let a$b = 1;\nlet á = 2;",
+        cm_modes::Spec::from("javascript"),
+        opts,
+        metrics,
+    );
 
     // Test the $ which is a word char in JS
     let (start, end) = e.find_word_at(cm_core::Pos::new(0, 5)); // inside a$b
     assert_eq!(start.ch, 4); // "a$b" starts at 4
-    assert_eq!(end.ch, 7);   // "a$b" ends at 7
+    assert_eq!(end.ch, 7); // "a$b" ends at 7
 
     // Test non-ascii letter which triggers isWordChar fallback
     // pos 1:4 is 'á'

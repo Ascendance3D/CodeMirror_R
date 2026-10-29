@@ -334,7 +334,12 @@ fn test_get_state_after() {
         wide_width: 20.0,
         astral_width: 20.0,
     };
-    let e = cm_view::Editor::new("let a = 1;\nlet b = 2;", cm_modes::Spec::from("javascript"), opts, metrics);
+    let mut e = cm_view::Editor::new(
+        "let a = 1;\nlet b = 2;",
+        cm_modes::Spec::from("javascript"),
+        opts,
+        metrics,
+    );
 
     // We run get_state_after(Some(0), true) -> it returns a state
     let state = e.get_state_after(Some(0), true);

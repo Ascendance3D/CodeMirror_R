@@ -452,7 +452,9 @@ impl Mode for Named {
     }
     fn start_state(&self, a1: JsArg, a2: JsArg) -> Option<State> {
         if let Some(ConfigValue::Obj(f)) = self.extensions.get("startState") {
-            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(JsArg, JsArg) -> Option<State>>>() {
+            if let Some(func) =
+                f.downcast_ref::<std::rc::Rc<dyn Fn(JsArg, JsArg) -> Option<State>>>()
+            {
                 return func(a1, a2);
             }
         }
@@ -460,9 +462,7 @@ impl Mode for Named {
     }
     fn token(&self, stream: &mut StringStream<'_>, state: &mut State) -> Option<String> {
         if let Some(ConfigValue::Obj(f)) = self.extensions.get("token") {
-            if let Some(func) =
-                f.downcast_ref::<Rc<dyn Fn(&mut StringStream<'_>, &mut State) -> Option<String>>>()
-            {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(&mut StringStream<'_>, &mut State) -> Option<String>>>() {
                 return func(stream, state);
             }
         }
@@ -470,7 +470,9 @@ impl Mode for Named {
     }
     fn blank_line(&self, state: &mut State) -> Option<String> {
         if let Some(ConfigValue::Obj(f)) = self.extensions.get("blankLine") {
-            if let Some(func) = f.downcast_ref::<Rc<dyn Fn(&mut State) -> Option<String>>>() {
+            if let Some(func) =
+                f.downcast_ref::<std::rc::Rc<dyn Fn(&mut State) -> Option<String>>>()
+            {
                 return func(state);
             }
         }
@@ -479,22 +481,20 @@ impl Mode for Named {
     fn has_blank_line(&self) -> bool {
         matches!(
             self.extensions.get("blankLine"),
-            Some(ConfigValue::Obj(f)) if f.downcast_ref::<Rc<dyn Fn(&mut State) -> Option<String>>>().is_some()
+            Some(ConfigValue::Obj(f)) if f.downcast_ref::<std::rc::Rc<dyn Fn(&mut State) -> Option<String>>>().is_some()
         ) || self.inner.has_blank_line()
     }
     fn copy_state(&self, state: &State) -> Option<State> {
         if let Some(ConfigValue::Obj(f)) = self.extensions.get("copyState") {
-            if let Some(func) = f.downcast_ref::<Rc<dyn Fn(&State) -> Option<State>>>() {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(&State) -> Option<State>>>() {
                 return func(state);
             }
         }
         self.inner.copy_state(state)
     }
-    fn inner_mode(&self, state: &State) -> Option<(Rc<dyn Mode>, State)> {
+    fn inner_mode(&self, state: &State) -> Option<(std::rc::Rc<dyn Mode>, State)> {
         if let Some(ConfigValue::Obj(f)) = self.extensions.get("innerMode") {
-            if let Some(func) =
-                f.downcast_ref::<Rc<dyn Fn(&State) -> Option<(Rc<dyn Mode>, State)>>>()
-            {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(&State) -> Option<(std::rc::Rc<dyn Mode>, State)>>>() {
                 return func(state);
             }
         }
@@ -503,7 +503,7 @@ impl Mode for Named {
     fn has_inner_mode(&self) -> bool {
         matches!(
             self.extensions.get("innerMode"),
-            Some(ConfigValue::Obj(f)) if f.downcast_ref::<Rc<dyn Fn(&State) -> Option<(Rc<dyn Mode>, State)>>>().is_some()
+            Some(ConfigValue::Obj(f)) if f.downcast_ref::<std::rc::Rc<dyn Fn(&State) -> Option<(std::rc::Rc<dyn Mode>, State)>>>().is_some()
         ) || self.inner.has_inner_mode()
     }
     fn inner_mode_mut(
@@ -515,7 +515,7 @@ impl Mode for Named {
     }
     fn combine_tokens(&self, state: &State) -> Option<bool> {
         if let Some(ConfigValue::Obj(f)) = self.extensions.get("combineTokens") {
-            if let Some(func) = f.downcast_ref::<Rc<dyn Fn(&State) -> Option<bool>>>() {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(&State) -> Option<bool>>>() {
                 return func(state);
             }
         }
@@ -524,7 +524,7 @@ impl Mode for Named {
     fn indent(&self, state: &State, text_after: &[u16], line: &[u16]) -> Option<f64> {
         if let Some(ConfigValue::Obj(f)) = self.extensions.get("indent") {
             if let Some(func) =
-                f.downcast_ref::<Rc<dyn Fn(&State, &[u16], &[u16]) -> Option<f64>>>()
+                f.downcast_ref::<std::rc::Rc<dyn Fn(&State, &[u16], &[u16]) -> Option<f64>>>()
             {
                 return func(state, text_after, line);
             }
@@ -534,12 +534,12 @@ impl Mode for Named {
     fn has_indent(&self) -> bool {
         matches!(
             self.extensions.get("indent"),
-            Some(ConfigValue::Obj(f)) if f.downcast_ref::<Rc<dyn Fn(&State, &[u16], &[u16]) -> Option<f64>>>().is_some()
+            Some(ConfigValue::Obj(f)) if f.downcast_ref::<std::rc::Rc<dyn Fn(&State, &[u16], &[u16]) -> Option<f64>>>().is_some()
         ) || self.inner.has_indent()
     }
     fn electric_input(&self, text: &[u16]) -> Option<bool> {
         if let Some(ConfigValue::Obj(f)) = self.extensions.get("electricInput") {
-            if let Some(func) = f.downcast_ref::<Rc<dyn Fn(&[u16]) -> Option<bool>>>() {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(&[u16]) -> Option<bool>>>() {
                 return func(text);
             }
         }
@@ -1119,35 +1119,42 @@ mod tests {
 
     /// `getMode` copies `modeExtensions[name]` and then `spec.modeProps` onto the mode
     /// (test/test.js "modeProps" sets `{name: "yyy", modeProps: {xxx: "b", enableC: true}}`).
-
     #[test]
     fn extend_mode_invalid_override() {
         let mut r = Registry::with_all_modes();
         let mut ext = HashMap::new();
+        // javascript has no blank_line.
         // Invalid override for a function-valued method
         ext.insert("indent".to_string(), ConfigValue::Num(4.0));
         ext.insert("blankLine".to_string(), ConfigValue::Str("nope".into()));
-        r.extend_mode("vrml", ext);
+        r.extend_mode("javascript", ext);
 
-        let m = r.get_mode(&ModeOptions::default(), &Spec::from("vrml"));
-        // vrml mode does NOT have a blank_line inner, but we injected a string instead of a function.
+        let m = r.get_mode(&ModeOptions::default(), &Spec::from("javascript"));
+        // javascript mode does NOT have a blank_line inner, and we injected a string instead of a function.
         // It should correctly check the type via downcast_ref and report false.
-        assert_eq!(m.has_blank_line(), false);
-        assert_eq!(m.has_indent(), true); // vrml has indent inner, which falls through
+        assert!(!m.has_blank_line());
+        assert!(m.has_indent()); // javascript has indent inner, which falls through
 
         // Add a valid override
         let mut valid_ext = HashMap::new();
-        let valid_blank = std::rc::Rc::new(|_: &mut State| Some("blank".to_string())) as std::rc::Rc<dyn Fn(&mut State) -> Option<String>>;
-        valid_ext.insert("blankLine".to_string(), ConfigValue::Obj(std::rc::Rc::new(valid_blank)));
-        r.extend_mode("vrml", valid_ext);
+        let valid_blank = std::rc::Rc::new(|_: &mut State| Some("blank".to_string()))
+            as std::rc::Rc<dyn Fn(&mut State) -> Option<String>>;
+        valid_ext.insert(
+            "blankLine".to_string(),
+            ConfigValue::Obj(std::rc::Rc::new(valid_blank.clone())),
+        );
+        r.extend_mode("javascript", valid_ext);
 
-        let m2 = r.get_mode(&ModeOptions::default(), &Spec::from("vrml"));
-        assert_eq!(m2.has_blank_line(), true);
+        let m2 = r.get_mode(&ModeOptions::default(), &Spec::from("javascript"));
+        assert!(m2.has_blank_line());
+
+        // call it and assert the result
+        let mut state = m2.start_state(JsArg::Undefined, JsArg::Undefined).unwrap();
+        assert_eq!(m2.blank_line(&mut state), Some("blank".to_string()));
     }
 
     #[test]
     fn extend_mode_and_mode_props() {
-
         let mut r = Registry::with_all_modes();
         let mut ext = HashMap::new();
         ext.insert("xxx".to_string(), ConfigValue::Str("a".into()));
