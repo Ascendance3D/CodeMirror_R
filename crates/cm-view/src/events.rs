@@ -127,6 +127,8 @@ pub struct EditorListeners {
     /// Immediate: the editor gained or lost focus.
     pub focus: Listeners<EditorHandler>,
     pub blur: Listeners<EditorHandler>,
+    /// Immediate: `setOption` changed an option (its name).
+    pub option_change: Listeners<NameHandler>,
 }
 
 impl EditorListeners {
@@ -151,6 +153,7 @@ impl EditorListeners {
             .or_else(|| removed(self.electric_input.remove(id)))
             .or_else(|| removed(self.focus.remove(id)))
             .or_else(|| removed(self.blur.remove(id)))
+            .or_else(|| removed(self.option_change.remove(id)))
     }
 }
 

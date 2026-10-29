@@ -85,6 +85,14 @@ pub struct EditorOptions {
     pub line_separator: Option<String>,
     /// The platform is a Mac (`mac`, `flipCtrlCmd`).
     pub mac: bool,
+    /// `lineNumberFormatter` (`None`: the number itself).
+    pub line_number_formatter: Option<crate::options::LineNumberFormatter>,
+    /// `phrases`: translations for [`Editor::phrase`].
+    pub phrases: Option<HashMap<String, String>>,
+    /// `autofocus`: focus the editor 20 ms after it is built ([`Editor::run_timers`]).
+    pub autofocus: bool,
+    /// `finishInit`: run at the end of the constructor, before the init hooks.
+    pub finish_init: Option<crate::options::InitHook>,
 }
 
 impl Default for EditorOptions {
@@ -114,6 +122,10 @@ impl Default for EditorOptions {
             flatten_spans: true,
             line_separator: None,
             mac: cfg!(target_os = "macos"),
+            line_number_formatter: None,
+            phrases: None,
+            autofocus: false,
+            finish_init: None,
         }
     }
 }
@@ -297,6 +309,10 @@ pub struct Editor {
     blink_start: Option<f64>,
     /// `onBlur`'s 150 ms timeout that resets `display.shift`.
     blur_shift_at: Option<f64>,
+    /// The constructor's 20 ms `autofocus` timeout (`onFocus` unless focused).
+    autofocus_at: Option<f64>,
+    /// Values of options defined with [`crate::options::define_option`].
+    pub(crate) custom_options: Vec<(String, crate::options::OptionValue)>,
     op: OpState,
     /// The rect of the last end-of-operation `scrollToPos`, for `maybeScrollWindow`.
     window_scroll_rect: Option<Rect>,
@@ -483,6 +499,8 @@ impl Editor {
             focused: false,
             blink_start: None,
             blur_shift_at: None,
+            autofocus_at: None,
+            custom_options: Vec::new(),
             op: OpState::default(),
             window_scroll_rect: None,
             heights,
@@ -505,6 +523,12 @@ impl Editor {
         ed.measure_max_line(true);
         // The constructor's operation draws the display and reports its range.
         ed.display.reported_view = (ed.display.view_from, ed.display.view_to);
+        // `if (options.autofocus && !mobile) ... setTimeout(() => { if
+        // (this.hasFocus() && !this.state.focused) onFocus(this) }, 20)`.
+        if ed.options.autofocus {
+            ed.autofocus_at = Some(cm_core::clock::now() + 20.0);
+        }
+        ed.finish_init();
         Ok(ed)
     }
 
@@ -824,6 +848,25 @@ impl Editor {
         let f: Rc<EditorHandler> = Rc::new(f);
         self.shared.ls.borrow_mut().blur.on_rc(f)
     }
+    /// `on("optionChange", f)`: `setOption` changed an option, with its name
+    /// (immediate, after the option's handler).
+    pub fn on_option_change(&self, f: impl Fn(&mut Cx, &str) + 'static) -> ListenerId {
+        let f: Rc<NameHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().option_change.on_rc(f)
+    }
+    /// `signal(cm, "optionChange", cm, name)`.
+    pub(crate) fn signal_option_change(&mut self, name: &str) {
+        let snap = self.shared.ls.borrow().option_change.snapshot();
+        for e in snap.iter() {
+            (e.f)(
+                &mut Cx {
+                    editor: self,
+                    others: &mut NoEditors,
+                },
+                name,
+            );
+        }
+    }
     /// `state.focused`.
     pub fn has_focus(&self) -> bool {
         self.focused
@@ -910,13 +953,25 @@ impl Editor {
     }
     /// Milliseconds until [`Editor::run_timers`] has work (`onBlur`'s timeout).
     pub fn next_timer_in(&self) -> Option<f64> {
-        let at = self.blur_shift_at?;
+        let at = match (self.blur_shift_at, self.autofocus_at) {
+            (Some(a), Some(b)) => a.min(b),
+            (a, b) => a.or(b)?,
+        };
         let d = at - cm_core::clock::now();
         Some(if d.is_finite() { d.max(0.0) } else { 0.0 })
     }
     /// Run the editor's due timers: `onBlur`'s timeout resets `display.shift` when
     /// the editor is still blurred.
     pub fn run_timers(&mut self) {
+        if let Some(at) = self.autofocus_at {
+            let now = cm_core::clock::now();
+            if now >= at || !now.is_finite() {
+                self.autofocus_at = None;
+                if !self.focused {
+                    self.set_focused(true);
+                }
+            }
+        }
         if let Some(at) = self.blur_shift_at {
             let now = cm_core::clock::now();
             if now >= at || !now.is_finite() {
@@ -1222,7 +1277,7 @@ impl Editor {
 
     /// `clearCaches(cm)` (position_measurement.js:278): the longest line is measured
     /// again at the end of the operation when lines do not wrap.
-    fn clear_caches(&self) {
+    pub(crate) fn clear_caches(&self) {
         if !self.options.line_wrapping {
             self.heights.borrow_mut().max_line.changed = true;
         }
@@ -1711,7 +1766,7 @@ impl Editor {
         (t, l)
     }
 
-    fn invalidate_heights(&self) {
+    pub(crate) fn invalidate_heights(&self) {
         let mut h = self.heights.borrow_mut();
         h.heights.clear();
         h.prefix = None;

@@ -28,6 +28,7 @@ pub mod measure;
 pub mod mouse;
 pub mod movement;
 pub mod native_clipboard;
+pub mod options;
 #[cfg(feature = "gpu")]
 pub mod render;
 #[cfg(feature = "gpu")]
