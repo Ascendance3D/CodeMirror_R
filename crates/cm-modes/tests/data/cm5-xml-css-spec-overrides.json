@@ -1,0 +1,2356 @@
+{
+ "version": "5.65.21",
+ "xml": {
+  "xml_default": {
+   "spec": {},
+   "after": "<li>",
+   "lines": [
+    {
+     "line": "<ul>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "ul",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "  <li>a",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "li",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "a",
+       null
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "    <li>b",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "li",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "b",
+       null
+      ]
+     ],
+     "indent": 6,
+     "indentAfter": 6
+    },
+    {
+     "line": "      </ul>",
+     "toks": [
+      [
+       "      ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "ul",
+       "tag error"
+      ],
+      [
+       ">",
+       "tag bracket error"
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "<foo><bar>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "foo",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "bar",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "  </bar>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "bar",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "    x",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "x",
+       null
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    }
+   ]
+  },
+  "xml_implicitly_closed": {
+   "spec": {
+    "implicitlyClosed": [
+     "li"
+    ]
+   },
+   "after": "<li>",
+   "lines": [
+    {
+     "line": "<ul>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "ul",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "  <li>a",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "li",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "a",
+       null
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "    <li>b",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "li",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "b",
+       null
+      ]
+     ],
+     "indent": 6,
+     "indentAfter": 6
+    },
+    {
+     "line": "      </ul>",
+     "toks": [
+      [
+       "      ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "ul",
+       "tag error"
+      ],
+      [
+       ">",
+       "tag bracket error"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "<foo><bar>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "foo",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "bar",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "  </bar>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "bar",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "    x",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "x",
+       null
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    }
+   ]
+  },
+  "xml_context_grabbers": {
+   "spec": {
+    "contextGrabbers": [
+     [
+      "li",
+      [
+       "li"
+      ]
+     ]
+    ]
+   },
+   "after": "<li>",
+   "lines": [
+    {
+     "line": "<ul>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "ul",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "  <li>a",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "li",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "a",
+       null
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 2
+    },
+    {
+     "line": "    <li>b",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "li",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "b",
+       null
+      ]
+     ],
+     "indent": 6,
+     "indentAfter": 2
+    },
+    {
+     "line": "      </ul>",
+     "toks": [
+      [
+       "      ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "ul",
+       "tag error"
+      ],
+      [
+       ">",
+       "tag bracket error"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "<foo><bar>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "foo",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "bar",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "  </bar>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "bar",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "    x",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "x",
+       null
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    }
+   ]
+  },
+  "xml_grabbers_and_implicit": {
+   "spec": {
+    "contextGrabbers": [
+     [
+      "li",
+      [
+       "li"
+      ]
+     ]
+    ],
+    "implicitlyClosed": [
+     "li"
+    ]
+   },
+   "after": "</ul>",
+   "lines": [
+    {
+     "line": "<ul>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "ul",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "  <li>a",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "li",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "a",
+       null
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 0
+    },
+    {
+     "line": "    <li>b",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "li",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "b",
+       null
+      ]
+     ],
+     "indent": 6,
+     "indentAfter": 0
+    },
+    {
+     "line": "      </ul>",
+     "toks": [
+      [
+       "      ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "ul",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 0,
+     "indentAfter": 0
+    },
+    {
+     "line": "<foo><bar>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "foo",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "bar",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "  </bar>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "bar",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "    x",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "x",
+       null
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    }
+   ]
+  },
+  "xml_auto_self_closers": {
+   "spec": {
+    "autoSelfClosers": [
+     "foo"
+    ]
+   },
+   "after": "</foo>",
+   "lines": [
+    {
+     "line": "<ul>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "ul",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 2
+    },
+    {
+     "line": "  <li>a",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "li",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "a",
+       null
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "    <li>b",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "li",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "b",
+       null
+      ]
+     ],
+     "indent": 6,
+     "indentAfter": 6
+    },
+    {
+     "line": "      </ul>",
+     "toks": [
+      [
+       "      ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "ul",
+       "tag error"
+      ],
+      [
+       ">",
+       "tag bracket error"
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "<foo><bar>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "foo",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "bar",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "  </bar>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "bar",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "    x",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "x",
+       null
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    }
+   ]
+  },
+  "xml_do_not_indent": {
+   "spec": {
+    "doNotIndent": [
+     "code"
+    ]
+   },
+   "after": "</b>",
+   "lines": [
+    {
+     "line": "<code>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "code",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "  <a>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "a",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "    x",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "x",
+       null
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "  </a>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "a",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "</code>",
+     "toks": [
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "code",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 0,
+     "indentAfter": 0
+    },
+    {
+     "line": "<b>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "b",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "  y",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "y",
+       null
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    }
+   ]
+  },
+  "html_default": {
+   "spec": {
+    "htmlMode": true
+   },
+   "after": "</div>",
+   "lines": [
+    {
+     "line": "<div>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "div",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "  <br>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "br",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "  <pre>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "pre",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "    <p>a",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "p",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "a",
+       null
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "      <p>b",
+     "toks": [
+      [
+       "      ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "p",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "b",
+       null
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "  </pre>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "pre",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "  <input>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "input",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "    </div>",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "div",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 0,
+     "indentAfter": 0
+    },
+    {
+     "line": "z",
+     "toks": [
+      [
+       "z",
+       null
+      ]
+     ],
+     "indent": 0,
+     "indentAfter": 0
+    }
+   ]
+  },
+  "html_empty_dicts": {
+   "spec": {
+    "htmlMode": true,
+    "autoSelfClosers": [],
+    "implicitlyClosed": [],
+    "contextGrabbers": [],
+    "doNotIndent": []
+   },
+   "after": "</div>",
+   "lines": [
+    {
+     "line": "<div>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "div",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "  <br>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "br",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "  <pre>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "pre",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "    <p>a",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "p",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "a",
+       null
+      ]
+     ],
+     "indent": 6,
+     "indentAfter": 6
+    },
+    {
+     "line": "      <p>b",
+     "toks": [
+      [
+       "      ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "p",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "b",
+       null
+      ]
+     ],
+     "indent": 8,
+     "indentAfter": 8
+    },
+    {
+     "line": "  </pre>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "pre",
+       "tag error"
+      ],
+      [
+       ">",
+       "tag bracket error"
+      ]
+     ],
+     "indent": 6,
+     "indentAfter": 6
+    },
+    {
+     "line": "  <input>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "input",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "    </div>",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "div",
+       "tag error"
+      ],
+      [
+       ">",
+       "tag bracket error"
+      ]
+     ],
+     "indent": 6,
+     "indentAfter": 6
+    },
+    {
+     "line": "z",
+     "toks": [
+      [
+       "z",
+       null
+      ]
+     ],
+     "indent": 6,
+     "indentAfter": 6
+    }
+   ]
+  },
+  "html_replaced_dicts": {
+   "spec": {
+    "htmlMode": true,
+    "autoSelfClosers": [
+     "input"
+    ],
+    "doNotIndent": [
+     "div"
+    ],
+    "contextGrabbers": [
+     [
+      "p",
+      [
+       "p",
+       "div"
+      ]
+     ]
+    ]
+   },
+   "after": "<p>",
+   "lines": [
+    {
+     "line": "<div>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "div",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "  <br>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "br",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "  <pre>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "pre",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "    <p>a",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "p",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "a",
+       null
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "      <p>b",
+     "toks": [
+      [
+       "      ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "p",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "b",
+       null
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "  </pre>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "pre",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "  <input>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "input",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "    </div>",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "div",
+       "tag error"
+      ],
+      [
+       ">",
+       "tag bracket error"
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    },
+    {
+     "line": "z",
+     "toks": [
+      [
+       "z",
+       null
+      ]
+     ],
+     "indent": "Pass",
+     "indentAfter": "Pass"
+    }
+   ]
+  },
+  "html_do_not_indent_true": {
+   "spec": {
+    "htmlMode": true,
+    "doNotIndent": true
+   },
+   "after": "</div>",
+   "lines": [
+    {
+     "line": "<div>",
+     "toks": [
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "div",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "  <br>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "br",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "  <pre>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "pre",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 4,
+     "indentAfter": 4
+    },
+    {
+     "line": "    <p>a",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "p",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "a",
+       null
+      ]
+     ],
+     "indent": 6,
+     "indentAfter": 4
+    },
+    {
+     "line": "      <p>b",
+     "toks": [
+      [
+       "      ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "p",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ],
+      [
+       "b",
+       null
+      ]
+     ],
+     "indent": 8,
+     "indentAfter": 4
+    },
+    {
+     "line": "  </pre>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "pre",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "  <input>",
+     "toks": [
+      [
+       "  ",
+       null
+      ],
+      [
+       "<",
+       "tag bracket"
+      ],
+      [
+       "input",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 2,
+     "indentAfter": 0
+    },
+    {
+     "line": "    </div>",
+     "toks": [
+      [
+       "    ",
+       null
+      ],
+      [
+       "</",
+       "tag bracket"
+      ],
+      [
+       "div",
+       "tag"
+      ],
+      [
+       ">",
+       "tag bracket"
+      ]
+     ],
+     "indent": 0,
+     "indentAfter": 0
+    },
+    {
+     "line": "z",
+     "toks": [
+      [
+       "z",
+       null
+      ]
+     ],
+     "indent": 0,
+     "indentAfter": 0
+    }
+   ]
+  }
+ },
+ "css": {
+  "scss_replaced_hooks": {
+   "spec": {
+    "name": "text/x-scss"
+   },
+   "hooks": [
+    [
+     "%",
+     "pct"
+    ]
+   ],
+   "lines": [
+    {
+     "line": "%ph { color: $x } // c",
+     "toks": [
+      [
+       "%ph",
+       "variable-3"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "color",
+       "property"
+      ],
+      [
+       ":",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "$",
+       null
+      ],
+      [
+       "x",
+       "variable"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "/",
+       null
+      ],
+      [
+       "/",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       "tag"
+      ]
+     ]
+    },
+    {
+     "line": "#{a} b:hover {}",
+     "toks": [
+      [
+       "#",
+       "builtin"
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       "a",
+       "tag"
+      ],
+      [
+       "}",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "b",
+       "tag"
+      ],
+      [
+       ":",
+       null
+      ],
+      [
+       "hover",
+       "variable-3"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       "}",
+       null
+      ]
+     ]
+    }
+   ]
+  },
+  "css_custom_hooks": {
+   "spec": {
+    "name": "text/css"
+   },
+   "hooks": [
+    [
+     "/",
+     "slash"
+    ],
+    [
+     "~",
+     "tilde"
+    ],
+    [
+     "&",
+     "amp"
+    ],
+    [
+     "^",
+     "caret"
+    ]
+   ],
+   "lines": [
+    {
+     "line": "a ~ b & c ^ d // x",
+     "toks": [
+      [
+       "a",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "~",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "b",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "&",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "^",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "d",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "// x",
+       "comment"
+      ]
+     ]
+    },
+    {
+     "line": "/* y */ e { color: red }",
+     "toks": [
+      [
+       "/",
+       null
+      ],
+      [
+       "*",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "y",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "*",
+       null
+      ],
+      [
+       "/",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "e",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "color",
+       "property"
+      ],
+      [
+       ":",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "red",
+       "keyword"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ]
+     ]
+    }
+   ]
+  },
+  "less_no_hooks": {
+   "spec": {
+    "name": "text/x-less"
+   },
+   "hooks": [],
+   "lines": [
+    {
+     "line": "@var: 1; // c",
+     "toks": [
+      [
+       "@var",
+       "def"
+      ],
+      [
+       ":",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "1",
+       "number"
+      ],
+      [
+       ";",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "/",
+       null
+      ],
+      [
+       "/",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "c",
+       "tag"
+      ]
+     ]
+    },
+    {
+     "line": ".a { &:hover { x: @var } }",
+     "toks": [
+      [
+       ".a",
+       "qualifier"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "&",
+       null
+      ],
+      [
+       ":",
+       null
+      ],
+      [
+       "hover",
+       "variable-3"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "{",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "x",
+       "property"
+      ],
+      [
+       ":",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "@var",
+       "def"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "}",
+       null
+      ]
+     ]
+    }
+   ]
+  },
+  "css_without_tables": {
+   "spec": {
+    "name": "css"
+   },
+   "hooks": [
+    [
+     "~",
+     "tilde"
+    ]
+   ],
+   "lines": [
+    {
+     "line": "a ~ b /* c */",
+     "toks": [
+      [
+       "a",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "~",
+       null
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "b",
+       "tag"
+      ],
+      [
+       " ",
+       null
+      ],
+      [
+       "/* c */",
+       "comment"
+      ]
+     ]
+    }
+   ]
+  }
+ }
+}

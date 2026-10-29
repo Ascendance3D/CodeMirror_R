@@ -16,7 +16,11 @@
 //! * JS regexps are hand-coded over UTF-16 code units; `\w`, `\d` and `/i` are
 //!   ASCII-only as in non-unicode JS regexps.
 //!
-//! Gaps: keyword tables and `tokenHooks` are read only from a [`CssConfig`]. A spec
+//! * A spec's own `tokenHooks` ([`TokenHooks`], e.g. `{name: "text/x-scss",
+//!   tokenHooks: ...}`, which `resolveMode` merges over the MIME config) replaces the
+//!   config's hooks, as `parserConfig.tokenHooks` does.
+//!
+//! Gaps: keyword tables are read only from a [`CssConfig`]. A spec
 //! with plain-object tables (`propertyKeywords: {...}`, `valueKeywords`, ...) falls
 //! back to `text/css`, and separate table keys are ignored. The
 //! `registerHelper("hintWords", "css", allWords)` call is not ported.
@@ -48,6 +52,25 @@ pub enum Hooks {
     /// only reachable from Rust callers building their own config).
     None,
 }
+
+/// What a `tokenHooks[ch]` function returns: `false` (fall through to
+/// `tokenBase`), a style string or null/undefined (`type` keeps its last value), or
+/// `[style, type]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum HookResult {
+    False,
+    Style(Option<String>),
+    Undefined,
+    Pair(Option<String>, Option<String>),
+}
+
+/// A `tokenHooks[ch]` function: `(stream, state) -> result`.
+pub type HookFn = Rc<dyn Fn(&mut StringStream<'_>, &mut CssState) -> HookResult>;
+
+/// A spec's `tokenHooks` object: character -> hook. Wrap it as
+/// `ConfigValue::Obj(Rc::new(TokenHooks(...)))` under the key `tokenHooks`.
+#[derive(Clone, Default)]
+pub struct TokenHooks(pub Vec<(u16, HookFn)>);
 
 /// The table-valued part of a css parser config. `None` = property absent (`|| {}`).
 #[derive(Clone, Debug)]
@@ -147,6 +170,9 @@ pub struct CssMode {
     inline: bool,
     indent_unit: f64,
     cfg: CssConfig,
+    /// `parserConfig.tokenHooks` given as a [`TokenHooks`] in the spec: replaces
+    /// `cfg.token_hooks`.
+    spec_hooks: Option<TokenHooks>,
     allow_nested: bool,
     line_comment: Option<String>,
     supports_at_component: bool,
@@ -355,6 +381,17 @@ impl CssMode {
                 b.map_or(JsStr::Null, JsStr::s),
             )
         };
+        if let Some(hooks) = &self.spec_hooks {
+            // `if (tokenHooks[ch])`: the first entry for `ch` (an object has one).
+            let (_, f) = hooks.0.iter().find(|(c, _)| *c == ch)?;
+            let opt = |v: Option<String>| v.map_or(JsStr::Null, |s| JsStr::S(s));
+            return Some(match f(stream, state) {
+                HookResult::False => Res::False,
+                HookResult::Style(st) => Res::Style(opt(st)),
+                HookResult::Undefined => Res::Style(JsStr::Undefined),
+                HookResult::Pair(a, b) => Res::Pair(opt(a), opt(b)),
+            });
+        }
         match (self.cfg.token_hooks, ch) {
             (Hooks::Css, c) if c == u('/') => {
                 if stream.eat(u('*')).is_none() {
@@ -1098,6 +1135,10 @@ fn make(registry: &Registry, config: &ModeOptions, parser_config: &ModeSpec) -> 
         inline,
         indent_unit: config.indent_unit as f64,
         cfg,
+        spec_hooks: pc
+            .get("tokenHooks")
+            .and_then(|v| v.as_obj::<TokenHooks>())
+            .cloned(),
         allow_nested: pc.truthy("allowNested"),
         // `lineComment: lineComment` — only a string is useful to callers.
         line_comment: pc

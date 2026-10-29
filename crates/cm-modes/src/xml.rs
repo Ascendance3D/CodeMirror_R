@@ -4,9 +4,11 @@
 //! case-sensitive even in html mode, and the module-level `type` / `setStyle`
 //! scratch variables live on the mode instance.
 //!
-//! Not ported: overriding the html/xml dictionaries (`autoSelfClosers`,
-//! `implicitlyClosed`, `contextGrabbers`, `doNotIndent`) through the spec — only the
-//! boolean and numeric options are read. `indent` looks the context's tag name up
+//! The html/xml dictionaries (`autoSelfClosers`, `implicitlyClosed`,
+//! `contextGrabbers`, `doNotIndent`) can be replaced through the spec with a
+//! [`TagDict`] / [`GrabberDict`] ([`tag_dict`], [`grabber_dict`]); like the JS
+//! `config[prop] = config_[prop]`, a spec value replaces the whole default
+//! dictionary. Only own keys count (`hasOwnProperty`). `indent` looks the context's tag name up
 //! with `contextGrabbers[name]`, so in JS a tag named like an `Object.prototype`
 //! member (`constructor`, ...) finds a function there; that is not reproduced.
 
@@ -20,13 +22,47 @@ use cm_core::util::string_stream::{RegexMatch, StringStream};
 use crate::js::{self, JsStr, is_js_space, is_js_word};
 use crate::{ConfigValue, JsArg, MimeTarget, Mode, ModeOptions, ModeSpec, Registry, State};
 
+/// A tag dictionary in a spec (`{br: true, hr: true}`): its own keys. Any value
+/// counts, as `hasOwnProperty` ignores it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TagDict(pub Vec<String>);
+
+/// A `contextGrabbers` dictionary in a spec: tag -> the tags that close it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GrabberDict(pub Vec<(String, Vec<String>)>);
+
+/// A spec value for `autoSelfClosers`, `implicitlyClosed` or `doNotIndent`.
+pub fn tag_dict(keys: &[&str]) -> ConfigValue {
+    ConfigValue::Obj(Rc::new(TagDict(
+        keys.iter().map(|k| k.to_string()).collect(),
+    )))
+}
+
+/// A spec value for `contextGrabbers`.
+pub fn grabber_dict(entries: &[(&str, &[&str])]) -> ConfigValue {
+    ConfigValue::Obj(Rc::new(GrabberDict(
+        entries
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.iter().map(|t| t.to_string()).collect()))
+            .collect(),
+    )))
+}
+
+/// The keys of a spec dictionary. A value that is not a [`TagDict`] has no own
+/// keys (JS `true.hasOwnProperty(x)` is false; `null` would throw there).
+fn spec_tags(v: &ConfigValue) -> HashSet<String> {
+    v.as_obj::<TagDict>()
+        .map(|d| d.0.iter().cloned().collect())
+        .unwrap_or_default()
+}
+
 /// `htmlConfig` / `xmlConfig` plus the spec's own options.
 #[derive(Debug)]
 pub struct XmlConfig {
-    pub auto_self_closers: HashSet<&'static str>,
-    pub implicitly_closed: HashSet<&'static str>,
-    pub context_grabbers: HashMap<&'static str, HashSet<&'static str>>,
-    pub do_not_indent: HashSet<&'static str>,
+    pub auto_self_closers: HashSet<String>,
+    pub implicitly_closed: HashSet<String>,
+    pub context_grabbers: HashMap<String, HashSet<String>>,
+    pub do_not_indent: HashSet<String>,
     pub allow_unquoted: bool,
     pub allow_missing: bool,
     pub allow_missing_tag_name: bool,
@@ -123,19 +159,48 @@ impl XmlConfig {
         let (auto, implicit, grab) = html_dicts();
         let opt = |k: &str| spec.get(k);
         let truthy_or = |k: &str, d: bool| opt(k).map_or(d, ConfigValue::truthy);
+        let owned = |set: &HashSet<&'static str>| -> HashSet<String> {
+            set.iter().map(|s| s.to_string()).collect()
+        };
+        // `for (var prop in config_) config[prop] = config_[prop]`: a spec dictionary
+        // replaces the default one.
+        let dict = |k: &str, default: HashSet<String>| opt(k).map_or(default, spec_tags);
         XmlConfig {
-            auto_self_closers: if html { auto.clone() } else { HashSet::new() },
-            implicitly_closed: if html {
-                implicit.clone()
-            } else {
-                HashSet::new()
+            auto_self_closers: dict(
+                "autoSelfClosers",
+                if html { owned(auto) } else { HashSet::new() },
+            ),
+            implicitly_closed: dict(
+                "implicitlyClosed",
+                if html {
+                    owned(implicit)
+                } else {
+                    HashSet::new()
+                },
+            ),
+            context_grabbers: match opt("contextGrabbers") {
+                Some(v) => v
+                    .as_obj::<GrabberDict>()
+                    .map(|d| {
+                        d.0.iter()
+                            .map(|(k, v)| (k.clone(), v.iter().cloned().collect()))
+                            .collect()
+                    })
+                    .unwrap_or_default(),
+                None if html => grab
+                    .iter()
+                    .map(|(k, v)| (k.to_string(), owned(v)))
+                    .collect(),
+                None => HashMap::new(),
             },
-            context_grabbers: if html { grab.clone() } else { HashMap::new() },
-            do_not_indent: if html {
-                ["pre"].into_iter().collect()
-            } else {
-                HashSet::new()
-            },
+            do_not_indent: dict(
+                "doNotIndent",
+                if html {
+                    ["pre".to_string()].into_iter().collect()
+                } else {
+                    HashSet::new()
+                },
+            ),
             allow_unquoted: truthy_or("allowUnquoted", html),
             allow_missing: truthy_or("allowMissing", html),
             allow_missing_tag_name: truthy_or("allowMissingTagName", false),
