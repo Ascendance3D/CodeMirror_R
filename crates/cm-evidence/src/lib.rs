@@ -337,8 +337,23 @@ pub fn resolve_private_in(
     let searched = private_candidates(root, name, explicit);
 
     for p in &searched {
-        if !p.exists() {
-            continue;
+        // Only a path with no entry at all is absent. A broken symlink or an entry that cannot be
+        // read is a fault, not a reason to skip.
+        match std::fs::symlink_metadata(p) {
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(e) => {
+                return Err(InputError::Mismatch(format!(
+                    "{name}: {}: {e}",
+                    p.display()
+                )));
+            }
+            Ok(_) if !p.exists() => {
+                return Err(InputError::Mismatch(format!(
+                    "{name}: {} is a symlink to a path that does not exist",
+                    p.display()
+                )));
+            }
+            Ok(_) => {}
         }
 
         let got = measure(p)
@@ -492,6 +507,32 @@ mod tests {
             resolve_private_in(&root, "set", Some(&empty)),
             Err(InputError::Absent(_))
         ));
+        // Mismatched: one extra file.
+        std::fs::write(data.join("set/extra.txt"), b"").unwrap();
+        assert!(matches!(
+            resolve_private_in(&root, "set", Some(&data)),
+            Err(InputError::Mismatch(_))
+        ));
+        std::fs::remove_file(data.join("set/extra.txt")).unwrap();
+        // Mismatched: a file where the manifest wants a directory.
+        let file_store = root.join("file-store");
+        std::fs::create_dir_all(&file_store).unwrap();
+        std::fs::write(file_store.join("set"), b"a\n").unwrap();
+        assert!(matches!(
+            resolve_private_in(&root, "set", Some(&file_store)),
+            Err(InputError::Mismatch(_))
+        ));
+        // Mismatched, not absent: a symlink whose target does not exist.
+        #[cfg(unix)]
+        {
+            let broken = root.join("broken");
+            std::fs::create_dir_all(&broken).unwrap();
+            std::os::unix::fs::symlink(root.join("no-such-dir"), broken.join("set")).unwrap();
+            assert!(matches!(
+                resolve_private_in(&root, "set", Some(&broken)),
+                Err(InputError::Mismatch(_))
+            ));
+        }
         // Mismatched: one changed byte.
         std::fs::write(data.join("set/a.txt"), b"A\n").unwrap();
         assert!(matches!(
