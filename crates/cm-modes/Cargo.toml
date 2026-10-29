@@ -10,6 +10,7 @@ publish.workspace = true
 cm-core = { path = "../cm-core" }
 
 [dev-dependencies]
+cm-evidence = { path = "../cm-evidence" }
 serde_json = "1"
 flate2 = "1"
 sha2 = "0.10"

@@ -1,0 +1,7 @@
+# Private test inputs (Ascendance3D/X_ITE_R#168). Historical Mall item files with no redistribution permission,
+# removed from the public tree at 32f3cca. Read by crates/cm-evidence (private_input). Not tracked; gitignored.
+# kind file: sha256 of the file. kind dir: sha256 of the sha256sum lines of every file (relative paths, bytewise sort).
+# cm5-cmd-ops-baseline.json embeds about 4.2 MB of corpus-items text, so it is private too.
+# name	kind	files	bytes	sha256
+corpus-items	dir	859	69552646	0a8127f2eaa77cff19ac9f4bdc33528ecb303804cd1412fb4acd66a72b66f534
+cm5-cmd-ops-baseline.json	file	1	8666084	59a1d53e3a7d753799c143ee7ce6cc9b3e7d592f9e84a28e2b817b902d727ed5

@@ -6,8 +6,9 @@
 //! wrapping) and recorded the editor state after each step. This test replays them
 //! on `cm_view::Editor` with `Metrics::oracle()` and compares every step.
 //!
-//! Baseline: `oracle/cm5-cmd-ops-baseline.json` (override with `CM_CMD_BASELINE`).
-//! Start documents from `oracle/corpus-items` are read by path (read-only).
+//! Baseline: the private input `cm5-cmd-ops-baseline.json` (override with `CM_CMD_BASELINE`).
+//! Start documents come from the private input `corpus-items` (read-only). Both are found and
+//! verified by `cm_evidence::private_input` (Ascendance3D/X_ITE_R#168).
 //! Known, explained differences: `tests/cmd-fuzz-known.tsv` (`seed<TAB>reason`).
 
 use std::path::PathBuf;
@@ -17,10 +18,6 @@ use cm_modes::Spec;
 use cm_view::editor::set_last_copied;
 use cm_view::{Editor, EditorOptions, Metrics};
 use serde_json::{Value, json};
-
-fn root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
-}
 
 /// `hashText` in the oracle.
 fn hash_text(s: &[u16]) -> Value {
@@ -86,9 +83,15 @@ fn mode_spec(v: &Value) -> Spec {
 
 #[test]
 fn cmd_fuzz_oracle() {
-    let path = std::env::var("CM_CMD_BASELINE")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| root().join("oracle/cm5-cmd-ops-baseline.json"));
+    let path = match std::env::var("CM_CMD_BASELINE") {
+        Ok(p) => PathBuf::from(p),
+        Err(_) => {
+            let Some(p) = cm_evidence::private_input("cm5-cmd-ops-baseline.json") else {
+                return;
+            };
+            p
+        }
+    };
     let data: Value =
         serde_json::from_str(&std::fs::read_to_string(&path).expect("baseline")).unwrap();
     let known: Vec<i64> = std::fs::read_to_string(
@@ -103,6 +106,14 @@ fn cmd_fuzz_oracle() {
         .ok()
         .map(|s| s.parse().unwrap());
     let seqs = data["sequences"].as_array().unwrap();
+    let corpus = if seqs.iter().any(|q| q["init"]["path"].is_string()) {
+        let Some(dir) = cm_evidence::private_input("corpus-items") else {
+            return;
+        };
+        Some(dir)
+    } else {
+        None
+    };
     let (mut nseq, mut nsteps, mut bad, mut known_bad) = (0, 0, Vec::new(), 0);
     for seq in seqs {
         let seed = seq["seed"].as_i64().unwrap();
@@ -113,7 +124,11 @@ fn cmd_fuzz_oracle() {
         let init = &seq["init"];
         let text = match init["path"].as_str() {
             Some(rel) => {
-                String::from_utf8(std::fs::read(root().join("oracle").join(rel)).unwrap()).unwrap()
+                let rel = rel
+                    .strip_prefix("corpus-items/")
+                    .unwrap_or_else(|| panic!("start document outside corpus-items: {rel}"));
+                let file = corpus.as_ref().unwrap().join(rel);
+                String::from_utf8(std::fs::read(file).unwrap()).unwrap()
             }
             None => init["text"].as_str().unwrap().to_string(),
         };

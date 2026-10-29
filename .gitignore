@@ -4,3 +4,6 @@
 # CI writes these into the workspace.
 /suite.log
 /evidence-skips.tsv
+# Private test inputs (oracle/private-inputs.tsv); never commit them.
+/oracle/corpus-items/
+/oracle/cm5-cmd-ops-baseline.json
