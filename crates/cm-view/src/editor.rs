@@ -40,7 +40,7 @@ use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_m
 use crate::events::{
     ChangeHandler, ChangesHandler, Cx, DisplayEvent, EditorEvents, EditorHandler, EditorShared,
     GutterHandler, InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler,
-    NameHandler, OpRecord, Parked, ViewChange, ViewportHandler, WithSelf, finish,
+    NameHandler, OpRecord, Parked, ViewChange, ViewportHandler, WidgetHandler, WithSelf, finish,
 };
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
@@ -277,6 +277,9 @@ pub(crate) struct HeightCache {
     /// Width of the widest line (`display.maxLine`), recomputed after changes.
     pub(crate) max_width: Option<f64>,
     pub(crate) max_line: MaxLine,
+    /// A line widget was added at some point: line heights are no longer all
+    /// `textHeight` when lines do not wrap.
+    pub(crate) has_widgets: bool,
 }
 
 /// The longest line: `display.maxLine`, `maxLineLength`, `maxLineChanged` and
@@ -501,6 +504,10 @@ impl Editor {
         hs.flatten_spans = options.flatten_spans;
         let hs = Rc::new(RefCell::new(hs));
         let heights = Rc::new(RefCell::new(HeightCache::default()));
+        heights.borrow_mut().has_widgets = (first..first + doc.line_count() as i64).any(|n| {
+            doc.get_line_handle(n)
+                .is_some_and(|h| !h.widgets().is_empty())
+        });
         let shared = EditorShared::new(
             EditorSemantics {
                 history_event_delay: options.history_event_delay,
@@ -820,6 +827,56 @@ impl Editor {
         let f: Rc<GutterHandler> = Rc::new(f);
         self.shared.ls.borrow_mut().gutter_click.on_rc(f)
     }
+    /// `addLineWidget(line, node, options)` (methods.js:294); `height` is the node's
+    /// height in px (CM5 measures the DOM node).
+    pub fn add_line_widget(
+        &mut self,
+        line: impl Into<cm_core::LineSel>,
+        node: Rc<dyn std::any::Any>,
+        height: f64,
+        opts: cm_core::LineWidgetOptions,
+    ) -> cm_core::LineWidget {
+        let line = line.into();
+        self.run_op(|cm| cm.doc.add_line_widget(line, node, height, opts))
+    }
+    /// `removeLineWidget(widget)` (methods.js:297): `widget.clear()`.
+    /// `lineWidgetCleared` is signaled after the operation (delivered with the orphan
+    /// callbacks, [`Editor::fire_orphan_delayed`]).
+    pub fn remove_line_widget(&mut self, widget: &cm_core::LineWidget) {
+        if let Some(no) = self.run_op(|cm| widget.detach(&cm.doc)) {
+            use cm_core::EditorSink;
+            self.shared
+                .signal_line_widget(widget, no, cm_core::LineWidgetEvent::Cleared);
+        }
+    }
+    /// `widget.changed()` once the host's node is `height` px tall.
+    pub fn line_widget_changed(&mut self, widget: &cm_core::LineWidget, height: f64) {
+        self.run_op(|cm| widget.changed(&cm.doc, height));
+    }
+    /// `on("lineWidgetAdded", f)`: `(cm, widget, line)` (delayed).
+    pub fn on_line_widget_added(
+        &self,
+        f: impl Fn(&mut Cx, &cm_core::LineWidget, i64) + 'static,
+    ) -> ListenerId {
+        let f: Rc<WidgetHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().line_widget_added.on_rc(f)
+    }
+    /// `on("lineWidgetCleared", f)` (delayed).
+    pub fn on_line_widget_cleared(
+        &self,
+        f: impl Fn(&mut Cx, &cm_core::LineWidget, i64) + 'static,
+    ) -> ListenerId {
+        let f: Rc<WidgetHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().line_widget_cleared.on_rc(f)
+    }
+    /// `on("lineWidgetChanged", f)` (delayed).
+    pub fn on_line_widget_changed(
+        &self,
+        f: impl Fn(&mut Cx, &cm_core::LineWidget, i64) + 'static,
+    ) -> ListenerId {
+        let f: Rc<WidgetHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().line_widget_changed.on_rc(f)
+    }
     /// `on("gutterContextMenu", f)` (immediate).
     pub fn on_gutter_context_menu(
         &self,
@@ -1114,6 +1171,20 @@ impl Editor {
         // The browser clamps the scroller to the content once `updateDisplay` has
         // resized the sizer, so a change that shortened the document moves the offsets
         // whether or not a scroll is queued; queued scrolls are resolved against them.
+        // line_widget.js adjustScrollWhenAboveVisible: a widget on a line above
+        // the visible top moves the scroll position by its height.
+        for (line, diff) in std::mem::take(&mut rec.widget_scroll) {
+            let Some(no) = self.doc.get_line_number(&line) else {
+                continue;
+            };
+            let top = self.op.scroll_top.unwrap_or(self.display.scroll_top);
+            if diff != 0.0 && self.height_at_line(no) < top {
+                self.add_to_scroll_top(diff);
+            }
+        }
+        if std::mem::take(&mut rec.force_update) {
+            self.force_update = true;
+        }
         self.clamp_scroll();
         self.take_sel_scroll();
         if let Some(st) = self.op.scroll_top.take() {
@@ -1878,8 +1949,12 @@ impl Editor {
         for i in 0..n {
             if h.heights[i].is_nan() {
                 let t = self.line_text(first + i as i64);
-                h.heights[i] =
-                    LineLayout::new(&self.metrics, &t, self.options.tab_size, Some(ww)).height();
+                let text = if self.options.line_wrapping {
+                    LineLayout::new(&self.metrics, &t, self.options.tab_size, Some(ww)).height()
+                } else {
+                    self.metrics.text_height
+                };
+                h.heights[i] = text + self.widgets_height(first + i as i64);
             }
             acc += h.heights[i];
             prefix.push(acc);
@@ -1887,9 +1962,121 @@ impl Editor {
         h.prefix = Some(prefix);
     }
 
+    /// Every line is `textHeight` tall: no wrapping and no line widget.
+    fn uniform_heights(&self) -> bool {
+        !self.options.line_wrapping && !self.heights.borrow().has_widgets
+    }
+    /// The widgets' share of line `n`'s height (`line.height` includes them unless
+    /// the line is hidden).
+    pub fn widgets_height(&self, n: i64) -> f64 {
+        let Some(h) = self.doc.get_line_handle(n) else {
+            return 0.0;
+        };
+        if self.doc.line_is_hidden(n) {
+            return 0.0;
+        }
+        h.widgets().iter().map(|w| w.height()).sum()
+    }
+    /// The top of line `n`'s text: below the widgets above it.
+    pub fn text_top(&self, n: i64) -> f64 {
+        self.height_at_line(n) + self.widget_top_height(n)
+    }
+    /// The boxes of the widgets of the rendered lines, for the host to draw its
+    /// nodes in (`insertLineWidgetsFor` + `positionLineWidget`, update_line.js:157-191):
+    /// `left`/`right` are window x, `top`/`bottom` document y. A widget spans the text
+    /// area; `coverGutter` extends it over the gutters; `noHScroll` keeps it at the
+    /// editor's left edge (it does not scroll horizontally).
+    pub fn line_widget_boxes(&self) -> Vec<(cm_core::LineWidget, Rect)> {
+        let mut out = Vec::new();
+        for n in self.display.view_from..self.display.view_to {
+            let Some(h) = self.doc.get_line_handle(n) else {
+                continue;
+            };
+            let ws = h.widgets();
+            if ws.is_empty() || self.doc.line_is_hidden(n) {
+                continue;
+            }
+            let mut above = self.height_at_line(n);
+            let mut below = above + self.widget_top_height(n) + self.text_rows_height(n);
+            for w in ws {
+                let o = w.options();
+                let ht = w.height();
+                let y = if o.above {
+                    above += ht;
+                    above - ht
+                } else {
+                    below += ht;
+                    below - ht
+                };
+                let sl = if o.no_h_scroll {
+                    0.0
+                } else {
+                    self.display.scroll_left
+                };
+                // A noHScroll widget sits at `fixedPos` with the gutters as left
+                // padding (update_line.js:177): its box starts at the wrapper's edge.
+                let left = if o.cover_gutter || o.no_h_scroll {
+                    0.0
+                } else {
+                    self.gutter_width
+                } - sl;
+                let right = if o.no_h_scroll {
+                    self.display.width
+                } else {
+                    self.gutter_width
+                        + self.text_area_width().max(if self.options.line_wrapping {
+                            0.0
+                        } else {
+                            self.max_line_width()
+                        })
+                        - sl
+                };
+                out.push((
+                    w,
+                    Rect {
+                        left,
+                        right,
+                        top: y,
+                        bottom: y + ht,
+                    },
+                ));
+            }
+        }
+        out
+    }
+    /// Line `n`'s text rows (its height without widgets).
+    pub fn text_rows_height(&self, n: i64) -> f64 {
+        self.line_height(n) - self.widgets_height(n)
+    }
+    /// `eventInWidget(display, e)` for a point in "div" coordinates (`x` from the
+    /// text area's left edge): inside a widget that does not handle mouse events.
+    pub fn event_in_widget(&self, x: f64, y: f64) -> bool {
+        let wx = x + self.gutter_width - self.display.scroll_left;
+        self.line_widget_boxes().iter().any(|(w, r)| {
+            !w.options().handle_mouse_events
+                && wx >= r.left
+                && wx < r.right
+                && y >= r.top
+                && y < r.bottom
+        })
+    }
+
+    /// `widgetTopHeight(lineObj)` (position_measurement.js:297): the height of the
+    /// widgets above the line's text.
+    pub fn widget_top_height(&self, n: i64) -> f64 {
+        let Some(h) = self.doc.get_line_handle(self.doc.visual_line_no(n)) else {
+            return 0.0;
+        };
+        h.widgets()
+            .iter()
+            .filter(|w| w.above())
+            .map(|w| w.height())
+            .sum()
+    }
+
     /// Height of one line.
     pub fn line_height(&self, n: i64) -> f64 {
-        if !self.options.line_wrapping {
+        if self.uniform_heights() {
             return self.metrics.text_height;
         }
         self.ensure_heights();
@@ -1903,7 +2090,7 @@ impl Editor {
     /// `heightAtLine(line)`: top of line `n`, document coordinates.
     pub fn height_at_line(&self, n: i64) -> f64 {
         let i = (n - self.first_line()).max(0);
-        if !self.options.line_wrapping {
+        if self.uniform_heights() {
             return i as f64 * self.metrics.text_height;
         }
         self.ensure_heights();
@@ -1919,7 +2106,7 @@ impl Editor {
     pub fn line_at_height(&self, y: f64) -> i64 {
         let first = self.first_line();
         let size = self.doc.line_count() as i64;
-        if !self.options.line_wrapping {
+        if self.uniform_heights() {
             let n = if y < 0.0 {
                 0
             } else {
@@ -1948,6 +2135,10 @@ impl Editor {
     }
 
     fn into_coords(&self, line: i64, mut r: Rect, sys: CoordSys) -> Rect {
+        // intoCoordSystem without includeWidgets: below the widgets above the line.
+        let wt = self.widget_top_height(line);
+        r.top += wt;
+        r.bottom += wt;
         let off = match sys {
             CoordSys::Line => 0.0,
             CoordSys::Div => self.height_at_line(line),
@@ -1995,7 +2186,9 @@ impl Editor {
         }
         let x = x.max(0.0);
         let (t, l) = self.layout(line_n);
-        coords_char_inner(&l, &t, line_n, x, y - self.height_at_line(line_n))
+        // coordsCharInner measures boxes below the widgets above the line.
+        let y = y - self.height_at_line(line_n) - self.widget_top_height(line_n);
+        coords_char_inner(&l, &t, line_n, x, y)
     }
     /// `cm.coordsChar(coords, "local")`.
     pub fn coords_char_local(&self, x: f64, y: f64) -> PosInfo {

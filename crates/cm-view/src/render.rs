@@ -523,7 +523,7 @@ impl Renderer {
             let (a, b) = (r.from(), r.to());
             for line in a.line.max(from)..=b.line.min(to - 1) {
                 let (t, l) = editor.layout(line);
-                let top = editor.height_at_line(line);
+                let top = editor.text_top(line);
                 let s_ch = if line == a.line { a.ch } else { 0 };
                 let e_ch = if line == b.line { b.ch } else { t.len() as i64 };
                 let left_c = l.cursor_coords(&t, s_ch, Some(cm_core::Sticky::After));
@@ -642,7 +642,7 @@ impl Renderer {
                     }
                 }
             };
-            placed.push((id, wy(editor.height_at_line(line))));
+            placed.push((id, wy(editor.text_top(line))));
             keep.insert(id, entry);
         }
         self.lines = keep;
@@ -657,12 +657,15 @@ impl Renderer {
             // updateLineGutter (update_line.js:87): a `gutterClass` line property
             // fills the whole gutter behind the line (CodeMirror-gutter-background).
             for line in from..to {
-                let y = wy(editor.height_at_line(line));
+                // The gutter background spans the whole line wrapper, widgets
+                // included; markers sit beside the text.
+                let wrap_top = wy(editor.height_at_line(line));
+                let y = wy(editor.text_top(line));
                 let lh = editor.line_height(line) as f32;
                 let handle = editor.doc.get_line_handle(line);
                 if let Some(cls) = handle.as_ref().and_then(|l| l.gutter_class()) {
                     if let Some(c) = theme.class_background(&cls) {
-                        quads.push((full(0.0, y, gutter - 1.0, y + lh), c));
+                        quads.push((full(0.0, wrap_top, gutter - 1.0, wrap_top + lh), c));
                     }
                 }
                 // A marker drawn as text (`String`/`&str`) in its column
@@ -701,7 +704,7 @@ impl Renderer {
                 };
                 let digits = n.to_string().len() as f32;
                 let x = lnum_right - 3.0 - digits * m.char_width as f32;
-                number_pos.push((n, x, wy(editor.height_at_line(line))));
+                number_pos.push((n, x, wy(editor.text_top(line))));
                 numbers_keep.insert(n, b);
             }
         }
