@@ -109,12 +109,12 @@ impl Doc {
     /// `changeLine(doc, handle, changeType, op)`: `op` returns whether it changed the
     /// line, and then the editor redraws it. Returns `None` for a handle whose line
     /// was removed.
-    pub(crate) fn change_line(
+    pub(crate) fn change_line<E>(
         &self,
         sel: &LineSel,
         kind: LineChange,
-        op: impl FnOnce(&mut Line) -> Result<bool, RegExpError>,
-    ) -> Result<Option<LineHandle>, RegExpError> {
+        op: impl FnOnce(&mut Line) -> Result<bool, E>,
+    ) -> Result<Option<LineHandle>, E> {
         let (line, no) = match sel {
             // The property is the clipped line's, but `changeLine` keeps the number it was
             // given as `no` (`let no = handle`), so `regLineChange` gets the unclipped one:
