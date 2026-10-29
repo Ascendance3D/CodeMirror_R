@@ -63,7 +63,6 @@ pub const STYLE: &str = r#"
 .cm-web .CodeMirror-overwrite .CodeMirror-cursor{border-left:none;background:#7e7}
 .cm-web .cm-web-gutters{position:absolute;left:0;top:0;z-index:3;background:#f7f7f7;border-right:1px solid #ddd;box-sizing:content-box}
 .cm-web .CodeMirror-linenumber{position:absolute;right:0;padding:0 3px 0 5px;min-width:20px;text-align:right;color:#999;white-space:nowrap;box-sizing:content-box}
-.cm-web .CodeMirror-linebackground{position:absolute;left:0;right:0;top:0;bottom:0;z-index:0}
 .cm-web .cm-web-field{position:absolute;overflow:hidden;width:3px;height:0;z-index:0}
 .cm-web .cm-web-field textarea{position:absolute;bottom:-1em;padding:0;width:1000px;height:1em;min-height:1em;outline:none;border:none;resize:none;overflow:hidden}
 .cm-web .cm-web-preedit{position:absolute;z-index:4;white-space:pre;text-decoration:underline;background:white;pointer-events:none}
@@ -97,12 +96,8 @@ pub struct Post {
 struct CachedLine {
     text: Vec<u16>,
     styles: Rc<cm_view::highlight::Styles>,
-    classes: frame::LineClasses,
     wrap: Option<f64>,
     tab_size: i64,
-    /// `el` is a wrapper div (`ensureLineWrapped`). CM5 keeps the wrapper for the life
-    /// of the line view, so it outlives the class that needed it.
-    wrapped: bool,
     el: HtmlElement,
 }
 
@@ -555,15 +550,10 @@ impl Dom {
         }
     }
 
-    fn build_line(
-        &self,
-        line: &frame::FrameLine,
-        tab_size: i64,
-        was_wrapped: bool,
-    ) -> Result<(HtmlElement, bool), JsValue> {
+    fn build_line(&self, line: &frame::FrameLine, tab_size: i64) -> Result<HtmlElement, JsValue> {
         let d = &self.document;
         let mut class = "CodeMirror-line".to_string();
-        if let Some(text_class) = &line.classes.text {
+        if let Some((_, Some(text_class))) = &line.styles.classes {
             class.push(' ');
             class.push_str(text_class);
         }
@@ -607,21 +597,7 @@ impl Dom {
             span.append_child(&d.create_text_node("\u{200b}"))?;
         }
         pre.append_child(&span)?;
-        if !was_wrapped && line.classes.bg.is_none() && line.classes.wrap.is_none() {
-            return Ok((pre, false));
-        }
-        // `ensureLineWrapped`: a wrapper holds the background and the text; it is made
-        // for a line with a background or wrap class and then kept (`was_wrapped`).
-        let wrapper = el(d, "div", line.classes.wrap.as_deref().unwrap_or(""))?;
-        css(&wrapper, "position", "relative");
-        if let Some(bg) = &line.classes.bg {
-            // `setUneditable` only marks the node with the contenteditable input style;
-            // the textarea input style (the only one here) leaves it alone.
-            let div = el(d, "div", &format!("{bg} CodeMirror-linebackground"))?;
-            wrapper.append_child(&div)?;
-        }
-        wrapper.append_child(&pre)?;
-        Ok((wrapper, true))
+        Ok(pre)
     }
 
     /// Write a frame into the elements.
@@ -662,12 +638,10 @@ impl Dom {
         let mut keep = HashMap::with_capacity(f.lines.len());
         let mut order = Vec::with_capacity(f.lines.len());
         for line in &f.lines {
-            let mut was_wrapped = false;
             let reuse = match self.cache.remove(&line.id) {
                 Some(c)
                     if c.text == line.text
                         && Rc::ptr_eq(&c.styles, &line.styles)
-                        && c.classes == line.classes
                         && c.wrap == f.wrap_width
                         && c.tab_size == tab_size =>
                 {
@@ -675,25 +649,19 @@ impl Dom {
                 }
                 Some(c) => {
                     c.el.remove();
-                    was_wrapped = c.wrapped;
                     None
                 }
                 None => None,
             };
             let entry = match reuse {
                 Some(c) => c,
-                None => {
-                    let (el, wrapped) = self.build_line(line, tab_size, was_wrapped)?;
-                    CachedLine {
-                        text: line.text.clone(),
-                        styles: line.styles.clone(),
-                        classes: line.classes.clone(),
-                        wrap: f.wrap_width,
-                        tab_size,
-                        wrapped,
-                        el,
-                    }
-                }
+                None => CachedLine {
+                    text: line.text.clone(),
+                    styles: line.styles.clone(),
+                    wrap: f.wrap_width,
+                    tab_size,
+                    el: self.build_line(line, tab_size)?,
+                },
             };
             css(&entry.el, "height", &px(line.height));
             order.push(line.id);
@@ -790,46 +758,6 @@ impl Dom {
             self.scroller.set_scroll_left(f.scroll_left.round() as i32);
         }
         Ok(())
-    }
-
-    /// `maybeScrollWindow(cm, rect)` (scrolling.js:15): when the editor sits partly
-    /// above or below the window and `rect` (sizer-relative, as the engine's `Local`
-    /// coordinates) is out of the window, scroll the page by a temporary node over
-    /// `rect` with DOM `scrollIntoView`, as CM5 does. That also moves the scroller
-    /// exactly (no 2 px threshold); its `scroll` event syncs the editor. CM5's
-    /// `scrollCursorIntoView` DOM-event veto has no counterpart here, and the call
-    /// runs when the frame is drawn, not inside the operation.
-    pub fn maybe_scroll_window(&self, rect: cm_view::measure::Rect) {
-        let sizer_top = self.sizer.get_bounding_client_rect().top();
-        let height = self
-            .window
-            .inner_height()
-            .ok()
-            .and_then(|h| h.as_f64())
-            .or_else(|| {
-                self.document
-                    .document_element()
-                    .map(|e| e.client_height() as f64)
-            })
-            .unwrap_or(0.0);
-        let Some(top_edge) = window_scroll_edge(rect.top, rect.bottom, sizer_top, height) else {
-            return;
-        };
-        // `scrollGap(cm)` is 50 minus the native scrollbar width; native bars add no `barHeight`.
-        let bar = (self.scroller.offset_width() - self.scroller.client_width()).max(0) as f64;
-        let Ok(node) = el(&self.document, "div", "") else {
-            return;
-        };
-        node.set_text_content(Some("\u{200b}"));
-        css(&node, "position", "absolute");
-        css(&node, "top", &px(rect.top));
-        css(&node, "height", &px(rect.bottom - rect.top + (50.0 - bar)));
-        css(&node, "left", &px(rect.left));
-        css(&node, "width", &px((rect.right - rect.left).max(2.0)));
-        if self.sizer.append_child(&node).is_ok() {
-            node.scroll_into_view_with_bool(top_edge);
-            let _ = self.sizer.remove_child(&node);
-        }
     }
 
     /// Event position relative to the scroller's border box (window pixels of
@@ -1058,107 +986,6 @@ fn on_mouse_up(inner: &mut Inner, e: &MouseEvent) -> Post {
     Post::default()
 }
 
-/// `gecko` from src/util/browser.js: `/gecko\/\d/i.test(navigator.userAgent)`. The user
-/// agent does not change during a page's life, so it is read once.
-fn is_gecko() -> bool {
-    thread_local! {
-        static GECKO: std::cell::OnceCell<bool> = const { std::cell::OnceCell::new() };
-    }
-    GECKO.with(|g| {
-        *g.get_or_init(|| {
-            let Some(nav) = web_sys::window().map(|w| w.navigator()) else {
-                return false;
-            };
-            ua_is_gecko(&nav.user_agent().unwrap_or_default())
-        })
-    })
-}
-
-/// The deltas CM5's `onScrollWheel` applies to a wheel with `dx != 0` outside Gecko
-/// (src/display/scroll_events.js:91): the wheel is handled in JS, not by the
-/// browser's scroll, so each axis goes through the `< 2px` threshold of
-/// `updateScrollTop` (on the raw, floored-at-0 target) and `setScrollLeft` (on the
-/// clamped one), and `dy` is ignored when the editor cannot scroll vertically at all
-/// (`canScrollY`). The vertical compare is on the RAW target, as CM5's: at the bottom a
-/// further `dy` is kept, and `Input::Wheel` then clamps it to no change (recorded
-/// `d_10_100_at_max_top`); clamping the compare, as a reviewer suggested, would drop
-/// it, which only differs in CM5's skipped `updateDisplaySimple`. Recorded in
-/// `tests/data/cm5-wheel-dx.json`. Offsets are `(top, left)`, `max` the same.
-fn wheel_with_dx(
-    (top, left): (f64, f64),
-    (max_top, max_left): (f64, f64),
-    (dx, dy): (f64, f64),
-) -> (f64, f64) {
-    let (can_x, can_y) = (max_left > 0.0, max_top > 0.0);
-    let dy = if dy != 0.0 && can_y && (top - (top + dy).max(0.0)).abs() >= 2.0 {
-        dy
-    } else {
-        0.0
-    };
-    let target = (left + dx).max(0.0).min(max_left);
-    let dx = if dx != 0.0 && can_x && (left - target).abs() >= 2.0 {
-        dx
-    } else {
-        0.0
-    };
-    (dx, dy)
-}
-
-/// Which edge of the window `maybeScrollWindow` (src/display/scrolling.js:15) scrolls to:
-/// `Some(true)` aligns the rect with the window top, `Some(false)` with the bottom,
-/// `None` leaves the window alone. `sizer_top` is the sizer's `getBoundingClientRect().top`,
-/// `rect_*` are `cursorCoords`-style local coordinates.
-fn window_scroll_edge(
-    rect_top: f64,
-    rect_bottom: f64,
-    sizer_top: f64,
-    window_height: f64,
-) -> Option<bool> {
-    if rect_top + sizer_top < 0.0 {
-        Some(true)
-    } else if rect_bottom + sizer_top > window_height {
-        Some(false)
-    } else {
-        None
-    }
-}
-
-/// `/gecko\/\d/i.test(userAgent)`.
-fn ua_is_gecko(ua: &str) -> bool {
-    let ua = ua.to_ascii_lowercase();
-    ua.match_indices("gecko/")
-        .any(|(i, m)| ua[i + m.len()..].starts_with(|c: char| c.is_ascii_digit()))
-}
-
-/// What `onScrollWheel` leaves to the editor for a wheel of `(dx, dy)` pixels.
-#[derive(Debug, PartialEq)]
-enum WheelAction {
-    /// The browser scrolls the scroller (Gecko with `dx != 0`: CM5 does not handle the
-    /// event and does not cancel it), and the `scroll` event syncs the editor.
-    Native,
-    /// The editor scrolls by these deltas through `Input::Wheel`; the default is cancelled.
-    /// This is the thresholded JS path for `dx != 0` outside Gecko, and also every
-    /// vertical-only wheel: CM5 leaves that one to the browser, and cm-web applies
-    /// `deltaY` itself instead (KNOWN_GAPS.md G5, unchanged here).
-    Editor(f64, f64),
-}
-
-fn wheel_action(ed: &cm_view::Editor, gecko: bool, (dx, dy): (f64, f64)) -> WheelAction {
-    if dx == 0.0 {
-        return WheelAction::Editor(dx, dy);
-    }
-    if gecko {
-        return WheelAction::Native;
-    }
-    let (max_top, max_left) = ed.max_scroll();
-    let (dx, dy) = wheel_with_dx(
-        (ed.display.scroll_top, ed.display.scroll_left),
-        (max_top, max_left),
-        (dx, dy),
-    );
-    WheelAction::Editor(dx, dy)
-}
-
 fn on_wheel(inner: &mut Inner, e: &WheelEvent) -> Post {
     if e.ctrl_key() {
         return Post::default();
@@ -1169,14 +996,12 @@ fn on_wheel(inner: &mut Inner, e: &WheelEvent) -> Post {
         1 => ed.metrics.text_height,
         _ => ed.display.height,
     };
-    let delta = (e.delta_x() * unit, e.delta_y() * unit);
-    let WheelAction::Editor(dx, dy) = wheel_action(ed, is_gecko(), delta) else {
-        // Native scrolling: neither cancelled nor applied here.
-        return Post::default();
-    };
     // The editor scrolls; the browser's default scroll would move it a second time.
     e.prevent_default();
-    inner.session.handle(Input::Wheel { dx, dy });
+    inner.session.handle(Input::Wheel {
+        dx: e.delta_x() * unit,
+        dy: e.delta_y() * unit,
+    });
     inner.after_scroll();
     Post::default()
 }
@@ -1282,131 +1107,6 @@ mod tests {
     use cm_core::Pos;
     use cm_modes::Spec;
     use cm_view::{CoordSys, Editor, EditorOptions};
-
-    /// Every recorded wheel (CM5 5.65.21, Chromium 151, Firefox and WebKit) through the
-    /// decision `on_wheel` makes (`wheel_action`) and the editor's own `Input::Wheel`.
-    /// Gecko with `dx != 0` is left to the browser (`Native`); its recorded offsets are the
-    /// browser's and are checked by the browser harness, not here.
-    #[test]
-    fn wheel_action_through_input_wheel_matches_the_recorded_browsers() {
-        use cm_view::app::{App, AppOptions, Input, MemClipboard};
-        let rec: serde_json::Value =
-            serde_json::from_str(include_str!("../tests/data/cm5-wheel-dx.json")).unwrap();
-        assert_eq!(rec["version"], "5.65.21");
-        for (browser, b) in rec["browsers"].as_object().unwrap() {
-            assert_eq!(
-                b["gecko"].as_bool().unwrap(),
-                ua_is_gecko(b["ua"].as_str().unwrap()),
-                "{browser}: the recorded user agent and the production rule agree"
-            );
-            assert_eq!(b["gecko"].as_bool().unwrap(), browser == "firefox");
-        }
-        let f = |v: &serde_json::Value| v.as_f64().unwrap();
-        let text = vec!["x".repeat(150); 60].join("\n");
-        let (mut replayed, mut native) = (0, 0);
-        for (name, c) in rec["cases"].as_object().unwrap() {
-            let (dx, dy) = (f(&c["dx"]), f(&c["dy"]));
-            for (browser, r) in c["by"].as_object().unwrap() {
-                let gecko = rec["browsers"][browser]["gecko"].as_bool().unwrap();
-                let mut app = App::new(
-                    &text,
-                    None,
-                    Metrics::oracle(),
-                    &AppOptions {
-                        no_line_numbers: true,
-                        ..AppOptions::default()
-                    },
-                    Box::new(MemClipboard::default()),
-                );
-                app.handle(Input::Resize {
-                    width: 600.0,
-                    height: 300.0,
-                });
-                // The browser's scroller ranges are whole pixels; the editor's are not.
-                let (mt, ml) = app.editor.max_scroll();
-                assert!(
-                    (mt - f(&c["maxTop"])).abs() < 1.0 && (ml - f(&c["maxLeft"])).abs() < 1.0,
-                    "{name}: the recorded ranges"
-                );
-                let (top, left) = (f(&r["before"]["top"]), f(&r["before"]["left"]));
-                app.editor.scroll_to(Some(left), Some(top));
-                assert_eq!(
-                    (
-                        app.editor.display.scroll_top,
-                        app.editor.display.scroll_left
-                    ),
-                    (top, left),
-                    "{name} in {browser}: start"
-                );
-                match wheel_action(&app.editor, gecko, (dx, dy)) {
-                    WheelAction::Native => {
-                        assert!(gecko && dx != 0.0, "{name} in {browser}");
-                        native += 1;
-                    }
-                    WheelAction::Editor(ax, ay) => {
-                        assert!(!(gecko && dx != 0.0), "{name} in {browser}");
-                        app.handle(Input::Wheel { dx: ax, dy: ay });
-                        assert_eq!(
-                            (
-                                app.editor.display.scroll_top.floor(),
-                                app.editor.display.scroll_left.floor()
-                            ),
-                            (f(&r["after"]["top"]), f(&r["after"]["left"])),
-                            "{name} in {browser}"
-                        );
-                        replayed += 1;
-                    }
-                }
-            }
-        }
-        // 20 cases x 3 browsers; Firefox leaves the 18 with dx != 0 to the browser.
-        assert_eq!((replayed, native), (42, 18));
-    }
-
-    /// The vertical compare is on the raw target (CM5's `updateScrollTop`): at the bottom a
-    /// further `dy` is kept (the editor then clamps it to no move); the horizontal compare
-    /// is on the clamped target, so the same request at the right edge is dropped.
-    #[test]
-    fn wheel_with_dx_compares_vertical_raw_and_horizontal_clamped() {
-        assert_eq!(
-            wheel_with_dx((1988.0, 0.0), (1988.0, 500.0), (0.0, 100.0)),
-            (0.0, 100.0)
-        );
-        assert_eq!(
-            wheel_with_dx((1988.0, 500.0), (1988.0, 500.0), (100.0, 100.0)),
-            (0.0, 100.0)
-        );
-        // One pixel short of the right edge: the clamped change is under 2px.
-        assert_eq!(
-            wheel_with_dx((800.0, 499.0), (1988.0, 500.0), (1.0, 0.0)),
-            (0.0, 0.0)
-        );
-    }
-
-    #[test]
-    fn window_scroll_edge_follows_maybe_scroll_window() {
-        // scrolling.js:19-20: above the window top -> true; below the bottom -> false.
-        assert_eq!(window_scroll_edge(100.0, 120.0, -101.0, 900.0), Some(true));
-        assert_eq!(window_scroll_edge(100.0, 120.0, -100.0, 900.0), None);
-        assert_eq!(window_scroll_edge(700.0, 721.0, 200.0, 920.0), Some(false));
-        assert_eq!(window_scroll_edge(700.0, 720.0, 200.0, 920.0), None);
-        // The top test wins when both hold.
-        assert_eq!(window_scroll_edge(0.0, 5000.0, -1.0, 900.0), Some(true));
-    }
-
-    #[test]
-    fn wheel_with_dx_ignores_axes_that_cannot_scroll() {
-        // No vertical range: dy is dropped, the horizontal move stands.
-        assert_eq!(
-            wheel_with_dx((0.0, 100.0), (0.0, 500.0), (10.0, 50.0)),
-            (10.0, 0.0)
-        );
-        // No horizontal range: dx is dropped.
-        assert_eq!(
-            wheel_with_dx((100.0, 0.0), (500.0, 0.0), (10.0, 50.0)),
-            (0.0, 50.0)
-        );
-    }
 
     fn measured(char_width: f64, text_height: f64) -> Measured {
         Measured {

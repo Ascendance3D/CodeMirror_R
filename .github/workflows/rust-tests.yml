@@ -61,6 +61,9 @@ jobs:
         with:
           cache-on-failure: true
 
+      - name: Static server unit test (oracle/server-utils.test.mjs)
+        run: node oracle/server-utils.test.mjs
+
       - name: Rust suite
         run: |
           rm -f "$CM_EVIDENCE_LOG"

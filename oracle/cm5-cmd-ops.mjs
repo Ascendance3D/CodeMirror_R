@@ -125,6 +125,9 @@ const server = createServer (async (req, res) =>
       base = s .path;
    }
    else {
+      // safeResolve resolves normal requests against ROOT (cm5-build).
+      // The original code resolved against ROOT but explicitly allowed traversing back up to HERE.
+      // Modifying this to use safeResolve narrows the scope to only ROOT and its descendants, effectively preventing escapes to HERE.
       const s = safeResolve (url .pathname, ROOT);
       if (s .status !== 200) { res .writeHead (s .status); return res .end (); }
       base = s .path;

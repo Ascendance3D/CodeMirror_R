@@ -58,10 +58,6 @@ const CASES = [
   ["wrong-version", ref(wrongVersion), 2, "BLOCKED", /does not declare CodeMirror.version/, false],
   ["fails-to-load", ref(throws), 2, "BLOCKED", /window.CodeMirror is undefined/, true],
   ["partial-api", ref(partialApi), 2, "BLOCKED", /CM5 API lacks getCursor/, true],
-  // No reference: the cm-web-only checks still run and are still required (BLOCKED, not PASS: nothing was compared).
-  ["no-oracle", ["--no-cm5"], 2, "BLOCKED", /--no-cm5/, true, r => r.integrity?.complete === true && r.integrity.web_only?.window_scroll?.ran === 3 && !r.integrity.sections && r.summary.differential === 0],
-  ["no-oracle-drops-web-check", ["--no-cm5", "--inject", "drop-web-check"], 1, "FAIL", null, true, r => r.integrity?.incomplete?.join() === "window_scroll (cm-web only)"],
-  ["oracle-drops-web-check", [...ref(CM5), "--inject", "drop-web-check"], 1, "FAIL", null, true, r => r.integrity?.incomplete?.join() === "window_scroll (cm-web only)" && r.integrity.sections.window_scroll.complete],
   ["compare-fail", [...ref(CM5), "--inject", "compare-fail"], 1, "FAIL", null, true, r => r.summary.failed.includes("keys.type")],
   ["partial-registration", [...ref(CM5), "--inject", "drop-section"], 1, "FAIL", null, true, r => r.integrity?.incomplete?.join() === "mouse"],
   ["navigation-fails", [...ref(CM5), "--inject", "nav-fail"], 1, "FAIL", /page\.goto: .*(ERR_NAME_NOT_RESOLVED|NS_ERROR_UNKNOWN_HOST|Could not resolve|Error resolving)/, true],
@@ -142,7 +138,7 @@ const report = CASES.map((c, i) => {
   if (wantStatus !== "PASS" && result?.ok !== false) problems.push(`ok ${result?.ok}, want false`);
   if (reason && !reason.test(why)) problems.push(`reason ${JSON.stringify(why.split("\n")[0])} does not match ${reason}`);
   if (extra && !(result && extra(result))) problems.push("case-specific assertion failed");
-  if (wantStatus === "PASS" && !(result?.integrity?.complete && result.summary.differential === 138)) problems.push("integrity not complete or differential != 138");
+  if (wantStatus === "PASS" && !(result?.integrity?.complete && result.summary.differential === 60)) problems.push("integrity not complete or differential != 60");
   if (launched && result?.cleanup?.browser_closed !== true) problems.push(`cleanup ${JSON.stringify(result?.cleanup)}`);
   if (linux && launched && r.processes.seen === 0) problems.push("no browser process was observed");
   if (linux && r.processes.left.length) problems.push(`left running: ${r.processes.left.join(", ")}`);

@@ -35,7 +35,7 @@ const NO_CM5 = flag("--no-cm5");
 const OUT = resolve(opt("--out") ?? ".");
 const BROWSER_TIMEOUT = Number(opt("--browser-timeout") ?? 300) * 1000;
 const INJECT = opt("--inject");
-const FAULTS = ["launch-fail", "context-fail", "nav-fail", "page-throw", "reject", "compare-fail", "drop-section", "drop-web-check", "hang"];
+const FAULTS = ["launch-fail", "context-fail", "nav-fail", "page-throw", "reject", "compare-fail", "drop-section", "hang"];
 mkdirSync(OUT, { recursive: true });
 const EXIT = { PASS: 0, FAIL: 1, BLOCKED: 2, UNSUPPORTED: 2 };
 // Write the results and the summary, and set the exit status (0 only when every browser passed).
@@ -121,28 +121,10 @@ const LONG = Array.from({ length: 300 }, (_, i) => `line ${i} ${"x".repeat(i % 7
 const MOBILE = { "chromium-mobile": "Pixel 7", "webkit-mobile": "iPhone 15" };
 const BROWSERS = ["chromium", "firefox", "webkit", ...Object.keys(MOBILE)];
 
-// The CM5 comparisons each run must make, by section (138 in all, 50 of them the line classes). A section may run
+// The CM5 comparisons each run must make, by section (60 in all). A section may run
 // fewer only when the environment cannot perform its action, which is recorded as
 // UNSUPPORTED; any other shortfall fails the run.
-// REQUIRED counts comparisons with CM5 (needs the reference). REQUIRED_WEB counts the cm-web-only checks that
-// must run in every mode, with or without the reference; a run that skips one fails.
-const REQUIRED_WEB = { window_scroll: 3 };
-const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 39, window_scroll: 10, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2, lineclass: 50 };
-
-// Line-class scenarios of the "lineclass" section. Each is five comparisons (classes and errors, node structure,
-// coordinates, hit-testing and selection, line boxes) per scenario.
-const LINE_CLASS_SCENARIOS = [
-  ["plain", []],
-  ["text", [["add", 1, "text", "tx"]]],
-  ["background", [["add", 1, "background", "bg"]]],
-  ["wrap", [["add", 1, "wrap", "wr"]]],
-  ["all_three", [["add", 1, "text", "tx"], ["add", 1, "background", "bg"], ["add", 1, "wrap", "wr"], ["add", 2, "background", "bg2"]]],
-  ["background_then_removed", [["add", 1, "background", "bg"], ["rm", 1, "background", "bg"]]],
-  ["wrap_then_removed", [["add", 1, "wrap", "wr"], ["rm", 1, "wrap", "wr"]]],
-  ["empty_classes", [["add", 1, "background", ""], ["add", 1, "wrap", ""], ["add", 1, "text", ""], ["add", 2, "text", "a"], ["add", 2, "text", ""]]],
-  ["regex_class_names", [["add", 1, "text", "foo"], ["add", 1, "text", "f.o"], ["add", 1, "text", "bar|foo"], ["add", 2, "background", "x y"], ["rm", 2, "background", "x|y"], ["add", 3, "text", "a"], ["add", 3, "text", "("], ["rm", 3, "text", "["]]],
-  ["clear_all", [["add", 0, "background", "b"], ["add", 0, "text", "t"], ["add", 0, "wrap", "w"], ["rm", 0, "background", null], ["rm", 0, "text", null], ["rm", 0, "wrap", null]]],
-];
+const REQUIRED = { render: 3, keys: 20, mouse: 5, scroll: 21, focus: 1, clipboard: 4, ime: 3, touch: 1, measure: 2 };
 
 // One browser run. It always returns a result with a status, and it closes the
 // browser on every path (normal end, failed check, thrown error, rejected promise,
@@ -381,37 +363,6 @@ async function runChecks(name, res, own) {
     ["triple_click_line", async () => { const p = await E(E => E.point(6, 5)); await page.mouse.click(p.x, p.y, { clickCount: 3 }); }],
   ]);
 
-  // --- Line classes (addLineClass / removeLineClass, update_line.js) ----------
-  // The same class steps on CM5 and cm-web: the class properties and thrown errors, the structure of the line nodes
-  // (a wrapper only for a background or wrap class), measurement, and real mouse hit-testing and selection through the
-  // lines. A step is [op, line, where, cls].
-  progress("Line classes");
-  const LC_DOC = "alpha beta\ngamma\ndelta epsilon\nzeta\neta";
-  for (const [lc, steps] of LINE_CLASS_SCENARIOS) {
-    const rec = {};
-    for (const kind of haveCm5 ? ["cm5", "cm-web"] : ["cm-web"]) {
-      await make(kind, LC_DOC, "text/plain", {});
-      await settle();
-      const errors = [];
-      for (const [op, l, w, c] of steps) errors.push(await E((E, op, l, w, c) => op === "add" ? E.addClass(l, w, c) : E.rmClass(l, w, c), op, l, w, c));
-      await settle();
-      const r = { classes: await E(E => [0, 1, 2, 3, 4].map(l => E.classes(l))), errors, nodes: await E(E => E.nodes()), coords: await E(E => [0, 1, 2, 3].flatMap(l => [E.local(l, 0), E.local(l, 4)])) };
-      await clickAt(1, 3); await settle();
-      await clickAt(3, 2, { modifiers: ["Shift"] }); await settle();
-      r.sels = await E(E => E.sels());
-      r.boxes = await E(E => E.boxes());
-      rec[kind] = r;
-    }
-    res[`lineclass_${lc}`] = rec;
-    if (!haveCm5) { res.checks.push({ name: `lineclass.${lc}.classes`, ok: true, exact: false, note: "CM5 build not supplied: no differential", actual: rec["cm-web"].classes }); continue; }
-    const [a, b] = [rec.cm5, rec["cm-web"]];
-    dcheck(`lineclass.${lc}.classes`, { classes: a.classes, errors: a.errors }, { classes: b.classes, errors: b.errors });
-    dcheck(`lineclass.${lc}.nodes`, a.nodes, b.nodes);
-    dnear(`lineclass.${lc}.coords`, a.coords, b.coords, 1);
-    dcheck(`lineclass.${lc}.hit_test_selection`, a.sels, b.sels);
-    dnear(`lineclass.${lc}.line_boxes`, a.boxes, b.boxes, 1);
-  }
-
   // --- Scrolling -------------------------------------------------------------
   progress("Scrolling");
   const scrollSeq = {};
@@ -419,7 +370,7 @@ async function runChecks(name, res, own) {
     await make(kind, LONG, "text/plain", { lineNumbers: true });
     await clickAt(0, 0);
     const seq = [];
-    const snap = async (l, ms = 150) => { await page.waitForTimeout(ms); seq.push([l, await E(E => ({ ...E.scroll(), cursor: E.cursor(), first: E.lines()[0]?.map(p => p[0]).join("") }))]); };
+    const snap = async l => { await page.waitForTimeout(150); seq.push([l, await E(E => ({ ...E.scroll(), cursor: E.cursor(), first: E.lines()[0]?.map(p => p[0]).join("") }))]); };
     const box = await E(E => { const r = E.root.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
     await page.mouse.move(box.x, box.y);
     const w1 = await wheel(0, 500); await snap("wheel_500");
@@ -430,91 +381,20 @@ async function runChecks(name, res, own) {
     await page.keyboard.press(`${mod}+Home`); await snap("ctrl_home");
     await E(E => { E.scroller().scrollTop = 2000; }); await snap("scrollbar_2000");
     await page.keyboard.press("End"); await snap("end_long_line");
-    // A wheel with dx != 0 is handled in JS outside Gecko, so a 1px move is dropped (issue #66).
-    await E(E => { E.scroller().scrollTop = 800; E.scroller().scrollLeft = 300; }); await snap("scroller_800_300");
-    const w3 = await wheel(1, 1); await snap("wheel_dx1_dy1");
-    const w4 = await wheel(10, 10); await snap("wheel_dx10_dy10");
-    // Boundaries and a large delta. Outside Gecko the wheel goes through the editor (2px applies, 1px is dropped,
-    // -2000 ends at 0); Gecko scrolls natively, so its large-delta result is the browser's own (recorded:
-    // d_1_neg_big_to_zero 800 -> 485), which the editor's own scroll (0) cannot produce.
-    const reset = async () => { await E(E => { E.scroller().scrollTop = 800; E.scroller().scrollLeft = 300; }); await page.waitForTimeout(150); };
-    await reset(); const w5 = await wheel(2, 0); await snap("wheel_dx2_dy0", 400);
-    await reset(); const w6 = await wheel(1, 0); await snap("wheel_dx1_dy0", 400);
-    await reset(); const w7 = await wheel(1, -2000); await snap("wheel_dx1_dyneg_big", 800);
-    if (w3 || w4 || w5 || w6 || w7) res[`wheel_dx_unsupported_${kind}`] = w3 || w4 || w5 || w6 || w7;
     scrollSeq[kind] = seq;
   }
   res.scroll = scrollSeq;
   const sw = scrollSeq["cm-web"];
-  {
-    // cm-web's own detection (`gecko` from src/util/browser.js) must agree with the profile, and the large wheel must
-    // take the path CM5 takes: native in Firefox (the offset is the browser's), the editor's elsewhere (ends at 0).
-    const gecko = await page.evaluate(() => /gecko\/\d/i.test(navigator.userAgent));
-    check("scroll.gecko_detected_only_in_firefox", name === "firefox", gecko);
-    const big = sw.find(([l]) => l === "wheel_dx1_dyneg_big")?.[1];
-    if (big && !res["wheel_dx_unsupported_cm-web"] && !name.endsWith("-mobile")) check("scroll.dx_wheel_path", gecko ? "native" : "editor", gecko ? (big.top > 0 && big.top < 800 ? "native" : "editor") : (big.top === 0 ? "editor" : "native"));
-  }
   if (res["wheel_unsupported_cm-web"]) res.checks.push({ name: "scroll.wheel", ok: true, exact: false, unsupported: res["wheel_unsupported_cm-web"] });
   else check("scroll.wheel_moves_dom_and_editor", true, sw[0][1].top > 0 && Math.abs(sw[0][1].top - sw[0][1].editorTop) < 1);
   check("scroll.native_scrollbar_syncs_editor", true, Math.abs(sw[5][1].editorTop - sw[5][1].top) < 2 && sw[5][1].top > 1000);
   if (haveCm5) scrollSeq.cm5.forEach(([l, want], i) => {
     const got = sw[i][1];
     dcheck(`scroll.${l}.cursor`, want.cursor, got.cursor);
-    // Firefox scrolls these natively (CM5 and cm-web alike), so the amount is the browser's and varies from run to run
-    // (recorded 485 vs 530 for the same wheel); only the direction is compared there, and `scroll.dx_wheel_path` pins the path.
-    if (name === "firefox" && (l === "wheel_dx10_dy10" || l === "wheel_dx1_dyneg_big")) dcheck(`scroll.${l}.top`, Math.sign(want.top - 800), Math.sign(got.top - 800));
-    else if (KNOWN[`scroll.${l}.top`] || l.startsWith("wheel_dx")) dcheck(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top));
+    if (KNOWN[`scroll.${l}.top`]) dcheck(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top));
     else dnear(`scroll.${l}.top`, Math.round(want.top), Math.round(got.top), 1);
-    // Horizontally these steps stay inside the range (the editor's left range is 111px), so Firefox's native move is the clamp;
-    // a 2px tolerance covers its animation and rounding without hiding a Rust-managed move (which is exact elsewhere).
-    if (name === "firefox" && (l === "wheel_dx10_dy10" || l === "wheel_dx1_dyneg_big")) dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 2);
-    else if (l.startsWith("wheel_dx")) dcheck(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left));
-    else dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 1);
+    dnear(`scroll.${l}.left`, Math.round(want.left), Math.round(got.left), 1);
   });
-
-  // --- Window scroll (maybeScrollWindow, scrolling.js:15) ----------------------
-  // An editor against the window's top or bottom whose cursor is out of the window: CM5 calls DOM scrollIntoView on a
-  // node over the cursor rect, which moves the page and the scroller exactly (recorded window_top_up_1 and _1.9 of
-  // oracle/cm5-scroll-threshold.mjs: the 1px and 1.9px moves apply). `inside` leaves the window alone.
-  progress("Window scroll");
-  const winSeq = {};
-  const WIN_CASES = [["top_up_1", "top", 1], ["top_up_1.9", "top", 1.9], ["top_up_30", "top", 30], ["bottom", "bottom", 0], ["inside", "inside", 0]];
-  for (const kind of haveCm5 ? ["cm5", "cm-web"] : ["cm-web"]) {
-    const rows = {};
-    for (const [label, edge, d] of WIN_CASES) {
-      await make(kind, LONG, "text/plain", { lineNumbers: true });
-      rows[label] = await page.evaluate(async ([edge, d]) => {
-        const wait = ms => new Promise(r => setTimeout(r, ms)), E = window.E, host = document.getElementById("host");
-        document.body.style.height = "4000px";
-        window.scrollTo(0, 0);
-        host.style.top = edge === "top" ? "0px" : edge === "bottom" ? `${innerHeight - 100}px` : "";
-        E.render(); await wait(200);
-        const setCursor = (l, c) => E.cm ? E.cm.setCursor({ line: l, ch: c }) : E.ed.setCursor(l, c);
-        if (edge === "top") { E.scroller().scrollTop = E.local(30, 0).top + d; await wait(200); setCursor(30, 0); }
-        else setCursor(edge === "bottom" ? 9 : 3, 0);
-        await wait(400);
-        const r = { top: E.scroller().scrollTop, wy: window.scrollY };
-        host.style.top = ""; document.body.style.height = ""; window.scrollTo(0, 0);
-        return r;
-      }, [edge, d]);
-    }
-    winSeq[kind] = rows;
-  }
-  res.window_scroll = winSeq;
-  if (INJECT !== "drop-web-check") {
-    check("window_scroll.inside_leaves_page", 0, winSeq["cm-web"].inside.wy);
-    // The recorded CM5 result for the three "above the window" cases is one scroller offset, whatever the distance
-    // (the page is already at its top): the same positive offset for 1, 1.9 and 30 px.
-    const w = winSeq["cm-web"];
-    check("window_scroll.top_moves_scroller_exactly", true, w["top_up_1"].top > 0 && w["top_up_1"].top === w["top_up_1.9"].top && w["top_up_1"].top === w["top_up_30"].top && w["top_up_1"].wy === 0);
-    // Below the window bottom: the page moves down and the scroller is left alone.
-    check("window_scroll.bottom_scrolls_page_only", true, w.bottom.wy > 0 && w.bottom.top === 0);
-  }
-  if (haveCm5) for (const [label] of WIN_CASES) {
-    const want = winSeq.cm5[label], got = winSeq["cm-web"][label];
-    dcheck(`window_scroll.${label}.top`, Math.round(want.top), Math.round(got.top));
-    dcheck(`window_scroll.${label}.page`, Math.round(want.wy), Math.round(got.wy));
-  }
 
   // --- Focus and blink -------------------------------------------------------
   progress("Focus and blink");
@@ -745,20 +625,17 @@ async function runChecks(name, res, own) {
   // Firefox answers readText with a paste prompt that stays open; close it.
   await page.keyboard.press("Escape");
   await page.waitForTimeout(200);
-  // Every required comparison ran, or its section recorded why the environment cannot run it. The cm-web-only
-  // checks (REQUIRED_WEB) are required with or without the reference.
-  const web = Object.fromEntries(Object.entries(REQUIRED_WEB).map(([sec, want]) => {
-    const ran = res.checks.filter(c => c.name.split(".")[0] === sec && !c.differential).length;
-    return [sec, { required: want, ran, complete: ran === want }];
-  }));
-  const sections = haveCm5 ? Object.fromEntries(Object.entries(REQUIRED).map(([sec, want]) => {
-    const mine = res.checks.filter(c => c.name.split(".")[0] === sec);
-    const ran = mine.filter(c => c.differential).length;
-    const unsupported = mine.filter(c => c.unsupported).map(c => `${c.name}: ${c.unsupported}`);
-    return [sec, { required: want, ran, ...(unsupported.length ? { unsupported } : {}), complete: ran === want || (ran < want && unsupported.length > 0) }];
-  })) : undefined;
-  const incomplete = [...Object.keys(web).filter(s => !web[s].complete).map(s => `${s} (cm-web only)`), ...Object.keys(sections ?? {}).filter(s => !sections[s].complete)];
-  res.integrity = { reference: haveCm5 ? "loaded" : "not supplied: comparisons not counted", web_only: web, ...(sections ? { sections } : {}), complete: incomplete.length === 0, ...(incomplete.length ? { incomplete } : {}) };
+  // Every required comparison ran, or its section recorded why the environment cannot run it.
+  if (haveCm5) {
+    const sections = Object.fromEntries(Object.entries(REQUIRED).map(([sec, want]) => {
+      const mine = res.checks.filter(c => c.name.split(".")[0] === sec);
+      const ran = mine.filter(c => c.differential).length;
+      const unsupported = mine.filter(c => c.unsupported).map(c => `${c.name}: ${c.unsupported}`);
+      return [sec, { required: want, ran, ...(unsupported.length ? { unsupported } : {}), complete: ran === want || (ran < want && unsupported.length > 0) }];
+    }));
+    const incomplete = Object.keys(sections).filter(s => !sections[s].complete);
+    res.integrity = { reference: "loaded", sections, complete: incomplete.length === 0, ...(incomplete.length ? { incomplete } : {}) };
+  }
 }
 
 const out = [];
