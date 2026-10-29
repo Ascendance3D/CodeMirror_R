@@ -369,6 +369,21 @@ pub trait Mode {
     fn electric_input(&self, _text: &[u16]) -> Option<bool> {
         None
     }
+    /// `mode.expressionAllowed(stream, state, backUp)` (the javascript mode exposes
+    /// it for mode/jsx); `None` = no such property. JS `backUp || 0` is `back_up`.
+    fn expression_allowed(
+        &self,
+        _stream: &StringStream<'_>,
+        _state: &State,
+        _back_up: usize,
+    ) -> Option<bool> {
+        None
+    }
+    /// `mode.skipExpression(state)` (javascript, used by mode/jsx). Returns false,
+    /// without touching `state`, when the mode has no such property.
+    fn skip_expression(&self, _state: &mut State) -> bool {
+        false
+    }
     /// Any other mode-object property (`configuration`, `fold`, `closeBrackets`,
     /// `blockCommentContinue`, `jsonMode`, ...), including those `extendMode` and
     /// `modeProps` add. `None` = undefined.
@@ -414,6 +429,19 @@ pub struct Registry {
     dependencies: HashMap<String, Vec<String>>,
     /// `registerHelper` / `registerGlobalHelper` tables.
     pub helpers: Helpers,
+    /// The tables as the JS globals hold them now. Every clone of a registry shares
+    /// them, and each definition through any clone updates them, so a mode that
+    /// looks a mode up at token time (`CodeMirror.getMode` inside htmlmixed's
+    /// `html`) sees definitions made after it was created. See [`Registry::current`].
+    live: Rc<std::cell::RefCell<LiveTables>>,
+}
+
+/// The shared tables behind [`Registry::current`].
+#[derive(Clone, Default)]
+struct LiveTables {
+    modes: HashMap<String, ModeFactory>,
+    mime_modes: HashMap<String, MimeTarget>,
+    mode_extensions: HashMap<String, HashMap<String, ConfigValue>>,
 }
 
 impl Default for Registry {
@@ -451,25 +479,60 @@ impl Mode for Named {
         &self.name
     }
     fn start_state(&self, a1: JsArg, a2: JsArg) -> Option<State> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("startState") {
+            if let Some(func) =
+                f.downcast_ref::<std::rc::Rc<dyn Fn(JsArg, JsArg) -> Option<State>>>()
+            {
+                return func(a1, a2);
+            }
+        }
         self.inner.start_state(a1, a2)
     }
     fn token(&self, stream: &mut StringStream<'_>, state: &mut State) -> Option<String> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("token") {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(&mut StringStream<'_>, &mut State) -> Option<String>>>() {
+                return func(stream, state);
+            }
+        }
         self.inner.token(stream, state)
     }
     fn blank_line(&self, state: &mut State) -> Option<String> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("blankLine") {
+            if let Some(func) =
+                f.downcast_ref::<std::rc::Rc<dyn Fn(&mut State) -> Option<String>>>()
+            {
+                return func(state);
+            }
+        }
         self.inner.blank_line(state)
     }
     fn has_blank_line(&self) -> bool {
-        self.inner.has_blank_line()
+        matches!(
+            self.extensions.get("blankLine"),
+            Some(ConfigValue::Obj(f)) if f.downcast_ref::<std::rc::Rc<dyn Fn(&mut State) -> Option<String>>>().is_some()
+        ) || self.inner.has_blank_line()
     }
     fn copy_state(&self, state: &State) -> Option<State> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("copyState") {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(&State) -> Option<State>>>() {
+                return func(state);
+            }
+        }
         self.inner.copy_state(state)
     }
-    fn inner_mode(&self, state: &State) -> Option<(Rc<dyn Mode>, State)> {
+    fn inner_mode(&self, state: &State) -> Option<(std::rc::Rc<dyn Mode>, State)> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("innerMode") {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(&State) -> Option<(std::rc::Rc<dyn Mode>, State)>>>() {
+                return func(state);
+            }
+        }
         self.inner.inner_mode(state)
     }
     fn has_inner_mode(&self) -> bool {
-        self.inner.has_inner_mode()
+        matches!(
+            self.extensions.get("innerMode"),
+            Some(ConfigValue::Obj(f)) if f.downcast_ref::<std::rc::Rc<dyn Fn(&State) -> Option<(std::rc::Rc<dyn Mode>, State)>>>().is_some()
+        ) || self.inner.has_inner_mode()
     }
     fn inner_mode_mut(
         &self,
@@ -479,16 +542,47 @@ impl Mode for Named {
         self.inner.inner_mode_mut(state, f)
     }
     fn combine_tokens(&self, state: &State) -> Option<bool> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("combineTokens") {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(&State) -> Option<bool>>>() {
+                return func(state);
+            }
+        }
         self.inner.combine_tokens(state)
     }
     fn indent(&self, state: &State, text_after: &[u16], line: &[u16]) -> Option<f64> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("indent") {
+            if let Some(func) =
+                f.downcast_ref::<std::rc::Rc<dyn Fn(&State, &[u16], &[u16]) -> Option<f64>>>()
+            {
+                return func(state, text_after, line);
+            }
+        }
         self.inner.indent(state, text_after, line)
     }
     fn has_indent(&self) -> bool {
-        self.inner.has_indent()
+        matches!(
+            self.extensions.get("indent"),
+            Some(ConfigValue::Obj(f)) if f.downcast_ref::<std::rc::Rc<dyn Fn(&State, &[u16], &[u16]) -> Option<f64>>>().is_some()
+        ) || self.inner.has_indent()
     }
     fn electric_input(&self, text: &[u16]) -> Option<bool> {
+        if let Some(ConfigValue::Obj(f)) = self.extensions.get("electricInput") {
+            if let Some(func) = f.downcast_ref::<std::rc::Rc<dyn Fn(&[u16]) -> Option<bool>>>() {
+                return func(text);
+            }
+        }
         self.inner.electric_input(text)
+    }
+    fn expression_allowed(
+        &self,
+        stream: &StringStream<'_>,
+        state: &State,
+        back_up: usize,
+    ) -> Option<bool> {
+        self.inner.expression_allowed(stream, state, back_up)
+    }
+    fn skip_expression(&self, state: &mut State) -> bool {
+        self.inner.skip_expression(state)
     }
     /// `getMode` copies `modeExtensions[name]`, then `spec.modeProps`, onto the mode
     /// object: later sources win over the mode's own properties. An extension that
@@ -569,6 +663,7 @@ impl Registry {
             mode_extensions: HashMap::new(),
             dependencies: HashMap::new(),
             helpers: Helpers::default(),
+            live: Rc::default(),
         };
         r.define_mode(
             "null",
@@ -602,6 +697,10 @@ impl Registry {
         for (k, v) in properties {
             exts.insert(k, v);
         }
+        self.live
+            .borrow_mut()
+            .mode_extensions
+            .insert(mode.to_string(), exts.clone());
     }
     pub fn has_mime(&self, mime: &str) -> bool {
         self.mime_modes.contains_key(mime)
@@ -609,7 +708,11 @@ impl Registry {
     /// `defineMode(name, factory)`. Redefining a name replaces the factory, as the
     /// JS assignment does; the dependencies of the old definition are dropped.
     pub fn define_mode(&mut self, name: &str, factory: ModeFactory) {
-        self.modes.insert(name.to_string(), factory);
+        self.modes.insert(name.to_string(), factory.clone());
+        self.live
+            .borrow_mut()
+            .modes
+            .insert(name.to_string(), factory);
         self.dependencies.remove(name);
     }
     /// `defineMode(name, factory, dep1, dep2, ...)`: the extra arguments become
@@ -634,7 +737,27 @@ impl Registry {
     }
     /// `defineMIME(mime, spec)`.
     pub fn define_mime(&mut self, mime: &str, spec: MimeTarget) {
-        self.mime_modes.insert(mime.to_string(), spec);
+        self.mime_modes.insert(mime.to_string(), spec.clone());
+        self.live
+            .borrow_mut()
+            .mime_modes
+            .insert(mime.to_string(), spec);
+    }
+    /// The registry as the JS globals are now: the modes, MIME types and mode
+    /// extensions last defined through this registry or any clone of it (a clone
+    /// shares them, as every JS caller shares `CodeMirror.modes`). A mode keeps a
+    /// clone of the registry it was made with; `current()` on that clone is what a
+    /// JS `CodeMirror.getMode` call at token time sees.
+    pub fn current(&self) -> Registry {
+        let live = self.live.borrow();
+        Registry {
+            modes: live.modes.clone(),
+            mime_modes: live.mime_modes.clone(),
+            mode_extensions: live.mode_extensions.clone(),
+            dependencies: self.dependencies.clone(),
+            helpers: self.helpers.clone(),
+            live: self.live.clone(),
+        }
     }
     pub fn has_mode(&self, name: &str) -> bool {
         self.modes.contains_key(name)
@@ -1064,6 +1187,40 @@ mod tests {
 
     /// `getMode` copies `modeExtensions[name]` and then `spec.modeProps` onto the mode
     /// (test/test.js "modeProps" sets `{name: "yyy", modeProps: {xxx: "b", enableC: true}}`).
+    #[test]
+    fn extend_mode_invalid_override() {
+        let mut r = Registry::with_all_modes();
+        let mut ext = HashMap::new();
+        // javascript has no blank_line.
+        // Invalid override for a function-valued method
+        ext.insert("indent".to_string(), ConfigValue::Num(4.0));
+        ext.insert("blankLine".to_string(), ConfigValue::Str("nope".into()));
+        r.extend_mode("javascript", ext);
+
+        let m = r.get_mode(&ModeOptions::default(), &Spec::from("javascript"));
+        // javascript mode does NOT have a blank_line inner, and we injected a string instead of a function.
+        // It should correctly check the type via downcast_ref and report false.
+        assert!(!m.has_blank_line());
+        assert!(m.has_indent()); // javascript has indent inner, which falls through
+
+        // Add a valid override
+        let mut valid_ext = HashMap::new();
+        let valid_blank = std::rc::Rc::new(|_: &mut State| Some("blank".to_string()))
+            as std::rc::Rc<dyn Fn(&mut State) -> Option<String>>;
+        valid_ext.insert(
+            "blankLine".to_string(),
+            ConfigValue::Obj(std::rc::Rc::new(valid_blank.clone())),
+        );
+        r.extend_mode("javascript", valid_ext);
+
+        let m2 = r.get_mode(&ModeOptions::default(), &Spec::from("javascript"));
+        assert!(m2.has_blank_line());
+
+        // call it and assert the result
+        let mut state = m2.start_state(JsArg::Undefined, JsArg::Undefined).unwrap();
+        assert_eq!(m2.blank_line(&mut state), Some("blank".to_string()));
+    }
+
     #[test]
     fn extend_mode_and_mode_props() {
         let mut r = Registry::with_all_modes();

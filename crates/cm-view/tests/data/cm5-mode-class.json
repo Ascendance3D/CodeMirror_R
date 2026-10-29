@@ -1,0 +1,510 @@
+{
+ "version": "5.65.21",
+ "cases": {
+  "js_plain": {
+   "options": {
+    "mode": "javascript"
+   },
+   "text": "var foo = bar(1, 'x');\n// note\nfoo();",
+   "lines": [
+    {
+     "styles": [
+      3,
+      "keyword",
+      4,
+      null,
+      7,
+      "def",
+      8,
+      null,
+      9,
+      "operator",
+      10,
+      null,
+      13,
+      "variable",
+      14,
+      null,
+      15,
+      "number",
+      17,
+      null,
+      20,
+      "string",
+      22,
+      null
+     ],
+     "classes": null
+    },
+    {
+     "styles": [
+      7,
+      "comment"
+     ],
+     "classes": null
+    },
+    {
+     "styles": [
+      3,
+      "variable",
+      6,
+      null
+     ],
+     "classes": null
+    }
+   ]
+  },
+  "js_add_mode_class": {
+   "options": {
+    "mode": "javascript",
+    "addModeClass": true
+   },
+   "text": "var foo = bar(1, 'x');\n// note\nfoo();",
+   "lines": [
+    {
+     "styles": [
+      3,
+      "m-javascript keyword",
+      4,
+      "m-javascript",
+      7,
+      "m-javascript def",
+      8,
+      "m-javascript",
+      9,
+      "m-javascript operator",
+      10,
+      "m-javascript",
+      13,
+      "m-javascript variable",
+      14,
+      "m-javascript",
+      15,
+      "m-javascript number",
+      17,
+      "m-javascript",
+      20,
+      "m-javascript string",
+      22,
+      "m-javascript"
+     ],
+     "classes": null
+    },
+    {
+     "styles": [
+      7,
+      "m-javascript comment"
+     ],
+     "classes": null
+    },
+    {
+     "styles": [
+      3,
+      "m-javascript variable",
+      6,
+      "m-javascript"
+     ],
+     "classes": null
+    }
+   ]
+  },
+  "html_add_mode_class": {
+   "options": {
+    "mode": "htmlmixed",
+    "addModeClass": true
+   },
+   "text": "<div class=\"a\"></div>\n<script>var x = 1;</script>\n<style>p { color: red }</style>\n\n<b>t</b>",
+   "lines": [
+    {
+     "styles": [
+      1,
+      "m-xml tag bracket",
+      4,
+      "m-xml tag",
+      5,
+      "m-xml",
+      10,
+      "m-xml attribute",
+      11,
+      "m-xml",
+      14,
+      "m-xml string",
+      17,
+      "m-xml tag bracket",
+      20,
+      "m-xml tag",
+      21,
+      "m-xml tag bracket"
+     ],
+     "classes": null
+    },
+    {
+     "styles": [
+      1,
+      "m-xml tag bracket",
+      7,
+      "m-xml tag",
+      8,
+      "m-xml tag bracket",
+      11,
+      "m-javascript keyword",
+      12,
+      "m-javascript",
+      13,
+      "m-javascript def",
+      14,
+      "m-javascript",
+      15,
+      "m-javascript operator",
+      16,
+      "m-javascript",
+      17,
+      "m-javascript number",
+      18,
+      "m-javascript",
+      20,
+      "m-xml tag bracket",
+      26,
+      "m-xml tag",
+      27,
+      "m-xml tag bracket"
+     ],
+     "classes": null
+    },
+    {
+     "styles": [
+      1,
+      "m-xml tag bracket",
+      6,
+      "m-xml tag",
+      7,
+      "m-xml tag bracket",
+      8,
+      "m-css tag",
+      11,
+      "m-css",
+      16,
+      "m-css property",
+      18,
+      "m-css",
+      21,
+      "m-css keyword",
+      23,
+      "m-css",
+      25,
+      "m-xml tag bracket",
+      30,
+      "m-xml tag",
+      31,
+      "m-xml tag bracket"
+     ],
+     "classes": null
+    },
+    {
+     "styles": [],
+     "classes": null
+    },
+    {
+     "styles": [
+      1,
+      "m-xml tag bracket",
+      2,
+      "m-xml tag",
+      3,
+      "m-xml tag bracket",
+      4,
+      "m-xml",
+      6,
+      "m-xml tag bracket",
+      7,
+      "m-xml tag",
+      8,
+      "m-xml tag bracket"
+     ],
+     "classes": null
+    }
+   ]
+  },
+  "html_add_mode_class_unflattened": {
+   "options": {
+    "mode": "htmlmixed",
+    "addModeClass": true,
+    "flattenSpans": false
+   },
+   "text": "<div class=\"a\"></div>\n<script>var x = 1;</script>\n<style>p { color: red }</style>\n\n<b>t</b>",
+   "lines": [
+    {
+     "styles": [
+      1,
+      "m-xml tag bracket",
+      4,
+      "m-xml tag",
+      5,
+      "m-xml",
+      10,
+      "m-xml attribute",
+      11,
+      "m-xml",
+      14,
+      "m-xml string",
+      15,
+      "m-xml tag bracket",
+      17,
+      "m-xml tag bracket",
+      20,
+      "m-xml tag",
+      21,
+      "m-xml tag bracket"
+     ],
+     "classes": null
+    },
+    {
+     "styles": [
+      1,
+      "m-xml tag bracket",
+      7,
+      "m-xml tag",
+      8,
+      "m-xml tag bracket",
+      11,
+      "m-javascript keyword",
+      12,
+      "m-javascript",
+      13,
+      "m-javascript def",
+      14,
+      "m-javascript",
+      15,
+      "m-javascript operator",
+      16,
+      "m-javascript",
+      17,
+      "m-javascript number",
+      18,
+      "m-javascript",
+      20,
+      "m-xml tag bracket",
+      26,
+      "m-xml tag",
+      27,
+      "m-xml tag bracket"
+     ],
+     "classes": null
+    },
+    {
+     "styles": [
+      1,
+      "m-xml tag bracket",
+      6,
+      "m-xml tag",
+      7,
+      "m-xml tag bracket",
+      8,
+      "m-css tag",
+      9,
+      "m-css",
+      10,
+      "m-css",
+      11,
+      "m-css",
+      16,
+      "m-css property",
+      17,
+      "m-css",
+      18,
+      "m-css",
+      21,
+      "m-css keyword",
+      22,
+      "m-css",
+      23,
+      "m-css",
+      25,
+      "m-xml tag bracket",
+      30,
+      "m-xml tag",
+      31,
+      "m-xml tag bracket"
+     ],
+     "classes": null
+    },
+    {
+     "styles": [],
+     "classes": null
+    },
+    {
+     "styles": [
+      1,
+      "m-xml tag bracket",
+      2,
+      "m-xml tag",
+      3,
+      "m-xml tag bracket",
+      4,
+      "m-xml",
+      6,
+      "m-xml tag bracket",
+      7,
+      "m-xml tag",
+      8,
+      "m-xml tag bracket"
+     ],
+     "classes": null
+    }
+   ]
+  },
+  "xml_flatten_option_off": {
+   "options": {
+    "mode": "xml",
+    "flattenSpans": false
+   },
+   "text": "<a></a><b/>",
+   "lines": [
+    {
+     "styles": [
+      1,
+      "tag bracket",
+      2,
+      "tag",
+      3,
+      "tag bracket",
+      5,
+      "tag bracket",
+      6,
+      "tag",
+      7,
+      "tag bracket",
+      8,
+      "tag bracket",
+      9,
+      "tag",
+      11,
+      "tag bracket"
+     ],
+     "classes": null
+    }
+   ]
+  },
+  "xml_flatten_option_on": {
+   "options": {
+    "mode": "xml"
+   },
+   "text": "<a></a><b/>",
+   "lines": [
+    {
+     "styles": [
+      1,
+      "tag bracket",
+      2,
+      "tag",
+      5,
+      "tag bracket",
+      6,
+      "tag",
+      8,
+      "tag bracket",
+      9,
+      "tag",
+      11,
+      "tag bracket"
+     ],
+     "classes": null
+    }
+   ]
+  },
+  "css_mode_flatten_false": {
+   "options": {
+    "mode": "css"
+   },
+   "text": "a{color:red}\nb  {  }",
+   "lines": [
+    {
+     "styles": [
+      1,
+      "tag",
+      2,
+      null,
+      7,
+      "property",
+      8,
+      null,
+      11,
+      "keyword",
+      12,
+      null
+     ],
+     "classes": null
+    },
+    {
+     "styles": [
+      1,
+      "tag",
+      3,
+      null,
+      4,
+      null,
+      6,
+      null,
+      7,
+      null
+     ],
+     "classes": null
+    }
+   ]
+  },
+  "xml_mode_flatten_true_option_off": {
+   "options": {
+    "mode": "xml",
+    "flattenSpans": false
+   },
+   "text": "<a></a><b/>",
+   "lines": [
+    {
+     "styles": [
+      1,
+      "tag bracket",
+      2,
+      "tag",
+      5,
+      "tag bracket",
+      6,
+      "tag",
+      8,
+      "tag bracket",
+      9,
+      "tag",
+      11,
+      "tag bracket"
+     ],
+     "classes": null
+    }
+   ]
+  },
+  "css_mode_flatten_false_add_mode_class": {
+   "options": {
+    "mode": "css",
+    "addModeClass": true
+   },
+   "text": "a{color:red}",
+   "lines": [
+    {
+     "styles": [
+      1,
+      "m-css tag",
+      2,
+      "m-css",
+      7,
+      "m-css property",
+      8,
+      "m-css",
+      11,
+      "m-css keyword",
+      12,
+      "m-css"
+     ],
+     "classes": null
+    }
+   ]
+  }
+ }
+}

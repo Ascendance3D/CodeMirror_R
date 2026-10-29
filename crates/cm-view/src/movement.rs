@@ -442,6 +442,6 @@ pub fn line_start_smart(cm: &Editor, pos: Pos) -> Pos {
 
 /// `cm.coordsChar({left, top: cursorCoords(head, "div").top + 5}, "div")`.
 pub fn line_side(cm: &Editor, head: Pos, left: f64) -> Pos {
-    let top = cm.cursor_coords(head, CoordSys::Div).top + 5.0;
+    let top = cm.cursor_coords(head, CoordSys::Doc).top + 5.0;
     cm.coords_char(left, top).pos()
 }

@@ -1,0 +1,1980 @@
+{
+ "version": "5.65.21",
+ "cases": [
+  {
+   "name": "none",
+   "opts": {},
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [],
+   "columns": [],
+   "guttersWidth": 0,
+   "sizerMargin": 0,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    }
+   ]
+  },
+  {
+   "name": "line_numbers",
+   "opts": {
+    "lineNumbers": true
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "CodeMirror-linenumbers",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter CodeMirror-linenumbers",
+     0,
+     48
+    ]
+   ],
+   "guttersWidth": 49,
+   "sizerMargin": 49,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 10,
+     "y": 20,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 15,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 17,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 20,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 40,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 45,
+     "y": 100,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 60,
+     "y": 120,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 80,
+     "y": 290,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 8
+    },
+    {
+     "x": 5,
+     "y": 100,
+     "scroll": 400,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       13,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 400
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 400
+    }
+   ]
+  },
+  {
+   "name": "custom_only",
+   "opts": {
+    "gutters": [
+     "g16"
+    ]
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "g16",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter g16",
+     0,
+     16
+    ]
+   ],
+   "guttersWidth": 17,
+   "sizerMargin": 17,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 10,
+     "y": 20,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 15,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 17,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 20,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 40,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 45,
+     "y": 100,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 60,
+     "y": 120,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 80,
+     "y": 290,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 8
+    },
+    {
+     "x": 5,
+     "y": 100,
+     "scroll": 400,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       13,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 400
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 400
+    }
+   ]
+  },
+  {
+   "name": "custom_and_numbers_appended",
+   "opts": {
+    "gutters": [
+     "g16",
+     "g30"
+    ],
+    "lineNumbers": true
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "g16",
+     null
+    ],
+    [
+     "g30",
+     null
+    ],
+    [
+     "CodeMirror-linenumbers",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter g16",
+     0,
+     16
+    ],
+    [
+     "CodeMirror-gutter g30",
+     16,
+     30
+    ],
+    [
+     "CodeMirror-gutter CodeMirror-linenumbers",
+     46,
+     48
+    ]
+   ],
+   "guttersWidth": 95,
+   "sizerMargin": 95,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 10,
+     "y": 20,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 15,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 17,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 20,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 40,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 45,
+     "y": 100,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 60,
+     "y": 120,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       3,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 80,
+     "y": 290,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       7,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 5,
+     "y": 100,
+     "scroll": 400,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       13,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 400
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 400
+    }
+   ]
+  },
+  {
+   "name": "numbers_placed_first",
+   "opts": {
+    "gutters": [
+     "CodeMirror-linenumbers",
+     "g16"
+    ],
+    "lineNumbers": true
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "CodeMirror-linenumbers",
+     null
+    ],
+    [
+     "g16",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter CodeMirror-linenumbers",
+     0,
+     48
+    ],
+    [
+     "CodeMirror-gutter g16",
+     48,
+     16
+    ]
+   ],
+   "guttersWidth": 65,
+   "sizerMargin": 65,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 10,
+     "y": 20,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 15,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 17,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 20,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 40,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 45,
+     "y": 100,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 60,
+     "y": 120,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       3,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 80,
+     "y": 290,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 8
+    },
+    {
+     "x": 5,
+     "y": 100,
+     "scroll": 400,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       13,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 400
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 400
+    }
+   ]
+  },
+  {
+   "name": "numbers_dropped",
+   "opts": {
+    "gutters": [
+     "CodeMirror-linenumbers",
+     "g30"
+    ],
+    "lineNumbers": false
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "g30",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter g30",
+     0,
+     30
+    ]
+   ],
+   "guttersWidth": 31,
+   "sizerMargin": 31,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 10,
+     "y": 20,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 15,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 17,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 20,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 40,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 45,
+     "y": 100,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 60,
+     "y": 120,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 80,
+     "y": 290,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 8
+    },
+    {
+     "x": 5,
+     "y": 100,
+     "scroll": 400,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       13,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 400
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 400
+    }
+   ]
+  },
+  {
+   "name": "style_width",
+   "opts": {
+    "gutters": [
+     {
+      "className": "gs",
+      "style": "width: 25px"
+     },
+     "gw"
+    ]
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "gs",
+     "width: 25px"
+    ],
+    [
+     "gw",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter gs",
+     0,
+     25
+    ],
+    [
+     "CodeMirror-gutter gw",
+     25,
+     7
+    ]
+   ],
+   "guttersWidth": 33,
+   "sizerMargin": 33,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "gs"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 10,
+     "y": 20,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "gs"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 15,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "gs"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 17,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "gs"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 20,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "gs"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 40,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 45,
+     "y": 100,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 60,
+     "y": 120,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 80,
+     "y": 290,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 8
+    },
+    {
+     "x": 5,
+     "y": 100,
+     "scroll": 400,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       13,
+       "gs"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 400
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 400
+    }
+   ]
+  },
+  {
+   "name": "zero_width_class",
+   "opts": {
+    "gutters": [
+     "nowidth",
+     "g16"
+    ]
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "nowidth",
+     null
+    ],
+    [
+     "g16",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter nowidth",
+     0,
+     0
+    ],
+    [
+     "CodeMirror-gutter g16",
+     0,
+     16
+    ]
+   ],
+   "guttersWidth": 17,
+   "sizerMargin": 17,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 10,
+     "y": 20,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 15,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 17,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 20,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 40,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 45,
+     "y": 100,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 60,
+     "y": 120,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 80,
+     "y": 290,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 8
+    },
+    {
+     "x": 5,
+     "y": 100,
+     "scroll": 400,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       13,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 400
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 400
+    }
+   ]
+  },
+  {
+   "name": "first_line_number",
+   "opts": {
+    "lineNumbers": true,
+    "firstLineNumber": 995,
+    "gutters": [
+     "g16"
+    ]
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "g16",
+     null
+    ],
+    [
+     "CodeMirror-linenumbers",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter g16",
+     0,
+     16
+    ],
+    [
+     "CodeMirror-gutter CodeMirror-linenumbers",
+     16,
+     86
+    ]
+   ],
+   "guttersWidth": 103,
+   "sizerMargin": 103,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 10,
+     "y": 20,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 15,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 17,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 20,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 40,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 45,
+     "y": 100,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 60,
+     "y": 120,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       3,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 80,
+     "y": 290,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       7,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 5,
+     "y": 100,
+     "scroll": 400,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       13,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 400
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 400
+    }
+   ]
+  },
+  {
+   "name": "context_menu",
+   "opts": {
+    "gutters": [
+     "g16",
+     "g30"
+    ],
+    "ctx": true
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "g16",
+     null
+    ],
+    [
+     "g30",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter g16",
+     0,
+     16
+    ],
+    [
+     "CodeMirror-gutter g30",
+     16,
+     30
+    ]
+   ],
+   "guttersWidth": 47,
+   "sizerMargin": 47,
+   "events": [
+    {
+     "x": 5,
+     "y": 50,
+     "scroll": 0,
+     "button": 3,
+     "log": [
+      [
+       "ctx",
+       1,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 30,
+     "y": 50,
+     "scroll": 0,
+     "button": 3,
+     "log": [
+      [
+       "ctx",
+       1,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 3,
+     "log": [],
+     "defaultPrevented": false,
+     "cursorMoved": true,
+     "scrollTop": 0
+    }
+   ]
+  },
+  {
+   "name": "set_option_gutters",
+   "opts": {
+    "lineNumbers": true
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "g30",
+     null
+    ],
+    [
+     "CodeMirror-linenumbers",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter g30",
+     0,
+     30
+    ],
+    [
+     "CodeMirror-gutter CodeMirror-linenumbers",
+     30,
+     48
+    ]
+   ],
+   "guttersWidth": 79,
+   "sizerMargin": 79,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 10,
+     "y": 20,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 15,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 17,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 20,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 40,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 45,
+     "y": 100,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       2,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 60,
+     "y": 120,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       3,
+       "CodeMirror-linenumbers"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 80,
+     "y": 290,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 8
+    },
+    {
+     "x": 5,
+     "y": 100,
+     "scroll": 400,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       13,
+       "g30"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 400
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 400
+    }
+   ]
+  },
+  {
+   "name": "set_option_line_numbers_off",
+   "opts": {
+    "gutters": [
+     "g16"
+    ],
+    "lineNumbers": true
+   },
+   "charWidth": 19.265625,
+   "textHeight": 38,
+   "specs": [
+    [
+     "g16",
+     null
+    ]
+   ],
+   "columns": [
+    [
+     "CodeMirror-gutter g16",
+     0,
+     16
+    ]
+   ],
+   "guttersWidth": 17,
+   "sizerMargin": 17,
+   "events": [
+    {
+     "x": 2,
+     "y": 5,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 10,
+     "y": 20,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       0,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 15,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       1,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 0
+    },
+    {
+     "x": 17,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 20,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 40,
+     "y": 80,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 45,
+     "y": 100,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 60,
+     "y": 120,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 0
+    },
+    {
+     "x": 80,
+     "y": 290,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 8
+    },
+    {
+     "x": 5,
+     "y": 100,
+     "scroll": 400,
+     "button": 1,
+     "log": [
+      [
+       "click",
+       13,
+       "g16"
+      ]
+     ],
+     "defaultPrevented": true,
+     "cursorMoved": false,
+     "scrollTop": 400
+    },
+    {
+     "x": 200,
+     "y": 50,
+     "scroll": 0,
+     "button": 1,
+     "log": [],
+     "defaultPrevented": true,
+     "cursorMoved": true,
+     "scrollTop": 400
+    }
+   ]
+  }
+ ]
+}
