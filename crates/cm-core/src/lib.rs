@@ -21,7 +21,7 @@ pub mod pos;
 pub mod text;
 pub mod util;
 
-pub use events::{ListenerId, Listeners};
+pub use events::{Args, Emitter, ListenerId, Listeners, NamedHandler, NamedListeners};
 pub use model::changes::{BeforeChange, BeforeSelectionChange, ChangeObj};
 pub use model::doc::{Doc, DocOptions, EditorSemantics, LinkedDocOptions};
 pub use model::gutter::LineInfo;

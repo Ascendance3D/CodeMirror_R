@@ -1,0 +1,500 @@
+{
+ "version": "5.65.21",
+ "cases": {
+  "empty": {
+   "doc": "short",
+   "opts": {},
+   "sel": [
+    [
+     [
+      1,
+      3
+     ],
+     [
+      1,
+      3
+     ]
+    ]
+   ],
+   "fat": false,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 61.7969,
+     "top": 38,
+     "height": 38,
+     "width": 1,
+     "styleWidth": null
+    }
+   ]
+  },
+  "tab": {
+   "doc": "short",
+   "opts": {},
+   "sel": [
+    [
+     [
+      2,
+      1
+     ],
+     [
+      2,
+      1
+     ]
+    ]
+   ],
+   "fat": false,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 81.0625,
+     "top": 76,
+     "height": 38,
+     "width": 1,
+     "styleWidth": null
+    }
+   ]
+  },
+  "selection_hidden": {
+   "doc": "short",
+   "opts": {},
+   "sel": [
+    [
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      4
+     ]
+    ]
+   ],
+   "fat": false,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": []
+  },
+  "selection_shown": {
+   "doc": "short",
+   "opts": {
+    "showCursorWhenSelecting": true
+   },
+   "sel": [
+    [
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      4
+     ]
+    ]
+   ],
+   "fat": false,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 81.0625,
+     "top": 38,
+     "height": 38,
+     "width": 1,
+     "styleWidth": null
+    }
+   ]
+  },
+  "multi": {
+   "doc": "short",
+   "opts": {},
+   "sel": [
+    [
+     [
+      0,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ],
+    [
+     [
+      1,
+      2
+     ],
+     [
+      1,
+      6
+     ]
+    ],
+    [
+     [
+      3,
+      3
+     ],
+     [
+      3,
+      3
+     ]
+    ]
+   ],
+   "fat": false,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 4,
+     "top": 0,
+     "height": 38,
+     "width": 1,
+     "styleWidth": null
+    },
+    {
+     "left": 61.7969,
+     "top": 114,
+     "height": 38,
+     "width": 1,
+     "styleWidth": null
+    }
+   ]
+  },
+  "multi_shown": {
+   "doc": "short",
+   "opts": {
+    "showCursorWhenSelecting": true
+   },
+   "sel": [
+    [
+     [
+      0,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ],
+    [
+     [
+      1,
+      6
+     ],
+     [
+      1,
+      2
+     ]
+    ],
+    [
+     [
+      3,
+      3
+     ],
+     [
+      3,
+      3
+     ]
+    ]
+   ],
+   "fat": false,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 4,
+     "top": 0,
+     "height": 38,
+     "width": 1,
+     "styleWidth": null
+    },
+    {
+     "left": 42.5312,
+     "top": 38,
+     "height": 38,
+     "width": 1,
+     "styleWidth": null
+    },
+    {
+     "left": 61.7969,
+     "top": 114,
+     "height": 38,
+     "width": 1,
+     "styleWidth": null
+    }
+   ]
+  },
+  "height_half": {
+   "doc": "short",
+   "opts": {
+    "cursorHeight": 0.5
+   },
+   "sel": [
+    [
+     [
+      1,
+      3
+     ],
+     [
+      1,
+      3
+     ]
+    ]
+   ],
+   "fat": false,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 61.7969,
+     "top": 38,
+     "height": 19,
+     "width": 1,
+     "styleWidth": null
+    }
+   ]
+  },
+  "height_zero": {
+   "doc": "short",
+   "opts": {
+    "cursorHeight": 0
+   },
+   "sel": [
+    [
+     [
+      1,
+      3
+     ],
+     [
+      1,
+      3
+     ]
+    ]
+   ],
+   "fat": false,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 61.7969,
+     "top": 38,
+     "height": 0,
+     "width": 1,
+     "styleWidth": null
+    }
+   ]
+  },
+  "fat": {
+   "doc": "short",
+   "opts": {},
+   "sel": [
+    [
+     [
+      1,
+      3
+     ],
+     [
+      1,
+      3
+     ]
+    ]
+   ],
+   "fat": true,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 61.7969,
+     "top": 38,
+     "height": 38,
+     "width": 19,
+     "styleWidth": 19.2656
+    }
+   ]
+  },
+  "fat_tab": {
+   "doc": "short",
+   "opts": {},
+   "sel": [
+    [
+     [
+      2,
+      0
+     ],
+     [
+      2,
+      0
+     ]
+    ]
+   ],
+   "fat": true,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 4,
+     "top": 76,
+     "height": 38,
+     "width": 77,
+     "styleWidth": 77.0625
+    }
+   ]
+  },
+  "fat_eol": {
+   "doc": "short",
+   "opts": {},
+   "sel": [
+    [
+     [
+      0,
+      5
+     ],
+     [
+      0,
+      5
+     ]
+    ]
+   ],
+   "fat": true,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 100.328,
+     "top": 0,
+     "height": 38,
+     "width": 19,
+     "styleWidth": 19.2656
+    }
+   ]
+  },
+  "fat_empty_line_doc": {
+   "doc": "short",
+   "opts": {
+    "cursorHeight": 0.5
+   },
+   "sel": [
+    [
+     [
+      3,
+      1
+     ],
+     [
+      3,
+      1
+     ]
+    ]
+   ],
+   "fat": true,
+   "view": [
+    0,
+    4
+   ],
+   "cursors": [
+    {
+     "left": 23.2656,
+     "top": 114,
+     "height": 19,
+     "width": 19,
+     "styleWidth": 19.2656
+    }
+   ]
+  },
+  "out_of_view": {
+   "doc": "long",
+   "opts": {},
+   "sel": [
+    [
+     [
+      2,
+      0
+     ],
+     [
+      2,
+      0
+     ]
+    ],
+    [
+     [
+      50,
+      1
+     ],
+     [
+      50,
+      1
+     ]
+    ]
+   ],
+   "fat": false,
+   "view": [
+    0,
+    17
+   ],
+   "cursors": [
+    {
+     "left": 4,
+     "top": 76,
+     "height": 38,
+     "width": 1,
+     "styleWidth": null
+    }
+   ]
+  },
+  "range_into_view": {
+   "doc": "long",
+   "opts": {
+    "showCursorWhenSelecting": true
+   },
+   "sel": [
+    [
+     [
+      50,
+      2
+     ],
+     [
+      3,
+      1
+     ]
+    ]
+   ],
+   "fat": false,
+   "view": [
+    0,
+    17
+   ],
+   "cursors": [
+    {
+     "left": 23.2656,
+     "top": 114,
+     "height": 38,
+     "width": 1,
+     "styleWidth": null
+    }
+   ]
+  }
+ }
+}

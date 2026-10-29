@@ -22,7 +22,7 @@ use glyphon::cosmic_text::{
 use glyphon::{Cache, Resolution, TextArea, TextAtlas, TextBounds, TextRenderer, Viewport};
 use wgpu::util::DeviceExt;
 
-use crate::editor::{CoordSys, Editor};
+use crate::editor::Editor;
 use crate::highlight::Styles;
 use crate::measure::{Glyph, LineLayout, Metrics, Rect};
 
@@ -239,7 +239,7 @@ pub struct Renderer {
     pub font_size: f32,
     pub line_height: f32,
     lines: HashMap<usize, LineEntry>,
-    numbers: HashMap<i64, Buffer>,
+    numbers: HashMap<String, Buffer>,
     pub theme: Theme,
 }
 
@@ -589,16 +589,15 @@ impl Renderer {
         // the text, so a cursor scrolled behind it is clipped to the text area here.
         let mut cursors: Vec<(Rect, Rgba)> = Vec::new();
         if frame.cursor_visible {
-            for r in &sel.ranges {
-                // `showCursorWhenSelecting` is false by default: cursors for empty ranges.
-                if !r.empty() {
+            // prepareSelection / drawSelectionCursor (`showCursorWhenSelecting`,
+            // `cursorHeight`, the fat cursor) in `Editor::cursor_rects`.
+            for (head, c) in editor.cursor_rects() {
+                if head.line < from || head.line >= to {
                     continue;
                 }
-                if r.head.line < from || r.head.line >= to {
-                    continue;
-                }
-                let c = editor.cursor_coords(r.head, CoordSys::Div);
-                let cw = if editor.overwrite {
+                let cw = if c.right > c.left {
+                    (c.right - c.left) as f32
+                } else if editor.overwrite {
                     (m.char_width as f32 / 4.0).max(2.0)
                 } else {
                     (m.char_width as f32 / 8.0).max(1.0).round()
@@ -648,8 +647,8 @@ impl Renderer {
         self.lines = keep;
 
         // Line numbers (`lineNumberFor`).
-        let mut numbers_keep: HashMap<i64, Buffer> = HashMap::new();
-        let mut number_pos: Vec<(i64, f32, f32)> = Vec::new();
+        let mut numbers_keep: HashMap<String, Buffer> = HashMap::new();
+        let mut number_pos: Vec<(String, f32, f32)> = Vec::new();
         let mut marker_pos: Vec<(String, f32, f32)> = Vec::new();
         if !editor.gutter_columns.is_empty() {
             quads.push((full(0.0, 0.0, gutter - 1.0, h), theme.gutter));
@@ -694,18 +693,20 @@ impl Renderer {
             .map(|c| (c.left + c.width) as f32);
         if let (true, Some(lnum_right)) = (editor.options.line_numbers, lnum_right) {
             for line in from..to {
-                let n = line + editor.options.first_line_number - editor.first_line();
+                // `lineNumberFor(cm.options, lineN)` (update_line.js:114), with
+                // `lineNumberFormatter`; the buffers are keyed by the text.
+                let n = editor.line_number_for(line);
                 let b = match self.numbers.remove(&n) {
                     Some(b) => b,
                     None => {
                         let lc = theme.line_number;
-                        self.make_buffer(&n.to_string(), None, false, lc)
+                        self.make_buffer(&n, None, false, lc)
                     }
                 };
-                let digits = n.to_string().len() as f32;
+                let digits = n.chars().count() as f32;
                 let x = lnum_right - 3.0 - digits * m.char_width as f32;
+                numbers_keep.insert(n.clone(), b);
                 number_pos.push((n, x, wy(editor.text_top(line))));
-                numbers_keep.insert(n, b);
             }
         }
         self.numbers = numbers_keep;
