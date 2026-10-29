@@ -66,6 +66,9 @@ jobs:
       - name: System libraries (self-hosted VM)
         if: runner.environment == 'self-hosted'
         run: |
+          # GitHub-hosted runners always have node. Without it the cm-view and cm-web tests that start node record an
+          # allowed tool-absent skip, and the suite passes with less evidence.
+          command -v node
           dpkg-query -W -f='${db:Status-Status} ${Package}\n' pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 mesa-vulkan-drivers xvfb > "$RUNNER_TEMP/packages.txt"
           awk '$1 != "installed" { print "::error::Not installed: " $2; bad = 1 } END { exit bad }' "$RUNNER_TEMP/packages.txt"
 
