@@ -40,8 +40,7 @@
 //! ranges in layout/measurement (collapsedLines, collapsedRangeCoordsChar, clickFold,
 //! everythingFolded, structuredFold, nestedFold, badNestedFold, nestedFoldOnSide,
 //! editInFold), line classes (addLineClass), helpers (`registerHelper`),
-//! mouse button key bindings and the `configureMouse` option (mouseBinding,
-//! configureMouse), wrapped-line measurement against a real browser
+//! wrapped-line measurement against a real browser
 //! (wrappingAndResizing, measureEndOfLine, measureWrappedEndOfLine,
 //! measureWrappedBeginOfLine, scrollEntirelyToRight).
 //!
@@ -1297,4 +1296,95 @@ fn mode_lookahead() {
     cm.run_op(|cm| cm.doc.replace_range("\n", p(2, 0), None, None));
     assert_eq!(cm.get_token_at(p(0, 1), false).ty, None);
     assert_eq!(cm.get_token_at(p(1, 1), false).ty.as_deref(), Some("atom"));
+}
+
+/// test.js `mouseDown(cm, button, pos, mods)`: a press at `charCoords(pos)`.
+fn mouse_down_at(cm: &mut Editor, button: u8, pos: Pos, shift: bool, ctrl: bool, time: f64) {
+    let c = cm.char_coords(pos, cm_view::CoordSys::Div);
+    cm.mouse_down(&cm_view::MouseEvent {
+        x: c.left,
+        y: c.top,
+        button,
+        shift,
+        ctrl,
+        alt: false,
+        meta: false,
+        time,
+    });
+    cm.mouse_up(None);
+}
+
+/// test.js:2048 mouseBinding.
+#[test]
+fn mouse_binding() {
+    let mut cm = cm("foo\nbar\nbaz");
+    let fired: Rc<RefCell<Vec<&str>>> = Rc::default();
+    let mut map = cm_view::keymap::KeyMap::default();
+    for (key, tag) in [
+        ("Shift-LeftClick", "a"),
+        ("Shift-LeftDoubleClick", "b"),
+        ("Shift-LeftTripleClick", "c"),
+    ] {
+        let f = fired.clone();
+        map.bind(
+            key,
+            cm_view::keymap::Binding::Mouse(Rc::new(move |_, pos| {
+                if tag == "a" {
+                    eq_char_pos(pos.unwrap(), p(1, 2));
+                }
+                f.borrow_mut().push(tag);
+                true
+            })),
+        );
+    }
+    cm.add_key_map(map, false);
+    let mut t = 1000.0;
+    for (button, shift, ctrl) in [
+        (1, true, false),
+        (1, true, false),
+        (1, true, false),
+        (1, false, false),
+        (2, false, true),
+        (2, false, true),
+    ] {
+        mouse_down_at(&mut cm, button, p(1, 2), shift, ctrl, t);
+        t += 10.0;
+    }
+    assert_eq!(fired.borrow().join(" "), "a b c");
+}
+
+/// test.js:2069 configureMouse.
+#[test]
+fn configure_mouse() {
+    let mut cm = cm("foo bar baz");
+    cm.set_configure_mouse(Some(Rc::new(|_, _, _| cm_view::mouse::MouseConfig {
+        unit: Some(cm_view::mouse::MouseUnit::Word),
+        ..Default::default()
+    })));
+    mouse_down_at(&mut cm, 1, p(0, 5), false, false, 1000.0);
+    eq_char_pos(cm.doc.selection().primary().from(), p(0, 4));
+    eq_char_pos(cm.doc.selection().primary().to(), p(0, 7));
+    cm.set_configure_mouse(Some(Rc::new(|_, _, _| cm_view::mouse::MouseConfig {
+        extend: Some(true),
+        ..Default::default()
+    })));
+    mouse_down_at(&mut cm, 1, p(0, 0), false, false, 3000.0);
+    eq_char_pos(cm.doc.selection().primary().from(), p(0, 0));
+    eq_char_pos(cm.doc.selection().primary().to(), p(0, 4));
+}
+
+/// `rangeForUnit` with a `unit` function from `configureMouse` (mouse_events.js:190):
+/// the function's range is selected.
+#[test]
+fn configure_mouse_custom_unit() {
+    let mut cm = cm("foo bar baz");
+    cm.set_configure_mouse(Some(Rc::new(|_, _, _| cm_view::mouse::MouseConfig {
+        unit: Some(cm_view::mouse::MouseUnit::Custom(Rc::new(|_, pos| {
+            (Pos::new(pos.line, 1), Pos::new(pos.line, 9))
+        }))),
+        ..Default::default()
+    })));
+    mouse_down_at(&mut cm, 1, p(0, 5), false, false, 1000.0);
+    eq_char_pos(cm.doc.selection().primary().from(), p(0, 1));
+    eq_char_pos(cm.doc.selection().primary().to(), p(0, 9));
 }

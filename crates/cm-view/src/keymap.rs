@@ -9,6 +9,8 @@ use crate::editor::Editor;
 /// A handler function bound in a key map (`keymap["X"] = function(cm) {...}`).
 /// Returning `false` is `CodeMirror.Pass`.
 pub type KeyFn = Rc<dyn Fn(&mut Editor) -> bool>;
+/// A [`Binding::Mouse`] function; returning `false` is `CodeMirror.Pass`.
+pub type MouseFn = Rc<dyn Fn(&mut Editor, Option<cm_core::Pos>) -> bool>;
 
 /// A key map value.
 #[derive(Clone)]
@@ -17,6 +19,10 @@ pub enum Binding {
     Command(String),
     /// A function.
     Fn(KeyFn),
+    /// A function that takes the click position: what a mouse binding
+    /// (`"Shift-LeftClick"`, mouse_events.js:96) is called with; `None` when a key
+    /// runs it (the JS `pos` is then undefined).
+    Mouse(MouseFn),
     /// `false`: stop lookup, do nothing ("nothing").
     Nothing,
     /// `"..."`: the prefix of a multi-stroke binding.
@@ -28,6 +34,7 @@ impl std::fmt::Debug for Binding {
         match self {
             Binding::Command(c) => write!(f, "Command({c:?})"),
             Binding::Fn(_) => write!(f, "Fn"),
+            Binding::Mouse(_) => write!(f, "Mouse"),
             Binding::Nothing => write!(f, "Nothing"),
             Binding::Multi => write!(f, "Multi"),
         }

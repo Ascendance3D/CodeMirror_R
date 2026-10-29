@@ -348,6 +348,8 @@ pub struct Editor {
     pub display: Display,
     /// `cm.state.overwrite`.
     pub overwrite: bool,
+    /// The `configureMouse` option.
+    pub(crate) configure_mouse_option: Option<crate::mouse::ConfigureMouseFn>,
     /// `cm.state.pasteIncoming` / `cutIncoming` (timestamps; -1 when unset, NaN when
     /// set at an unknown time, see `cm_core::clock`).
     pub paste_incoming: f64,
@@ -548,6 +550,7 @@ impl Editor {
                 last_invalid_view: Cell::new(None),
             },
             overwrite: false,
+            configure_mouse_option: None,
             paste_incoming: -1.0,
             cut_incoming: -1.0,
             key_seq: None,
@@ -3076,6 +3079,10 @@ impl Editor {
                 None => return false,
             },
             Binding::Fn(f) => f.clone(),
+            Binding::Mouse(f) => {
+                let f = f.clone();
+                Rc::new(move |cm: &mut Editor| f(cm, None))
+            }
             _ => return false,
         };
         let prev_shift = self.display.shift;
@@ -3089,6 +3096,35 @@ impl Editor {
         self.display.shift = prev_shift;
         self.doc.set_suppress_edits(false);
         done
+    }
+
+    /// The `dispatchKey` of `handleMappedButton`: a command or function bound to
+    /// `name` runs with the click position, with edits suppressed in a read-only
+    /// editor; `Pass` (`false`) lets the lookup go on.
+    pub(crate) fn dispatch_mouse_binding(&mut self, name: &str, pos: Pos) -> bool {
+        self.dispatch_key(name, &mut |cm, b| {
+            let f: crate::keymap::MouseFn = match b {
+                Binding::Command(c) => match cm.commands.get(c) {
+                    Some(f) => {
+                        let f = f.clone();
+                        Rc::new(move |cm: &mut Editor, _| f(cm))
+                    }
+                    None => return false,
+                },
+                Binding::Fn(f) => {
+                    let f = f.clone();
+                    Rc::new(move |cm: &mut Editor, _| f(cm))
+                }
+                Binding::Mouse(f) => f.clone(),
+                _ => return false,
+            };
+            if cm.is_read_only() {
+                cm.doc.set_suppress_edits(true);
+            }
+            let done = cm.run_op(|cm| f(cm, Some(pos)));
+            cm.doc.set_suppress_edits(false);
+            done
+        })
     }
 
     /// `lookupKeyForEditor(cm, name, handle)`.

@@ -11,6 +11,8 @@
 //! padding, y is document y without the top padding); the renderer converts window
 //! pixels with [`Editor::div_from_window`].
 
+use std::rc::Rc;
+
 use cm_core::Pos;
 use cm_core::pos::cmp;
 use cm_core::util::misc::{count_column, find_column};
@@ -92,16 +94,54 @@ impl ClickTracker {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// A `unit` function from `configureMouse`: the range selected around a position
+/// (`rangeForUnit`, mouse_events.js:190).
+pub type UnitFn = Rc<dyn Fn(&Editor, Pos) -> (Pos, Pos)>;
+
+#[derive(Clone)]
 pub enum MouseUnit {
     Char,
     Word,
     Line,
     Rectangle,
+    Custom(UnitFn),
 }
 
+impl PartialEq for MouseUnit {
+    fn eq(&self, o: &Self) -> bool {
+        match (self, o) {
+            (MouseUnit::Custom(a), MouseUnit::Custom(b)) => Rc::ptr_eq(a, b),
+            _ => std::mem::discriminant(self) == std::mem::discriminant(o),
+        }
+    }
+}
+
+impl std::fmt::Debug for MouseUnit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MouseUnit::Char => write!(f, "Char"),
+            MouseUnit::Word => write!(f, "Word"),
+            MouseUnit::Line => write!(f, "Line"),
+            MouseUnit::Rectangle => write!(f, "Rectangle"),
+            MouseUnit::Custom(_) => write!(f, "Custom"),
+        }
+    }
+}
+
+/// What the `configureMouse` option returns; a `None` field gets its default.
+#[derive(Clone, Debug, Default)]
+pub struct MouseConfig {
+    pub unit: Option<MouseUnit>,
+    pub extend: Option<bool>,
+    pub add_new: Option<bool>,
+    pub move_on_drag: Option<bool>,
+}
+
+/// The `configureMouse` option: `(cm, repeat, event) -> MouseConfig`.
+pub type ConfigureMouseFn = Rc<dyn Fn(&Editor, Repeat, &MouseEvent) -> MouseConfig>;
+
 /// `configureMouse` result.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Behavior {
     pub unit: MouseUnit,
     pub extend: bool,
@@ -162,10 +202,14 @@ impl Editor {
         coords
     }
 
-    /// `configureMouse(cm, repeat, event)`.
+    /// `configureMouse(cm, repeat, event)` (mouse_events.js:116): the option's
+    /// value, with each missing field defaulted.
     fn configure_mouse(&self, repeat: Repeat, e: &MouseEvent) -> Behavior {
-        let rect = e.alt;
-        let unit = if rect {
+        let value = match self.configure_mouse_option.clone() {
+            Some(f) => f(self, repeat, e),
+            None => MouseConfig::default(),
+        };
+        let unit = value.unit.unwrap_or(if e.alt {
             MouseUnit::Rectangle
         } else {
             match repeat {
@@ -173,14 +217,58 @@ impl Editor {
                 Repeat::Double => MouseUnit::Word,
                 Repeat::Triple => MouseUnit::Line,
             }
-        };
+        });
         let ext = self.doc.get_extending();
+        let extend = match value.extend {
+            Some(v) if !ext => v,
+            _ => ext || e.shift,
+        };
         Behavior {
             unit,
-            extend: ext || e.shift,
-            add_new: if self.options.mac { e.meta } else { e.ctrl },
-            move_on_drag: !(if self.options.mac { e.alt } else { e.ctrl }),
+            extend,
+            add_new: value
+                .add_new
+                .unwrap_or(if self.options.mac { e.meta } else { e.ctrl }),
+            move_on_drag: value
+                .move_on_drag
+                .unwrap_or(!(if self.options.mac { e.alt } else { e.ctrl })),
         }
+    }
+
+    /// `setOption("configureMouse", f)`.
+    pub fn set_configure_mouse(&mut self, f: Option<ConfigureMouseFn>) {
+        self.configure_mouse_option = f;
+    }
+
+    /// `handleMappedButton(cm, button, pos, repeat, event)` (mouse_events.js:96):
+    /// `"[Shift-]LeftClick"`, `"MiddleDoubleClick"`, ... in the key maps, called with
+    /// the click position.
+    fn handle_mapped_button(
+        &mut self,
+        button: u8,
+        pos: Pos,
+        repeat: Repeat,
+        e: &MouseEvent,
+    ) -> bool {
+        let click = match repeat {
+            Repeat::Single => "Click",
+            Repeat::Double => "DoubleClick",
+            Repeat::Triple => "TripleClick",
+        };
+        let side = match button {
+            1 => "Left",
+            2 => "Middle",
+            _ => "Right",
+        };
+        let ke = crate::keymap::KeyEvent {
+            shift: e.shift,
+            ctrl: e.ctrl,
+            alt: e.alt,
+            meta: e.meta,
+            ..Default::default()
+        };
+        let name = crate::keymap::add_modifier_names(&format!("{side}{click}"), &ke, false, false);
+        self.dispatch_mouse_binding(&name, pos)
     }
 
     /// `onMouseDown(e)` for a click in the text area (gutter clicks are ignored,
@@ -196,6 +284,9 @@ impl Editor {
         let repeat = self.clicks.click_repeat(pos, e.button, e.time);
         if self.mouse.is_some() && e.button == 1 {
             self.mouse_up(None);
+        }
+        if self.handle_mapped_button(e.button, pos, repeat, e) {
+            return;
         }
         match e.button {
             1 => self.run_op(|cm| cm.left_button_down(info, repeat, e)),
@@ -234,8 +325,9 @@ impl Editor {
     }
 
     /// `rangeForUnit(cm, pos, unit)`.
-    fn range_for_unit(&self, pos: Pos, unit: MouseUnit) -> (Pos, Pos) {
+    fn range_for_unit(&self, pos: Pos, unit: &MouseUnit) -> (Pos, Pos) {
         match unit {
+            MouseUnit::Custom(f) => f(self, pos),
             MouseUnit::Word => self.find_word_at(pos),
             MouseUnit::Line => (
                 Pos::new(pos.line, 0),
@@ -278,7 +370,7 @@ impl Editor {
             start = self.pos_from_mouse(e.x, e.y, true).pos();
             our_index = -1;
         } else {
-            let range = self.range_for_unit(start, behavior.unit);
+            let range = self.range_for_unit(start, &behavior.unit);
             our_range = if behavior.extend {
                 extend_range(our_range, range.0, Some(range.1), true)
             } else {
@@ -395,7 +487,14 @@ impl Editor {
                 if cmp(&cur, &last_pos).is_ne() {
                     last = cur;
                     self.run_op(|cm| {
-                        cm.extend_to(cur, start, behavior, our_index, our_range, &start_sel)
+                        cm.extend_to(
+                            cur,
+                            start,
+                            behavior.clone(),
+                            our_index,
+                            our_range,
+                            &start_sel,
+                        )
                     });
                 }
                 self.mouse = Some(MouseState {
@@ -472,7 +571,7 @@ impl Editor {
             );
         } else {
             let old = our_range;
-            let range = self.range_for_unit(pos, behavior.unit);
+            let range = self.range_for_unit(pos, &behavior.unit);
             let (anchor, head);
             let old_from = min_pos(&old.0, &old.1);
             let old_to = max_pos(&old.0, &old.1);
