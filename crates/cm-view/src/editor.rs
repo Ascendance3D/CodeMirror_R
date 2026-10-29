@@ -514,6 +514,69 @@ impl Editor {
             cm.force_update = true;
         });
     }
+    /// `addOverlay(spec, options)` (src/edit/methods.js:67): a mode object, or a
+    /// spec resolved with `getMode(cm.options, spec)`, joins `cm.state.overlays`
+    /// after those of lower or equal `priority` (`options.priority || 0`: pass 0.0
+    /// for none; NaN counts as 0). Bumps `modeGen` and redraws everything. A mode
+    /// with a `startState` is refused, before anything changes.
+    pub fn add_overlay(
+        &mut self,
+        spec: highlight::OverlaySpec,
+        opaque: bool,
+        priority: f64,
+    ) -> Result<(), highlight::StatefulOverlay> {
+        let mode = match &spec {
+            highlight::OverlaySpec::Mode(m) => m.clone(),
+            highlight::OverlaySpec::Spec(s) => {
+                let mode_opts = ModeOptions {
+                    indent_unit: self.options.indent_unit,
+                    tab_size: self.options.tab_size,
+                    highlight_non_standard_property_keywords: None,
+                };
+                self.registry.get_mode(&mode_opts, s)
+            }
+        };
+        if highlight::has_start_state(&*mode) {
+            return Err(highlight::StatefulOverlay);
+        }
+        let priority = if priority.is_nan() { 0.0 } else { priority };
+        self.run_op(|cm| {
+            let mut hs = cm.hs.borrow_mut();
+            cm_core::util::misc::insert_sorted(
+                &mut hs.overlays,
+                highlight::Overlay {
+                    mode,
+                    mode_spec: spec,
+                    opaque,
+                    priority,
+                },
+                |o| o.priority,
+            );
+            hs.mode_gen += 1;
+            drop(hs);
+            cm.force_update = true;
+        });
+        Ok(())
+    }
+    /// `removeOverlay(spec)` (src/edit/methods.js:77): removes the first overlay
+    /// whose spec is `spec` (the same mode object, or an equal spec) or, for a
+    /// string, whose spec's `name` is that string. Bumps `modeGen` and redraws
+    /// only when one was removed.
+    pub fn remove_overlay(&mut self, spec: &highlight::OverlaySpec) {
+        self.run_op(|cm| {
+            let mut hs = cm.hs.borrow_mut();
+            if let Some(i) = hs
+                .overlays
+                .iter()
+                .position(|o| highlight::OverlaySpec::matches_removal(&o.mode_spec, spec))
+            {
+                hs.overlays.remove(i);
+                hs.mode_gen += 1;
+                drop(hs);
+                cm.force_update = true;
+            }
+        });
+    }
     /// `setOption("tabSize", n)`: `resetModeState`, `clearCaches`.
     pub fn set_tab_size(&mut self, n: i64) {
         self.run_op(|cm| {
