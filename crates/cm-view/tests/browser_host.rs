@@ -2,6 +2,7 @@
 //! key codes, `refresh()` after font measurement (`Editor::set_metrics`), and a
 //! save requested by Ctrl-S when keys reach the editor without `App::handle`.
 
+use std::ops::Add;
 use std::path::Path;
 
 use cm_core::Pos;
@@ -61,8 +62,9 @@ fn set_metrics_refreshes_geometry() {
     let c = cm.cursor_coords(Pos::new(3, 1), CoordSys::Div);
     assert_eq!((c.left, c.top, c.bottom), (4.0 + 9.6328125, 57.0, 76.0));
     assert_eq!(cm.doc_height(), 121.0 * 19.0);
-    // updateGutterSpace: three digits at the new char width.
-    assert_eq!(cm.gutter_width, (3.0 * 9.6328125 + 9.0f64).ceil());
+    // updateGutterSpace: three digits at the new char width; lineNumWidth =
+    // round(max(text, 20) + 8) + 1 (line_numbers.js:32), plus the 1 px border.
+    assert_eq!(cm.gutter_width, (3.0 * 9.6328125f64).max(20.0).add(8.0).round() + 2.0);
     assert_ne!(cm.gutter_width, g0);
     // The visible range follows the new line height.
     assert_eq!(cm.visible_lines(), (0, 10));

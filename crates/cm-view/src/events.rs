@@ -96,6 +96,8 @@ pub struct InputChange {
     pub text: Vec<String>,
     pub origin: String,
 }
+/// `gutterClick`/`gutterContextMenu`: `(cm, line, gutter className, event)`.
+pub type GutterHandler = dyn Fn(&mut Cx, i64, &str, &crate::mouse::MouseEvent);
 pub type BeforeChangeHandler = dyn Fn(&Doc, EditorId, &mut BeforeChange);
 pub type BeforeSelHandler = dyn Fn(&Doc, EditorId, &mut BeforeSelectionChange);
 
@@ -127,6 +129,9 @@ pub struct EditorListeners {
     /// Immediate: the editor gained or lost focus.
     pub focus: Listeners<EditorHandler>,
     pub blur: Listeners<EditorHandler>,
+    /// Immediate: a click or context menu in a gutter column (line, gutter class).
+    pub gutter_click: Listeners<GutterHandler>,
+    pub gutter_context_menu: Listeners<GutterHandler>,
 }
 
 impl EditorListeners {
@@ -151,6 +156,8 @@ impl EditorListeners {
             .or_else(|| removed(self.electric_input.remove(id)))
             .or_else(|| removed(self.focus.remove(id)))
             .or_else(|| removed(self.blur.remove(id)))
+            .or_else(|| removed(self.gutter_click.remove(id)))
+            .or_else(|| removed(self.gutter_context_menu.remove(id)))
     }
 }
 
@@ -298,6 +305,17 @@ impl EditorShared {
     /// `regLineChange(cm, line, "text")` for each of `lines`, in the open operation.
     pub(crate) fn reg_line_changes(&self, lines: &[i64]) {
         self.with_op(|op| op.regs.extend(lines.iter().copied().map(ViewChange::Line)));
+    }
+
+    /// `regChange(cm)`: every line of the document, in the open operation.
+    pub(crate) fn reg_change_all(&self, first: i64, size: i64) {
+        self.with_op(|op| {
+            op.regs.push(ViewChange::Range {
+                from: first,
+                to: first + size,
+                lendiff: 0,
+            })
+        });
     }
 
     fn with_op(&self, f: impl FnOnce(&mut OpRecord)) {
@@ -759,6 +777,8 @@ listener_tables! {
     electric_input: LineHandler,
     focus: EditorHandler,
     blur: EditorHandler,
+    gutter_click: GutterHandler,
+    gutter_context_menu: GutterHandler,
 }
 
 /// A handle on an editor's listener tables, usable without the editor (for example
