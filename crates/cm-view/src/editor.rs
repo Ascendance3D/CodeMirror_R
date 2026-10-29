@@ -21,6 +21,7 @@
 //! * bidi in measurement, cursors, selection drawing and clicks (left to right only;
 //!   `moveVisually` and `endOfLine` do use the ported bidi ordering).
 
+use std::any::Any;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
@@ -38,9 +39,10 @@ use cm_core::{
 use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_mode};
 
 use crate::events::{
-    ChangeHandler, ChangesHandler, Cx, DisplayEvent, EditorEvents, EditorHandler, EditorShared,
-    InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler, NameHandler,
-    OpRecord, Parked, ViewChange, ViewportHandler, WithSelf, finish,
+    ChangeHandler, ChangesHandler, Cx, DisplayEvent, DomEvent, EditorEvents, EditorHandler,
+    EditorShared, InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler,
+    NameHandler, NamedEditorHandler, OpRecord, Parked, ViewChange, ViewportHandler, WithSelf,
+    finish,
 };
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
@@ -813,6 +815,74 @@ impl Editor {
         let f: Rc<EditorHandler> = Rc::new(f);
         self.shared.ls.borrow_mut().blur.on_rc(f)
     }
+    /// `on(cm, name, f)` for a string-named or custom event (addons signal
+    /// `"fold"`, `"startCompletion"`, ...): `f` gets the values of
+    /// [`Editor::signal_event`]. A name of a typed event (`"change"`, ...) is a
+    /// separate entry here and is reached only by `signal_event`. Remove it with
+    /// [`Editor::off`].
+    pub fn on_event(
+        &self,
+        name: &str,
+        f: impl Fn(&mut Cx, cm_core::Args<'_>) + 'static,
+    ) -> ListenerId {
+        self.on_event_rc(name, Rc::new(f))
+    }
+    /// [`Editor::on_event`] with a shared handler, for removal by identity
+    /// ([`Editor::off_event_fn`]).
+    pub fn on_event_rc(&self, name: &str, f: Rc<NamedEditorHandler>) -> ListenerId {
+        self.shared.ls.borrow_mut().named.on_rc(name, f)
+    }
+    /// `off(cm, name, f)`: remove the first handler of `name` that is `f`.
+    pub fn off_event_fn(&self, name: &str, f: &Rc<NamedEditorHandler>) -> bool {
+        let gone = self.shared.ls.borrow_mut().named.remove_fn(name, f);
+        gone.is_some()
+    }
+    /// `getHandlers(cm, name)`: the named handlers of `name` as of now (empty
+    /// when there are none); later `on`/`off` calls do not change it.
+    pub fn get_handlers(&self, name: &str) -> Rc<[cm_core::events::Entry<NamedEditorHandler>]> {
+        self.shared.ls.borrow().named.get_handlers(name)
+    }
+    /// `hasHandler(cm, name)` for the named table.
+    pub fn has_handler(&self, name: &str) -> bool {
+        self.shared.ls.borrow().named.has_handler(name)
+    }
+    /// `signal(cm, name, ...values)`: call the named handlers of `name` now, in
+    /// registration order, over the list as it was when the signal started.
+    pub fn signal_event(&mut self, name: &str, args: cm_core::Args<'_>) {
+        let hs = self.get_handlers(name);
+        for e in hs.iter() {
+            (e.f)(
+                &mut Cx {
+                    editor: self,
+                    others: &mut NoEditors,
+                },
+                args,
+            );
+        }
+    }
+    /// `on(cm, type, f)` for a DOM event the editor handles: `f` sees the event
+    /// before the editor and may pre-empt it ([`DomEvent::prevent_default`],
+    /// [`DomEvent::set_codemirror_ignore`]).
+    pub fn on_dom_event(&self, kind: &str, f: impl Fn(&mut Cx, &DomEvent) + 'static) -> ListenerId {
+        self.on_event(kind, move |cx, args| {
+            if let Some(e) = args.first().and_then(|a| a.downcast_ref::<DomEvent>()) {
+                f(cx, e)
+            }
+        })
+    }
+    /// `signalDOMEvent(cm, e, override)` (src/util/event.js:51): signal `e` to the
+    /// handlers of `override` (or `e.kind`); `true` when one of them called
+    /// `preventDefault` or set `codemirrorIgnore`, and the editor must leave the
+    /// event alone. The editor calls it at its input entry points (`key_down`,
+    /// `key_press`, `mouse_down`, `paste`) and before `maybeScrollWindow`
+    /// (`"scrollCursorIntoView"`); a host calls it for the events it handles itself.
+    pub fn signal_dom_event(&mut self, e: &DomEvent, override_: Option<&str>) -> bool {
+        let name = override_.unwrap_or(&e.kind).to_string();
+        if self.has_handler(&name) {
+            self.signal_event(&name, &[e as &dyn Any]);
+        }
+        e.default_prevented() || e.codemirror_ignore()
+    }
     /// `state.focused`.
     pub fn has_focus(&self) -> bool {
         self.focused
@@ -906,7 +976,11 @@ impl Editor {
             ensure = Some((from.line, to.line));
             // `maybeScrollWindow(cm, rect)` takes this rect; the engine has no window, so
             // an adapter that has one reads it with `take_window_scroll_rect`.
-            self.window_scroll_rect = Some(self.scroll_pos_into_view(from, to, margin));
+            let rect = self.scroll_pos_into_view(from, to, margin);
+            // maybeScrollWindow: `if (signalDOMEvent(cm, "scrollCursorIntoView")) return`.
+            if !self.signal_dom_event(&DomEvent::new("scrollCursorIntoView"), None) {
+                self.window_scroll_rect = Some(rect);
+            }
         }
         // regChange (view_tracking.js:13) and regLineChange (:78), in order, without
         // collapsed spans. The view array is not kept: `replaced` stands for
@@ -2506,6 +2580,14 @@ impl Editor {
 
     /// `handlePaste`: paste text from the clipboard.
     pub fn paste(&mut self, text: &str) {
+        // `if (signalDOMEvent(cm, e) || handlePaste(e, cm)) return` (TextareaInput.js:50).
+        let dom = DomEvent {
+            text: Some(text.to_string()),
+            ..DomEvent::new("paste")
+        };
+        if self.signal_dom_event(&dom, None) {
+            return;
+        }
         if text.is_empty() || self.is_read_only() {
             return;
         }
@@ -2651,6 +2733,14 @@ impl Editor {
     pub fn key_down(&mut self, e: &KeyEvent) -> bool {
         // input.js: `on(d.input, "keydown", operation(cm, onKeyDown))`
         self.run_op(|cm| {
+            // `if (signalDOMEvent(cm, e)) return` (key_events.js:111).
+            let dom = DomEvent {
+                key: Some(e.clone()),
+                ..DomEvent::new("keydown")
+            };
+            if cm.signal_dom_event(&dom, None) {
+                return false;
+            }
             cm.display.shift = e.key == "Shift" || e.shift;
             cm.handle_key_binding(e)
         })
@@ -2662,6 +2752,16 @@ impl Editor {
         self.run_op(|cm| cm.key_press_in_op(ch, e))
     }
     fn key_press_in_op(&mut self, ch: &str, e: &KeyEvent) -> bool {
+        // `if (... || signalDOMEvent(cm, e) || e.ctrlKey && !e.altKey || ...) return`
+        // (key_events.js:154).
+        let dom = DomEvent {
+            key: Some(e.clone()),
+            ch: Some(ch.to_string()),
+            ..DomEvent::new("keypress")
+        };
+        if self.signal_dom_event(&dom, None) {
+            return false;
+        }
         if e.ctrl && !e.alt || self.options.mac && e.meta {
             return false;
         }

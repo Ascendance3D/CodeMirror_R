@@ -186,6 +186,14 @@ impl Editor {
     /// `onMouseDown(e)` for a click in the text area (gutter clicks are ignored,
     /// like `clickInGutter`).
     pub fn mouse_down(&mut self, e: &MouseEvent) {
+        // `if (signalDOMEvent(cm, e) || ...) return` (mouse_events.js:61).
+        let dom = crate::events::DomEvent {
+            mouse: Some(*e),
+            ..crate::events::DomEvent::new("mousedown")
+        };
+        if self.signal_dom_event(&dom, None) {
+            return;
+        }
         self.display.shift = e.shift;
         if e.x < 0.0 {
             return;
