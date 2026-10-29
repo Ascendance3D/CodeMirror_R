@@ -9,7 +9,7 @@
 #   tools/fetch-upstream.sh && cargo test --workspace --no-fail-fast
 #
 # The C0 reference suite (node oracle/cm5-run.mjs, 1483 upstream browser tests) needs a rollup
-# build of oracle/cm5-build and Playwright; it runs locally only (README.md, "C0 suite").
+# build of oracle/cm5-build and Playwright; it runs locally only (docs/TESTING.md, "C0 suite").
 
 name: Rust tests
 
