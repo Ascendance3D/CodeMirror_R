@@ -1,3 +1,6 @@
 /target/
 /upstream/
 /oracle/cm5-build/node_modules/
+# CI writes these into the workspace.
+/suite.log
+/evidence-skips.tsv
