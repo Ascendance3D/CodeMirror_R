@@ -124,6 +124,49 @@ pub enum CoordSys {
     Local,
 }
 
+/// `cm.getScrollInfo()` (src/edit/methods.js:365): the scroll offsets, the size of
+/// the scrollable content (`scrollHeight`/`scrollWidth` less the scrollbar gap) and
+/// the visible size (`displayHeight` / `displayWidth`, gutters included).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ScrollInfo {
+    pub left: f64,
+    pub top: f64,
+    pub height: f64,
+    pub width: f64,
+    pub client_height: f64,
+    pub client_width: f64,
+}
+
+/// The `range` argument of `cm.scrollIntoView(range, margin)` (methods.js:373):
+/// `null` (the primary cursor, with `cursorScrollMargin` when no margin is given),
+/// a line number (its start), a position, a `{from, to}` range, a
+/// `{left, top, right, bottom}` box in "local" coordinates, or a range of two boxes.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ScrollTarget {
+    Cursor,
+    Line(i64),
+    Pos(Pos),
+    Range(Pos, Pos),
+    Coords(Rect),
+    CoordsRange(Rect, Rect),
+}
+
+impl From<i64> for ScrollTarget {
+    fn from(n: i64) -> Self {
+        ScrollTarget::Line(n)
+    }
+}
+impl From<Pos> for ScrollTarget {
+    fn from(p: Pos) -> Self {
+        ScrollTarget::Pos(p)
+    }
+}
+impl From<Rect> for ScrollTarget {
+    fn from(r: Rect) -> Self {
+        ScrollTarget::Coords(r)
+    }
+}
+
 /// The parts of `cm.display` the model needs.
 #[derive(Clone, Debug)]
 pub struct Display {
@@ -2716,6 +2759,78 @@ impl Editor {
             cm.resolve_scroll_to_pos();
             cm.op.scroll_to_pos = Some((from, to, margin));
         });
+    }
+    /// `cm.scrollIntoView(range, margin)` (src/edit/methods.js:373, a methodOp)
+    /// with every form of `range` ([`ScrollTarget`]). A position form queues
+    /// `op.scrollToPos` (`scrollToRange`), resolved at the end of the operation; a
+    /// box form computes the scroll position now (`scrollToCoordsRange`,
+    /// scrolling.js:149) and sets `op.scrollLeft`/`op.scrollTop`. `margin` `None`
+    /// is 0, except for [`ScrollTarget::Cursor`], where it is `cursorScrollMargin`.
+    pub fn scroll_into_view_target(
+        &mut self,
+        target: impl Into<ScrollTarget>,
+        margin: Option<f64>,
+    ) {
+        let target = target.into();
+        self.run_op(|cm| {
+            let margin = match target {
+                ScrollTarget::Cursor => margin.unwrap_or(cm.options.cursor_scroll_margin),
+                _ => margin.unwrap_or(0.0),
+            };
+            // `range.margin = margin || 0`.
+            let margin = if margin.is_nan() { 0.0 } else { margin };
+            let (from, to) = match target {
+                ScrollTarget::Cursor => {
+                    let h = cm.doc.selection().primary().head;
+                    (h, h)
+                }
+                ScrollTarget::Line(n) => (Pos::new(n, 0), Pos::new(n, 0)),
+                ScrollTarget::Pos(p) => (p, p),
+                ScrollTarget::Range(a, b) => (a, b),
+                ScrollTarget::Coords(r) => return cm.scroll_to_coords_range(r, r, margin),
+                ScrollTarget::CoordsRange(a, b) => return cm.scroll_to_coords_range(a, b, margin),
+            };
+            cm.resolve_scroll_to_pos();
+            cm.op.scroll_to_pos = Some((from, to, margin));
+        });
+    }
+    /// `scrollToCoordsRange(cm, from, to, margin)` (src/display/scrolling.js:149):
+    /// boxes in "local" coordinates.
+    fn scroll_to_coords_range(&mut self, from: Rect, to: Rect, margin: f64) {
+        let (st, sl) = self.calculate_scroll_pos(Rect {
+            left: from.left.min(to.left),
+            top: from.top.min(to.top) - margin,
+            right: from.right.max(to.right),
+            bottom: from.bottom.max(to.bottom) + margin,
+        });
+        self.scroll_to_coords(sl, st);
+    }
+    /// `scrollIntoView(cm, rect)` (src/display/scrolling.js:70): scroll a box in
+    /// "local" coordinates into view at once, through the thresholded
+    /// `updateScrollTop` / `setScrollLeft` (a change under 2 px is dropped). Runs as
+    /// an operation, so the rendered range follows (`updateDisplaySimple`).
+    pub fn scroll_rect_into_view(&mut self, rect: Rect) {
+        self.run_op(|cm| {
+            let (st, sl) = cm.calculate_scroll_pos(rect);
+            if let Some(v) = st {
+                cm.update_scroll_top(v);
+            }
+            if let Some(v) = sl {
+                cm.update_scroll_left(v);
+            }
+        });
+    }
+    /// `cm.getScrollInfo()` (src/edit/methods.js:365).
+    pub fn get_scroll_info(&self) -> ScrollInfo {
+        let (mh, mw) = self.max_scroll();
+        ScrollInfo {
+            left: self.display.scroll_left,
+            top: self.display.scroll_top,
+            height: mh + self.display_height(),
+            width: mw + self.display.width,
+            client_height: self.display_height(),
+            client_width: self.display.width,
+        }
     }
     /// `removeKeyMap(name)`.
     pub fn remove_key_map(&mut self, name: &str) -> bool {
