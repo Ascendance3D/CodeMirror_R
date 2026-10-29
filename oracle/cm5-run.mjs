@@ -11,6 +11,7 @@ import { createServer } from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { extname, join, normalize } from "node:path";
+import { safeResolve } from "./server-utils.mjs";
 import { fileURLToPath } from "node:url";
 
 const HERE = normalize (join (fileURLToPath (import.meta.url), ".."));
@@ -26,9 +27,9 @@ const filter = args [0] || "";
 
 const server = createServer (async (req, res) =>
 {
-   const path = normalize (join (ROOT, decodeURIComponent (new URL (req .url, "http://x") .pathname)));
-
-   if (!path .startsWith (ROOT)) { res .writeHead (403); return res .end (); }
+   const s = safeResolve (new URL (req .url, "http://x") .pathname, ROOT);
+   if (s .status !== 200) { res .writeHead (s .status); return res .end (); }
+   const path = s .path;
 
    try
    {
