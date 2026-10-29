@@ -1,6 +1,7 @@
 # Rust tests for pull requests, on the self-hosted Linux runners of the xite-ci runner group (Proxmox VM, no GPU).
-# The VM provides Rust 1.95.0 and the system libraries; the toolchain and apt steps find them installed. The apt
-# steps wait for the dpkg lock, because two runners share the VM.
+# The VM provides Rust 1.95.0 and the system libraries. Each runner has its own unprivileged user, home and toolchain,
+# and no sudo, so a job on the VM installs no package: the "System libraries" step runs on a GitHub-hosted runner
+# only, and on the VM a check fails the job when a library is missing.
 #
 # Missing evidence never passes in silence (crates/cm-evidence). CM_EVIDENCE=ci lets a test skip only
 # for a reason in CM_EVIDENCE_ALLOW; each permitted skip is one line in CM_EVIDENCE_LOG, and the
@@ -55,11 +56,18 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: System libraries
+        if: runner.environment == 'github-hosted'
         run: |
-          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get update
           # libxkbcommon-x11-0 and the Mesa software Vulkan driver (lavapipe) let winit_event_loop_under_xvfb
           # run the real cm-edit binary on a private X display; without them it crashes (first CI run).
-          sudo apt-get -o DPkg::Lock::Timeout=300 install -y --no-install-recommends pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 mesa-vulkan-drivers xvfb
+          sudo apt-get install -y --no-install-recommends pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 mesa-vulkan-drivers xvfb
+
+      - name: System libraries (self-hosted VM)
+        if: runner.environment == 'self-hosted'
+        run: |
+          dpkg-query -W -f='${db:Status-Status} ${Package}\n' pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 mesa-vulkan-drivers xvfb > "$RUNNER_TEMP/packages.txt"
+          awk '$1 != "installed" { print "::error::Not installed: " $2; bad = 1 } END { exit bad }' "$RUNNER_TEMP/packages.txt"
 
       - uses: Swatinem/rust-cache@v2
         with:
