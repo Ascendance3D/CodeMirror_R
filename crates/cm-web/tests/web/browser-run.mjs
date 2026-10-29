@@ -121,7 +121,7 @@ const LONG = Array.from({ length: 300 }, (_, i) => `line ${i} ${"x".repeat(i % 7
 const MOBILE = { "chromium-mobile": "Pixel 7", "webkit-mobile": "iPhone 15" };
 const BROWSERS = ["chromium", "firefox", "webkit", ...Object.keys(MOBILE)];
 
-// The CM5 comparisons each run must make, by section (88 in all). A section may run
+// The CM5 comparisons each run must make, by section (138 in all, 50 of them the line classes). A section may run
 // fewer only when the environment cannot perform its action, which is recorded as
 // UNSUPPORTED; any other shortfall fails the run.
 // REQUIRED counts comparisons with CM5 (needs the reference). REQUIRED_WEB counts the cm-web-only checks that
