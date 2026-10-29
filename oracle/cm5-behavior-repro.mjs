@@ -16,6 +16,7 @@ import { createServer } from "node:http";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { extname, join, normalize } from "node:path";
+import { safeResolve } from "./server-utils.mjs";
 import { fileURLToPath } from "node:url";
 
 const HERE = normalize (join (fileURLToPath (import.meta.url), ".."));
@@ -38,8 +39,9 @@ const server = createServer (async (req, res) =>
       res .writeHead (200, { "Content-Type": "text/html", "Cache-Control": "no-store" });
       return res .end (HARNESS);
    }
-   const path = normalize (join (ROOT, decodeURIComponent (url .pathname)));
-   if (!path .startsWith (ROOT)) { res .writeHead (403); return res .end (); }
+   const s = safeResolve (url .pathname, ROOT);
+   if (s .status !== 200) { res .writeHead (s .status); return res .end (); }
+   const path = s .path;
    try
    {
       const body = await readFile (path);

@@ -5,6 +5,10 @@ default theme and with the model geometry; 12 of 12 runs were bit-identical, dir
 `xvfb-run -a`. Record: .reports/codemirror-r/2026-10-26-p0-completion/renderer/RENDERER.md.
 Accepted: by owner direction, as part of P0's completed Linux acceptance scope (2026-10-26).
 Re-checked: 2026-10-26 P0 correction (M1); all 14 frames unchanged after the cursor clip.
+Re-recorded: 2026-10-28, issue #36 (gutters): line_numbers.png and line_numbers_2x.png only. The
+line-number gutter is now CM5's lineNumWidth + the 1 px .CodeMirror-gutters border (30 px for one
+digit; it was 29), checked against tests/data/cm5-gutters.json (3 engines). The other 12 candidates
+were byte-identical to their goldens on the same adapter.
 
 Policy: an image here is authoritative only for the adapter whose identity matches ADAPTER.txt
 in all seven fields. Other adapters (other Linux GPUs or drivers, macOS Metal) need their own

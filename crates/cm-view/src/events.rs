@@ -147,6 +147,10 @@ pub struct InputChange {
     pub text: Vec<String>,
     pub origin: String,
 }
+/// `gutterClick`/`gutterContextMenu`: `(cm, line, gutter className, event)`.
+pub type GutterHandler = dyn Fn(&mut Cx, i64, &str, &crate::mouse::MouseEvent);
+/// `lineWidgetAdded`/`lineWidgetCleared`/`lineWidgetChanged`: `(cm, widget, line)`.
+pub type WidgetHandler = dyn Fn(&mut Cx, &cm_core::LineWidget, i64);
 pub type BeforeChangeHandler = dyn Fn(&Doc, EditorId, &mut BeforeChange);
 pub type BeforeSelHandler = dyn Fn(&Doc, EditorId, &mut BeforeSelectionChange);
 
@@ -178,6 +182,13 @@ pub struct EditorListeners {
     /// Immediate: the editor gained or lost focus.
     pub focus: Listeners<EditorHandler>,
     pub blur: Listeners<EditorHandler>,
+    /// Immediate: a click or context menu in a gutter column (line, gutter class).
+    pub gutter_click: Listeners<GutterHandler>,
+    pub gutter_context_menu: Listeners<GutterHandler>,
+    /// Delayed: `lineWidgetAdded`/`Cleared`/`Changed` `(cm, widget, line)`.
+    pub line_widget_added: Listeners<WidgetHandler>,
+    pub line_widget_cleared: Listeners<WidgetHandler>,
+    pub line_widget_changed: Listeners<WidgetHandler>,
     /// String-named and custom events, and the DOM-event hooks (immediate, when
     /// signalled).
     pub named: NamedListeners<NamedEditorHandler>,
@@ -205,6 +216,11 @@ impl EditorListeners {
             .or_else(|| removed(self.electric_input.remove(id)))
             .or_else(|| removed(self.focus.remove(id)))
             .or_else(|| removed(self.blur.remove(id)))
+            .or_else(|| removed(self.gutter_click.remove(id)))
+            .or_else(|| removed(self.gutter_context_menu.remove(id)))
+            .or_else(|| removed(self.line_widget_added.remove(id)))
+            .or_else(|| removed(self.line_widget_cleared.remove(id)))
+            .or_else(|| removed(self.line_widget_changed.remove(id)))
             .or_else(|| removed(self.named.remove(id)))
     }
 }
@@ -250,6 +266,10 @@ pub(crate) struct OpRecord {
     pub display: Vec<DisplayEvent>,
     /// `op.updateMaxLine`: the longest line must be found again (endOperation_R1).
     pub update_max_line: bool,
+    /// `adjustScrollWhenAboveVisible` requests of line widgets: (line, height diff).
+    pub widget_scroll: Vec<(cm_core::LineHandle, f64)>,
+    /// `cm.curOp.forceUpdate` set by the model (line widgets).
+    pub force_update: bool,
 }
 
 impl OpRecord {
@@ -265,6 +285,8 @@ impl OpRecord {
             maybe_unhidden: Vec::new(),
             display: Vec::new(),
             update_max_line: false,
+            widget_scroll: Vec::new(),
+            force_update: false,
         }
     }
 }
@@ -353,6 +375,17 @@ impl EditorShared {
     /// `regLineChange(cm, line, "text")` for each of `lines`, in the open operation.
     pub(crate) fn reg_line_changes(&self, lines: &[i64]) {
         self.with_op(|op| op.regs.extend(lines.iter().copied().map(ViewChange::Line)));
+    }
+
+    /// `regChange(cm)`: every line of the document, in the open operation.
+    pub(crate) fn reg_change_all(&self, first: i64, size: i64) {
+        self.with_op(|op| {
+            op.regs.push(ViewChange::Range {
+                from: first,
+                to: first + size,
+                lendiff: 0,
+            })
+        });
     }
 
     fn with_op(&self, f: impl FnOnce(&mut OpRecord)) {
@@ -682,6 +715,50 @@ impl EditorSink for EditorShared {
             }
         });
     }
+    fn line_widget(
+        &self,
+        _doc: &Doc,
+        line: &cm_core::LineHandle,
+        _line_no: i64,
+        diff: f64,
+        _widget: &cm_core::LineWidget,
+        event: cm_core::LineWidgetEvent,
+    ) {
+        use cm_core::LineWidgetEvent as E;
+        // The line's height changed: measure it again.
+        {
+            let mut h = self.heights.borrow_mut();
+            h.has_widgets = true;
+            h.heights.clear();
+            h.prefix = None;
+        }
+        self.with_op(|op| {
+            op.widget_scroll.push((line.clone(), diff));
+            // addLineWidget and changed() set forceUpdate; clear() redraws the line
+            // through regLineChange.
+            op.force_update |= event != E::Cleared;
+        });
+    }
+    fn signal_line_widget(
+        &self,
+        widget: &cm_core::LineWidget,
+        line_no: i64,
+        event: cm_core::LineWidgetEvent,
+    ) {
+        use cm_core::LineWidgetEvent as E;
+        let snap = {
+            let ls = self.ls.borrow();
+            match event {
+                E::Added => ls.line_widget_added.snapshot(),
+                E::Cleared => ls.line_widget_cleared.snapshot(),
+                E::Changed => ls.line_widget_changed.snapshot(),
+            }
+        };
+        for e in snap.iter() {
+            let (f, w) = (e.f.clone(), widget.clone());
+            self.later(move |cx| f(cx, &w, line_no));
+        }
+    }
     fn line_changed(&self, _doc: &Doc, line: i64, _kind: cm_core::LineChange) {
         // `regLineChange(cm, line, "class" | "gutter")`: the rendered line is redrawn.
         self.with_op(|op| op.regs.push(ViewChange::Line(line)));
@@ -814,6 +891,11 @@ listener_tables! {
     electric_input: LineHandler,
     focus: EditorHandler,
     blur: EditorHandler,
+    gutter_click: GutterHandler,
+    gutter_context_menu: GutterHandler,
+    line_widget_added: WidgetHandler,
+    line_widget_cleared: WidgetHandler,
+    line_widget_changed: WidgetHandler,
 }
 
 /// A handle on an editor's listener tables, usable without the editor (for example

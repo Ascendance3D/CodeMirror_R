@@ -1,0 +1,1680 @@
+{
+ "version": "5.65.21",
+ "cases": {
+  "plain": {
+   "spec": {
+    "name": "javascript"
+   },
+   "lines": [
+    {
+     "line": "var a = b;",
+     "toks": [
+      [
+       "var",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "a",
+       "def",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "=",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "b",
+       "variable",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "a + c",
+     "toks": [
+      [
+       "a",
+       "variable",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "+",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "c",
+       "variable",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "`x${",
+     "toks": [
+      [
+       "`x${",
+       "string-2",
+       true,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "y",
+     "toks": [
+      [
+       "y",
+       "variable",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    }
+   ]
+  },
+  "local_vars": {
+   "spec": {
+    "name": "javascript",
+    "localVars": [
+     "x",
+     "y"
+    ]
+   },
+   "lines": [
+    {
+     "line": "x + y + z;",
+     "toks": [
+      [
+       "x",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "+",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "y",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "+",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "z",
+       "variable",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [
+      "x",
+      "y"
+     ],
+     "globalVars": null,
+     "context": true,
+     "indent": 0
+    },
+    {
+     "line": "var q = x;",
+     "toks": [
+      [
+       "var",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "q",
+       "def",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "=",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "x",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [
+      "q",
+      "x",
+      "y"
+     ],
+     "globalVars": null,
+     "context": true,
+     "indent": 0
+    },
+    {
+     "line": "q; function f(p) { return p + x }",
+     "toks": [
+      [
+       "q",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "function",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "f",
+       "def",
+       false,
+       false
+      ],
+      [
+       "(",
+       null,
+       true,
+       true
+      ],
+      [
+       "p",
+       "def",
+       false,
+       false
+      ],
+      [
+       ")",
+       null,
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "{",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "return",
+       "keyword",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "p",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "+",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "x",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "}",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [
+      "f",
+      "q",
+      "x",
+      "y"
+     ],
+     "globalVars": null,
+     "context": true,
+     "indent": 0
+    },
+    {
+     "line": "f(q)",
+     "toks": [
+      [
+       "f",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       "(",
+       null,
+       true,
+       true
+      ],
+      [
+       "q",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       ")",
+       null,
+       false,
+       false
+      ]
+     ],
+     "localVars": [
+      "f",
+      "q",
+      "x",
+      "y"
+     ],
+     "globalVars": null,
+     "context": true,
+     "indent": 0
+    }
+   ]
+  },
+  "global_vars_true": {
+   "spec": {
+    "name": "javascript",
+    "globalVars": true
+   },
+   "lines": [
+    {
+     "line": "var g = 1, h;",
+     "toks": [
+      [
+       "var",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "g",
+       "def",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "=",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "1",
+       "number",
+       false,
+       false
+      ],
+      [
+       ",",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "h",
+       "def",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [],
+     "globalVars": [
+      "h",
+      "g"
+     ],
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "function k(a) { var inner; }",
+     "toks": [
+      [
+       "function",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "k",
+       "def",
+       false,
+       false
+      ],
+      [
+       "(",
+       null,
+       true,
+       true
+      ],
+      [
+       "a",
+       "def",
+       false,
+       false
+      ],
+      [
+       ")",
+       null,
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "{",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "var",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "inner",
+       "def",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "}",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [
+      "inner"
+     ],
+     "globalVars": [
+      "k",
+      "h",
+      "g"
+     ],
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "let m; g + m",
+     "toks": [
+      [
+       "let",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "m",
+       "def",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "g",
+       "variable",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "+",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "m",
+       "variable",
+       false,
+       false
+      ]
+     ],
+     "localVars": [
+      "inner"
+     ],
+     "globalVars": [
+      "m",
+      "k",
+      "h",
+      "g"
+     ],
+     "context": false,
+     "indent": 0
+    }
+   ]
+  },
+  "global_vars_list": {
+   "spec": {
+    "name": "javascript",
+    "globalVars": [
+     "pre"
+    ]
+   },
+   "lines": [
+    {
+     "line": "var g;",
+     "toks": [
+      [
+       "var",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "g",
+       "def",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [],
+     "globalVars": [
+      "g",
+      "pre"
+     ],
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "var pre;",
+     "toks": [
+      [
+       "var",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "pre",
+       "def",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [],
+     "globalVars": [
+      "g",
+      "pre"
+     ],
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "pre + g",
+     "toks": [
+      [
+       "pre",
+       "variable",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "+",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "g",
+       "variable",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": [
+      "g",
+      "pre"
+     ],
+     "context": false,
+     "indent": 0
+    }
+   ]
+  },
+  "global_and_local": {
+   "spec": {
+    "name": "javascript",
+    "localVars": [
+     "l"
+    ],
+    "globalVars": true
+   },
+   "lines": [
+    {
+     "line": "var a;",
+     "toks": [
+      [
+       "var",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "a",
+       "def",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [
+      "a",
+      "l"
+     ],
+     "globalVars": null,
+     "context": true,
+     "indent": 0
+    },
+    {
+     "line": "{ var b; let c; }",
+     "toks": [
+      [
+       "{",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "var",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "b",
+       "def",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "let",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "c",
+       "def",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "}",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [
+      "a",
+      "l"
+     ],
+     "globalVars": null,
+     "context": true,
+     "indent": 0
+    },
+    {
+     "line": "a + b + l",
+     "toks": [
+      [
+       "a",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "+",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "b",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "+",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "l",
+       "variable-2",
+       false,
+       false
+      ]
+     ],
+     "localVars": [
+      "a",
+      "l"
+     ],
+     "globalVars": null,
+     "context": true,
+     "indent": 0
+    }
+   ]
+  },
+  "global_vars_no_track_scope": {
+   "spec": {
+    "name": "javascript",
+    "globalVars": true,
+    "trackScope": false
+   },
+   "lines": [
+    {
+     "line": "var a;",
+     "toks": [
+      [
+       "var",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "a",
+       "def",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "a",
+     "toks": [
+      [
+       "a",
+       "variable",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    }
+   ]
+  },
+  "skip_expression_after_assign": {
+   "spec": {
+    "name": "javascript"
+   },
+   "lines": [
+    {
+     "line": "var a =",
+     "toks": [
+      [
+       "var",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "a",
+       "def",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "=",
+       "operator",
+       true,
+       true
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 4
+    },
+    {
+     "line": "@skip",
+     "toks": [],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 4
+    },
+    {
+     "line": "; b",
+     "toks": [
+      [
+       ";",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "b",
+       "variable",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "c",
+     "toks": [
+      [
+       "c",
+       "variable",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    }
+   ]
+  },
+  "skip_expression_in_call": {
+   "spec": {
+    "name": "javascript"
+   },
+   "lines": [
+    {
+     "line": "f(",
+     "toks": [
+      [
+       "f",
+       "variable",
+       false,
+       false
+      ],
+      [
+       "(",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 2
+    },
+    {
+     "line": "@skip",
+     "toks": [],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 2
+    },
+    {
+     "line": ", 2)",
+     "toks": [
+      [
+       ",",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "2",
+       "number",
+       false,
+       false
+      ],
+      [
+       ")",
+       null,
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "x",
+     "toks": [
+      [
+       "x",
+       "variable",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    }
+   ]
+  },
+  "skip_expression_statement": {
+   "spec": {
+    "name": "javascript"
+   },
+   "lines": [
+    {
+     "line": "@skip",
+     "toks": [],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "+ 1",
+     "toks": [
+      [
+       "+",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "1",
+       "number",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "if (",
+     "toks": [
+      [
+       "if",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "(",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 2
+    },
+    {
+     "line": "@skip",
+     "toks": [],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 4
+    },
+    {
+     "line": ") y",
+     "toks": [
+      [
+       ")",
+       null,
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "y",
+       "variable",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    }
+   ]
+  },
+  "expression_allowed_regexp": {
+   "spec": {
+    "name": "javascript"
+   },
+   "lines": [
+    {
+     "line": "x = /a/; y / 2",
+     "toks": [
+      [
+       "x",
+       "variable",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "=",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "/a/",
+       "string-2",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "y",
+       "variable",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "/",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "2",
+       "number",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "return /b/",
+     "toks": [
+      [
+       "return",
+       "keyword",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "/b/",
+       "string-2",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    },
+    {
+     "line": "z /= 3",
+     "toks": [
+      [
+       "z",
+       "variable",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "/=",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "3",
+       "number",
+       false,
+       false
+      ]
+     ],
+     "localVars": [],
+     "globalVars": null,
+     "context": false,
+     "indent": 0
+    }
+   ]
+  },
+  "typescript_local": {
+   "spec": {
+    "name": "javascript",
+    "typescript": true,
+    "localVars": [
+     "t"
+    ]
+   },
+   "lines": [
+    {
+     "line": "let u: number = t;",
+     "toks": [
+      [
+       "let",
+       "keyword",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "u",
+       "def",
+       false,
+       false
+      ],
+      [
+       ":",
+       null,
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "number",
+       "type",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "=",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "t",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       ";",
+       null,
+       true,
+       true
+      ]
+     ],
+     "localVars": [
+      "u",
+      "t"
+     ],
+     "globalVars": null,
+     "context": true,
+     "indent": 0
+    },
+    {
+     "line": "t + u",
+     "toks": [
+      [
+       "t",
+       "variable-2",
+       false,
+       false
+      ],
+      [
+       " ",
+       null,
+       false,
+       false
+      ],
+      [
+       "+",
+       "operator",
+       true,
+       true
+      ],
+      [
+       " ",
+       null,
+       true,
+       true
+      ],
+      [
+       "u",
+       "variable-2",
+       false,
+       false
+      ]
+     ],
+     "localVars": [
+      "u",
+      "t"
+     ],
+     "globalVars": null,
+     "context": true,
+     "indent": 0
+    }
+   ]
+  }
+ }
+}

@@ -28,6 +28,7 @@ pub use model::gutter::LineInfo;
 pub use model::history::{HistoryChangeData, HistoryData, HistoryEventData, HistorySize};
 pub use model::line::{GutterMarker, GutterMarkers, LineHandle};
 pub use model::line_class::{LineSel, LineWhere};
+pub use model::line_widget::{LineWidget, LineWidgetEvent, LineWidgetOptions};
 pub use model::mark_text::{
     MarkOptions, Marker, MarkerFind, MarkerType, SharedTextMarker, TextMarker,
 };
