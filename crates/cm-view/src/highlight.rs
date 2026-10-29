@@ -5,6 +5,8 @@
 //! The cached values live on cm-core's line objects ([`LineHandle::state_after`],
 //! [`LineHandle::styles`]), which `updateLine` clears exactly like the JS.
 //!
+//! `runMode` honors `addModeClass` and a mode's own `flattenSpans`.
+//!
 //! Not ported: overlays (`addOverlay`, `cm.state.overlays`, `baseToken`), so
 //! `highlightLine` runs the mode alone. Mode line classes (`line-*` /
 //! `line-background-*` tokens) are collected into `Styles::classes`, but the renderer
@@ -18,7 +20,9 @@ use cm_core::text::Text;
 use cm_core::util::misc::count_column;
 use cm_core::util::string_stream::{LineOracle, StringStream};
 use cm_core::{Doc, LineHandle, Pos};
-use cm_modes::{JsArg, Mode, State, copy_state, read_token, start_state, with_inner_mode_mut};
+use cm_modes::{
+    ConfigValue, JsArg, Mode, State, copy_state, read_token, start_state, with_inner_mode_mut,
+};
 
 /// `SavedContext` / a bare saved state: what `line.stateAfter` holds.
 #[derive(Debug)]
@@ -107,6 +111,8 @@ pub struct HighlightState {
     pub tab_size: i64,
     pub max_highlight_length: usize,
     pub flatten_spans: bool,
+    /// `options.addModeClass`: prefix each style with `m-<inner mode name>`.
+    pub add_mode_class: bool,
     /// `display.viewFrom` / `display.viewTo`: lines in view get their state saved.
     pub view_from: i64,
     pub view_to: i64,
@@ -121,6 +127,7 @@ impl HighlightState {
             tab_size: 4,
             max_highlight_length: 10000,
             flatten_spans: true,
+            add_mode_class: false,
             view_from: first,
             view_to: first,
         }
@@ -342,7 +349,13 @@ fn run_mode_line(
     line_classes: &mut (Option<Vec<String>>, Option<Vec<String>>),
     force_to_end: bool,
 ) {
-    let mut flatten = hs.flatten_spans;
+    // `mode.flattenSpans`, unless null/undefined, beats `cm.options.flattenSpans`.
+    let mut flatten = match mode.prop("flattenSpans") {
+        None | Some(ConfigValue::Null) => hs.flatten_spans,
+        Some(v) => v.truthy(),
+    };
+    // `cm.options.addModeClass && [null]`: `readToken` stores the inner mode here.
+    let mut inner: Option<Option<Rc<dyn Mode>>> = hs.add_mode_class.then_some(None);
     let mut cur_start = 0usize;
     let mut cur_style: Option<String> = None;
     let oracle = CtxOracle {
@@ -359,7 +372,7 @@ fn run_mode_line(
             extract_line_classes(call_blank_line(mode, &mut ctx.state), line_classes);
         }
         while !stream.eol() {
-            let style;
+            let mut style;
             if stream.pos > hs.max_highlight_length {
                 flatten = false;
                 if force_to_end {
@@ -368,9 +381,20 @@ fn run_mode_line(
                 stream.pos = text.len();
                 style = None;
             } else {
-                let tok = read_token(mode, &mut stream, &mut ctx.state, None)
+                let tok = read_token(mode, &mut stream, &mut ctx.state, inner.as_mut())
                     .unwrap_or_else(|e| panic!("{e}"));
                 style = extract_line_classes(tok, line_classes);
+            }
+            // `style = "m-" + (style ? mName + " " + style : mName)` for a named
+            // inner mode.
+            if let Some(Some(im)) = &inner {
+                let m_name = im.name();
+                if !m_name.is_empty() {
+                    style = Some(match style {
+                        Some(s) if !s.is_empty() => format!("m-{m_name} {s}"),
+                        _ => format!("m-{m_name}"),
+                    });
+                }
             }
             if !flatten || cur_style != style {
                 while cur_start < stream.start {

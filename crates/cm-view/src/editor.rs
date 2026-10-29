@@ -77,6 +77,8 @@ pub struct EditorOptions {
     pub selections_may_touch: bool,
     pub max_highlight_length: usize,
     pub flatten_spans: bool,
+    /// `addModeClass`: styles get an `m-<inner mode name>` prefix.
+    pub add_mode_class: bool,
     /// `lineSeparator`.
     pub line_separator: Option<String>,
     /// The platform is a Mac (`mac`, `flipCtrlCmd`).
@@ -107,6 +109,7 @@ impl Default for EditorOptions {
             selections_may_touch: false,
             max_highlight_length: 10000,
             flatten_spans: true,
+            add_mode_class: false,
             line_separator: None,
             mac: cfg!(target_os = "macos"),
         }
@@ -423,6 +426,7 @@ impl Editor {
         hs.tab_size = options.tab_size;
         hs.max_highlight_length = options.max_highlight_length;
         hs.flatten_spans = options.flatten_spans;
+        hs.add_mode_class = options.add_mode_class;
         let hs = Rc::new(RefCell::new(hs));
         let heights = Rc::new(RefCell::new(HeightCache::default()));
         let shared = EditorShared::new(
@@ -509,6 +513,24 @@ impl Editor {
         self.run_op(|cm| {
             cm.mode = cm.registry.get_mode(&mode_opts, &spec);
             cm.mode_spec = spec;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.force_update = true;
+        });
+    }
+    /// `setOption("flattenSpans", v)`: `resetModeState` (src/edit/options.js:151).
+    pub fn set_flatten_spans(&mut self, v: bool) {
+        self.run_op(|cm| {
+            cm.options.flatten_spans = v;
+            cm.hs.borrow_mut().flatten_spans = v;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.force_update = true;
+        });
+    }
+    /// `setOption("addModeClass", v)`: `resetModeState` (src/edit/options.js:152).
+    pub fn set_add_mode_class(&mut self, v: bool) {
+        self.run_op(|cm| {
+            cm.options.add_mode_class = v;
+            cm.hs.borrow_mut().add_mode_class = v;
             highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
             cm.force_update = true;
         });
