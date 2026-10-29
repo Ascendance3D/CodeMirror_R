@@ -110,7 +110,6 @@ pub struct EditorWindow {
     mods: ModifiersState,
     cursor: (f64, f64),
     mouse_down: bool,
-    blink_start: Instant,
     focused: bool,
     script: Option<std::collections::VecDeque<Step>>,
     /// The manual clock of a scripted run (`pause` advances it).
@@ -132,7 +131,6 @@ impl EditorWindow {
             mods: ModifiersState::empty(),
             cursor: (0.0, 0.0),
             mouse_down: false,
-            blink_start: Instant::now(),
             focused: true,
             script: script.map(Into::into),
             exit_error: None,
@@ -160,8 +158,8 @@ impl EditorWindow {
         let view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let elapsed = self.blink_start.elapsed().as_millis();
-        let cursor_visible = !self.focused || (elapsed / 530) % 2 == 0;
+        // `restartBlink` / `cursorBlinkRate` live in the editor.
+        let cursor_visible = app.editor.cursor_blink_visible();
         st.renderer.render(
             &st.gpu,
             &mut app.editor,
@@ -181,7 +179,6 @@ impl EditorWindow {
     fn input(&mut self, input: Input) {
         if let Some(app) = &mut self.app {
             if app.handle(input) {
-                self.blink_start = Instant::now();
                 if let Some(st) = &self.state {
                     st.window.request_redraw();
                 }
@@ -312,6 +309,8 @@ impl ApplicationHandler for EditorWindow {
             Ok(mut app) => {
                 app.editor
                     .set_size(config.width as f64, config.height as f64);
+                // The window starts focused (until a `Focused(false)` arrives).
+                app.set_focused(self.focused);
                 window.set_title(&app.title());
                 self.app = Some(app);
             }
@@ -444,19 +443,31 @@ impl ApplicationHandler for EditorWindow {
             event_loop.set_control_flow(ControlFlow::Poll);
             return;
         }
+        if let Some(app) = &mut self.app {
+            app.editor.run_timers();
+        }
         let more = self.app.as_mut().is_some_and(|a| a.idle());
         if let Some(st) = &self.state {
             if more {
                 st.window.request_redraw();
                 event_loop.set_control_flow(ControlFlow::Poll);
             } else {
-                // Cursor blink (`cursorBlinkRate` 530ms).
-                let next = Instant::now()
-                    + Duration::from_millis(
-                        530 - (self.blink_start.elapsed().as_millis() % 530) as u64,
-                    );
+                // The cursor blink (`cursorBlinkRate`) and the editor's timers.
+                let wait = self.app.as_ref().and_then(|a| {
+                    match (a.editor.next_blink_in(), a.editor.next_timer_in()) {
+                        (Some(b), Some(t)) => Some(b.min(t)),
+                        (b, t) => b.or(t),
+                    }
+                });
                 st.window.request_redraw();
-                event_loop.set_control_flow(ControlFlow::WaitUntil(next));
+                match wait {
+                    Some(ms) => {
+                        let next =
+                            Instant::now() + Duration::from_millis(ms.ceil().max(1.0) as u64);
+                        event_loop.set_control_flow(ControlFlow::WaitUntil(next));
+                    }
+                    None => event_loop.set_control_flow(ControlFlow::Wait),
+                }
             }
         }
     }

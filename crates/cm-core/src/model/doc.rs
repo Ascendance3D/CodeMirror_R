@@ -41,7 +41,7 @@ use super::spans::{
 };
 use super::tree::Tree;
 use crate::CmError;
-use crate::events::{ListenerId, Listeners, removed};
+use crate::events::{Args, Entry, ListenerId, Listeners, NamedListeners, removed};
 use crate::operation_group::{EditorId, EditorSink, Editors, NoEditors, run_in_op};
 use crate::pos::{CH_END, Pos, PosRef};
 use crate::text::{Text, from_u16, join, split_by, split_lines_auto, to_u16};
@@ -119,6 +119,9 @@ pub(crate) type BeforeChangeHandler = dyn Fn(&Doc, &mut BeforeChange);
 pub(crate) type BeforeSelHandler = dyn Fn(&Doc, &mut BeforeSelectionChange);
 pub(crate) type ChangeHandler = dyn Fn(&Doc, &ChangeObj);
 
+/// A handler of a string-named document event.
+pub type DocNamedHandler = dyn Fn(&Doc, Args<'_>);
+
 pub(crate) struct DocInner {
     pub id: u32,
     pub first: i64,
@@ -148,6 +151,8 @@ pub(crate) struct DocInner {
     pub cursor_activity: Listeners<dyn Fn(&Doc)>,
     /// `historyAdded` (immediate).
     pub history_added: Listeners<dyn Fn(&Doc)>,
+    /// String-named and custom events (`on(doc, name, f)`).
+    pub named: NamedListeners<DocNamedHandler>,
     /// `cm.state.suppressEdits`: set while a key handler runs in a read-only editor.
     pub suppress_edits: bool,
     /// The cursor at each `ensureCursorVisible(doc.cm)` call of `setSelectionNoUndo`
@@ -265,6 +270,7 @@ impl Doc {
             change: Listeners::default(),
             cursor_activity: Listeners::default(),
             history_added: Listeners::default(),
+            named: NamedListeners::default(),
         };
         let doc = Doc(Rc::new(RefCell::new(inner)));
         let text = match lines {
@@ -629,8 +635,39 @@ impl Doc {
                 .or_else(|| removed(i.change.remove(id)))
                 .or_else(|| removed(i.cursor_activity.remove(id)))
                 .or_else(|| removed(i.history_added.remove(id)))
+                .or_else(|| removed(i.named.remove(id)))
         };
         gone.is_some()
+    }
+    /// `on(doc, name, f)` for a string-named or custom event: `f` gets the document
+    /// and the values of [`Doc::signal_event`]. Remove it with [`Doc::off`].
+    pub fn on_event<F: Fn(&Doc, Args<'_>) + 'static>(&self, name: &str, f: F) -> ListenerId {
+        self.inner_mut().named.on_rc(name, Rc::new(f))
+    }
+    /// [`Doc::on_event`] with a shared handler, for removal by identity.
+    pub fn on_event_rc(&self, name: &str, f: Rc<DocNamedHandler>) -> ListenerId {
+        self.inner_mut().named.on_rc(name, f)
+    }
+    /// `off(doc, name, f)`: remove the first handler of `name` that is `f`.
+    pub fn off_event_fn(&self, name: &str, f: &Rc<DocNamedHandler>) -> bool {
+        let gone = self.inner_mut().named.remove_fn(name, f);
+        gone.is_some()
+    }
+    /// `getHandlers(doc, name)`: the named handlers of `name` as of now.
+    pub fn get_handlers(&self, name: &str) -> Rc<[Entry<DocNamedHandler>]> {
+        self.inner().named.get_handlers(name)
+    }
+    /// `hasHandler(doc, name)` for the named table.
+    pub fn has_handler(&self, name: &str) -> bool {
+        self.inner().named.has_handler(name)
+    }
+    /// `signal(doc, name, ...values)`: call the named handlers of `name` now, over
+    /// the list as it was when the signal started.
+    pub fn signal_event(&self, name: &str, args: Args<'_>) {
+        let hs = self.get_handlers(name);
+        for e in hs.iter() {
+            (e.f)(self, args);
+        }
     }
     /// `on("change", f)`: called after each change to this document, with the
     /// change as applied here. Delayed (`signalLater`): it runs when the outermost

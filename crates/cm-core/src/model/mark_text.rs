@@ -25,7 +25,7 @@ use super::spans::{
     remove_marked_span,
 };
 use crate::CmError;
-use crate::events::{ListenerId, Listeners, removed};
+use crate::events::{Args, Entry, ListenerId, Listeners, NamedHandler, NamedListeners, removed};
 use crate::operation_group::{Delayed, signal_later};
 use crate::pos::{Pos, cmp};
 
@@ -98,6 +98,8 @@ pub(crate) struct MarkerData {
     /// `hide` / `unhide` (immediate, at the end of an editor operation).
     pub hide: Listeners<dyn Fn()>,
     pub unhide: Listeners<dyn Fn()>,
+    /// String-named and custom events.
+    pub named: NamedListeners<NamedHandler>,
 }
 
 /// A marker in one document (`TextMarker`). Clones share the marker.
@@ -194,8 +196,25 @@ impl TextMarker {
                 .or_else(|| removed(d.before_cursor_enter.remove(id)))
                 .or_else(|| removed(d.hide.remove(id)))
                 .or_else(|| removed(d.unhide.remove(id)))
+                .or_else(|| removed(d.named.remove(id)))
         };
         gone.is_some()
+    }
+    /// `on(marker, name, f)` for a string-named or custom event. Remove it with
+    /// [`TextMarker::off`].
+    pub fn on_event<F: Fn(Args<'_>) + 'static>(&self, name: &str, f: F) -> ListenerId {
+        self.data_mut().named.on_rc(name, Rc::new(f))
+    }
+    /// `getHandlers(marker, name)` for the named table.
+    pub fn get_handlers(&self, name: &str) -> Rc<[Entry<NamedHandler>]> {
+        self.data().named.get_handlers(name)
+    }
+    /// `signal(marker, name, ...values)`.
+    pub fn signal_event(&self, name: &str, args: Args<'_>) {
+        let hs = self.get_handlers(name);
+        for e in hs.iter() {
+            (e.f)(args);
+        }
     }
     /// `signal(m, "beforeCursorEnter")`.
     pub(crate) fn signal_before_cursor_enter(&self) {
@@ -627,6 +646,7 @@ pub(crate) fn mark_text_inner(
         before_cursor_enter: Listeners::default(),
         hide: Listeners::default(),
         unhide: Listeners::default(),
+        named: NamedListeners::default(),
     })));
     let diff = cmp(&from, &to);
     // Don't connect empty markers unless clearWhenEmpty is false.

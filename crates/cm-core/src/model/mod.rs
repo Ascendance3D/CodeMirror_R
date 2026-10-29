@@ -8,6 +8,7 @@ pub mod gutter;
 pub mod history;
 pub mod line;
 pub mod line_class;
+pub mod line_widget;
 pub mod mark_text;
 pub mod selection;
 pub mod selection_updates;

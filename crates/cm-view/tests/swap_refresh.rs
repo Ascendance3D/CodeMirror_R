@@ -179,3 +179,19 @@ fn on_resize_applies_metrics_and_size() {
     assert_eq!(cm.metrics.char_width, 7.0);
     assert!(log.borrow().is_empty());
 }
+
+/// Line widgets belong to their document: swapping in a document with a widget
+/// gives its line the widget's height, and swapping back drops it.
+#[test]
+fn swap_doc_line_widget_heights() {
+    let mut a = editor_with_doc(Doc::new("a\nb\nc"), Spec::Null);
+    let th = Metrics::test_grid().text_height;
+    let mut b = editor_with_doc(Doc::new("x\ny\nz"), Spec::Null);
+    b.add_line_widget(1, Rc::new(()), 30.0, Default::default());
+    let bdoc = b.swap_doc(Doc::new("")).unwrap();
+    assert_eq!(a.height_at_line(2), 2.0 * th);
+    let adoc = a.swap_doc(bdoc).unwrap();
+    assert_eq!(a.height_at_line(2), 2.0 * th + 30.0);
+    a.swap_doc(adoc).unwrap();
+    assert_eq!(a.height_at_line(2), 2.0 * th);
+}

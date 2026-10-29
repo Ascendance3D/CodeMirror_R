@@ -9,7 +9,7 @@ use std::rc::Rc;
 use super::changes::ChangeObj;
 use super::spans::{SpanArr, attach_marked_spans, detach_marked_spans};
 use super::tree::NodeId;
-use crate::events::{ListenerId, Listeners, removed};
+use crate::events::{Args, Entry, ListenerId, Listeners, NamedHandler, NamedListeners, removed};
 use crate::operation_group::{Delayed, signal_later};
 use crate::text::Text;
 
@@ -32,6 +32,8 @@ pub(crate) struct Line {
     pub gutter_markers: Option<GutterMarkers>,
     /// Line handle listeners (`change`, `delete`), allocated on first use.
     pub events: Option<Box<LineEvents>>,
+    /// `line.widgets` (`addLineWidget`).
+    pub widgets: Option<Vec<super::line_widget::LineWidget>>,
 }
 
 /// A gutter marker value. CM5 stores any truthy value, in practice a DOM node; here it is
@@ -76,6 +78,8 @@ pub(crate) type LineChangeHandler = dyn Fn(&LineHandle, &ChangeObj);
 pub(crate) struct LineEvents {
     pub change: Listeners<LineChangeHandler>,
     pub delete: Listeners<dyn Fn()>,
+    /// String-named and custom events.
+    pub named: NamedListeners<NamedHandler>,
 }
 
 /// `signalLater(line, "change", line, change)` (document_data.js:27).
@@ -128,6 +132,7 @@ pub(crate) fn new_line(text: Text, spans: Option<SpanArr>) -> LineRef {
         gutter_class: None,
         gutter_markers: None,
         events: None,
+        widgets: None,
     }));
     attach_marked_spans(&line, spans);
     line
@@ -168,13 +173,38 @@ impl LineHandle {
         let mut l = self.0.borrow_mut();
         l.events.get_or_insert_default().delete.on_rc(Rc::new(f))
     }
+    /// `on(line, name, f)` for a string-named or custom event. Remove it with
+    /// [`LineHandle::off`].
+    pub fn on_event<F: Fn(Args<'_>) + 'static>(&self, name: &str, f: F) -> ListenerId {
+        let mut l = self.0.borrow_mut();
+        l.events
+            .get_or_insert_default()
+            .named
+            .on_rc(name, Rc::new(f))
+    }
+    /// `getHandlers(line, name)` for the named table.
+    pub fn get_handlers(&self, name: &str) -> Rc<[Entry<NamedHandler>]> {
+        match &self.0.borrow().events {
+            Some(e) => e.named.get_handlers(name),
+            None => Rc::from(Vec::<Entry<NamedHandler>>::new()),
+        }
+    }
+    /// `signal(line, name, ...values)`.
+    pub fn signal_event(&self, name: &str, args: Args<'_>) {
+        let hs = self.get_handlers(name);
+        for e in hs.iter() {
+            (e.f)(args);
+        }
+    }
     /// Remove the line handler registered as `id`.
     pub fn off(&self, id: ListenerId) -> bool {
         let gone = {
             let mut l = self.0.borrow_mut();
-            l.events
-                .as_mut()
-                .and_then(|e| removed(e.change.remove(id)).or_else(|| removed(e.delete.remove(id))))
+            l.events.as_mut().and_then(|e| {
+                removed(e.change.remove(id))
+                    .or_else(|| removed(e.delete.remove(id)))
+                    .or_else(|| removed(e.named.remove(id)))
+            })
         };
         gone.is_some()
     }
