@@ -26,6 +26,7 @@ The host supplies these services:
 - **Time:** `cm_core::clock::set_override` / `set_host_clock`. On `wasm32-unknown-unknown` there is no system clock. Install `Date.now` there; without it the time is unknown, and `+`-origin edits do not merge in the history. See the `clock` module documentation.
 - **Files:** `cm_view::fileio::FileHost` (`StdFs`, `MemFiles`, or your own) through `App::open_with`. `read` returns `Ok(None)` only for a missing file, which opens empty. Every other failure is an `Err`, and `App::open_with` returns it without building an editor. `StdFs` treats only `NotFound` as missing. On `wasm32-unknown-unknown` every `StdFs` call returns `Unsupported`, so the browser supplies its own host (`cm-web`'s `JsFiles`).
 - **Clipboard:** `cm_view::app::Clipboard`.
+- **Window position:** `Editor::display.window_origin` (the editor's top-left in the host window) and `display.page_scroll` (the page scroll offset) for the "window" and "page" coordinate systems of `cursor_coords_in`, `char_coords_in`, `coords_char_in`, `line_at_height_in` and `height_at_line_in` (CM5's default is "page"). Both default to (0, 0), so without a host they are editor-relative. `crates/cm-view/tests/coord_systems.rs` compares all five methods in every system with `tests/data/cm5-coord-systems.json` (`oracle/cm5-coord-systems.mjs`).
 
 ## Reference
 
@@ -80,6 +81,8 @@ Recorded baselines (strict, `CM_EVIDENCE` unset, GPU adapter of the reviewed gol
 ## Events
 
 Editor, document, line and marker events follow CM5's order: immediate events (`beforeChange`, `beforeSelectionChange`, `beforeCursorEnter`, `historyAdded`, `focus`, `blur`) run at once; the others are delayed to the end of the outermost operation (or, outside any operation, to the host's next `fire_orphan_delayed`). Handlers are typed (`Editor::on_change`, `Doc::on_change`, `LineHandle::on_delete`, `TextMarker::on_hide`, …) and return a `ListenerId` for `off`. Editor handlers receive a `Cx` with `&mut Editor` and the other editors the caller can reach; several editors that share documents or call each other live in an `EditorSet`. Event state is per thread. A document method called directly on a document attached to an editor parks the editor's part of the operation until the editor's next call or `flush_parked`. A panic in a handler still ends the operation; `panic = "abort"` builds are not supported. See `crates/cm-core/src/operation_group.rs` and `crates/cm-view/src/events.rs`; the order is checked against CM5 recordings in `crates/cm-view/tests/editor_events.rs` and `editor_set.rs`.
+
+String-named and custom events (`on(emitter, name, f)`, `off`, `getHandlers`, `signal`) sit next to the typed lists: `Editor::on_event` / `signal_event` / `get_handlers`, the same on `Doc`, `LineHandle` and `TextMarker`, and `cm_core::Emitter` for any other object (an addon's hint data). Handlers get the signal's values as `&[&dyn Any]`. A typed event's name in the named table is reached only by a named `signal_event`. `Editor::on_dom_event(type, f)` and `signal_dom_event` port `signalDOMEvent`: the editor signals `keydown`, `keypress`, `mousedown`, `paste` and `scrollCursorIntoView` before handling them, and a handler that calls `DomEvent::prevent_default` or sets `codemirror_ignore` pre-empts the editor (`crates/cm-view/tests/named_events.rs`).
 
 ## Modes
 
