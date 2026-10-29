@@ -11,7 +11,8 @@
 //! Not ported:
 //! * the `scroll`/`swapDoc`/`refresh`/
 //!   `optionChange`/`gutterClick`/DOM editor events.
-//! * `addOverlay`/`removeOverlay`. `getHelper`/`getHelpers` are ported.
+//! * `addOverlay`/`removeOverlay`. `getHelper`/`getHelpers` are ported; `findWordAt`
+//!   consults the `wordChars` helper (misc.js:129-133).
 //! * `addLineClass`, `setGutterMarker` and the `gutters` option; `addLineWidget`,
 //!   `addWidget`.
 //! * collapsed ranges in layout: line heights and the viewport count every line
@@ -2150,7 +2151,8 @@ impl Editor {
                 0 => is_w(c),
                 1 => is_s(c),
                 // `!/\s/.test(ch) && !isWordChar(ch)`: "" (out of range) passes.
-                _ => !is_s(c) && !is_w(c),
+                // methods.js:345 tests punctuation with isWordChar(ch), no helper.
+                _ => !is_s(c) && !c.is_some_and(|c| cm_core::util::misc::is_word_char(&[c], None)),
             };
             while start > 0 && check(char_at(start - 1)) {
                 start -= 1;

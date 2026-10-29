@@ -20,7 +20,6 @@
 //! behave as if absent. The mode object has no `skipExpression` or
 //! `expressionAllowed` property (`expressionAllowed` is internal only). The
 //! `registerHelper("wordChars", "javascript", /[\w$]/)` call is ported.
-//! helpers).
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
