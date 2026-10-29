@@ -64,7 +64,10 @@ fn set_metrics_refreshes_geometry() {
     assert_eq!(cm.doc_height(), 121.0 * 19.0);
     // updateGutterSpace: three digits at the new char width; lineNumWidth =
     // round(max(text, 20) + 8) + 1 (line_numbers.js:32), plus the 1 px border.
-    assert_eq!(cm.gutter_width, (3.0 * 9.6328125f64).max(20.0).add(8.0).round() + 2.0);
+    assert_eq!(
+        cm.gutter_width,
+        (3.0 * 9.6328125f64).max(20.0).add(8.0).round() + 2.0
+    );
     assert_ne!(cm.gutter_width, g0);
     // The visible range follows the new line height.
     assert_eq!(cm.visible_lines(), (0, 10));

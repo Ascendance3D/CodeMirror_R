@@ -183,7 +183,7 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
     let from = editor.display.view_from.min(vis_from).max(first);
     let to = editor.display.view_to.max(vis_to + 1).min(end);
     let wrap = editor.options.line_wrapping;
-    let content_width = if wrap { 0.0 } else { editor.max_line_width() };
+    let content_width = if wrap { 0.0 } else { editor.sizer_width() };
 
     let mut lines = Vec::new();
     for line in from..to {
