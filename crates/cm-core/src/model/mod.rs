@@ -6,6 +6,7 @@ pub mod doc;
 pub mod document_data;
 pub mod history;
 pub mod line;
+pub mod line_class;
 pub mod mark_text;
 pub mod selection;
 pub mod selection_updates;

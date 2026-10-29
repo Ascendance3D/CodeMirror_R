@@ -627,6 +627,11 @@ impl EditorSink for EditorShared {
             }
         });
     }
+    fn line_changed(&self, _doc: &Doc, line: i64, _kind: cm_core::LineChange) {
+        // `regLineChange(cm, line, "class" | "gutter")`: the rendered line is redrawn.
+        self.with_op(|op| op.regs.push(ViewChange::Line(line)));
+    }
+
     fn marker_cleared(
         &self,
         doc: &Doc,

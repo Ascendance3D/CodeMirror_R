@@ -26,12 +26,13 @@ pub use model::changes::{BeforeChange, BeforeSelectionChange, ChangeObj};
 pub use model::doc::{Doc, DocOptions, EditorSemantics, LinkedDocOptions};
 pub use model::history::{HistoryChangeData, HistoryData, HistoryEventData, HistorySize};
 pub use model::line::LineHandle;
+pub use model::line_class::{LineSel, LineWhere};
 pub use model::mark_text::{
     MarkOptions, Marker, MarkerFind, MarkerType, SharedTextMarker, TextMarker,
 };
 pub use model::selection::{SelRange, Selection};
 pub use model::selection_updates::SelOptions;
-pub use operation_group::{Delayed, EdCall, EditorId, EditorSink, Editors, NoEditors};
+pub use operation_group::{Delayed, EdCall, EditorId, EditorSink, Editors, LineChange, NoEditors};
 pub use pos::{Pos, Sticky};
 pub use util::string_stream::StringStream;
 

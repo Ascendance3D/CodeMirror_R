@@ -142,7 +142,7 @@ const report = CASES.map((c, i) => {
   if (wantStatus !== "PASS" && result?.ok !== false) problems.push(`ok ${result?.ok}, want false`);
   if (reason && !reason.test(why)) problems.push(`reason ${JSON.stringify(why.split("\n")[0])} does not match ${reason}`);
   if (extra && !(result && extra(result))) problems.push("case-specific assertion failed");
-  if (wantStatus === "PASS" && !(result?.integrity?.complete && result.summary.differential === 88)) problems.push("integrity not complete or differential != 88");
+  if (wantStatus === "PASS" && !(result?.integrity?.complete && result.summary.differential === 138)) problems.push("integrity not complete or differential != 138");
   if (launched && result?.cleanup?.browser_closed !== true) problems.push(`cleanup ${JSON.stringify(result?.cleanup)}`);
   if (linux && launched && r.processes.seen === 0) problems.push("no browser process was observed");
   if (linux && r.processes.left.length) problems.push(`left running: ${r.processes.left.join(", ")}`);

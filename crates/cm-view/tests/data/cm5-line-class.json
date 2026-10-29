@@ -1,0 +1,1887 @@
+{
+ "version": "5.65.21",
+ "model": {
+  "empty_on_empty": [
+   {
+    "step": [
+     "add",
+     "text",
+     ""
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     ""
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "x"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "empty_after_class": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     ""
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo ",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     ""
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "foo ",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     ""
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "empty_after_two": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "bar"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo bar",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     ""
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo bar ",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "remove_empty_cls": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo bar"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo bar",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     ""
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "foo bar",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "x"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo bar x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     ""
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "foo bar x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "dot_wildcard": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "f.o"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "f.o"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": null,
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "alternation_remove": [
+   {
+    "step": [
+     "add",
+     "text",
+     "x"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "x foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "y"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "x foo y",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "foo|bar"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "x  y",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "x|y"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "  y",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "alternation_add": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "bar|foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "baz|qux"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo baz|qux",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "space_in_cls": [
+   {
+    "step": [
+     "add",
+     "text",
+     "a b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "a b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "a b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": null,
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "a b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": null,
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "duplicate_classes": [
+   {
+    "step": [
+     "add",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "remove_middle_first_last": [
+   {
+    "step": [
+     "add",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "c"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a b c",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a c",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "c",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "c"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": null,
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "invalid_open_bracket_nonempty": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "["
+    ],
+    "err": "SyntaxError",
+    "ret": null,
+    "redraw": 0,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "["
+    ],
+    "err": "SyntaxError",
+    "ret": null,
+    "redraw": 0,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "invalid_open_bracket_empty_slot": [
+   {
+    "step": [
+     "add",
+     "text",
+     "["
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "[",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "["
+    ],
+    "err": "SyntaxError",
+    "ret": null,
+    "redraw": 0,
+    "text": "[",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "invalid_open_paren_nonempty": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "("
+    ],
+    "err": "SyntaxError",
+    "ret": null,
+    "redraw": 0,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "("
+    ],
+    "err": "SyntaxError",
+    "ret": null,
+    "redraw": 0,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "invalid_star_nonempty": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "*"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "*"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "invalid_backslash_nonempty": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "\\"
+    ],
+    "err": "SyntaxError",
+    "ret": null,
+    "redraw": 0,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "\\"
+    ],
+    "err": "SyntaxError",
+    "ret": null,
+    "redraw": 0,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "valid_metachars": [
+   {
+    "step": [
+     "add",
+     "text",
+     "a.b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a.b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "a+b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a.b a+b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "a\\.b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a+b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "a+b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a+b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "$"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a+b $",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "^x"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a+b $ ^x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "^x"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a+b $ ^x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "$"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a+b $ ^x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "zero_width": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "(?:)"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo (?:)",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "(?:)"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "foo (?:)",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "(?:)"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "foo (?:)",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "lookahead": [
+   {
+    "step": [
+     "add",
+     "text",
+     "foo bar"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo bar",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "foo(?= bar)"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "bar",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "(?=bar)"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "bar",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "whitespace_class": [
+   {
+    "step": [
+     "add",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "\\S+"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "\\S+"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": null,
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "feff_separator": [
+   {
+    "step": [
+     "add",
+     "text",
+     "a﻿b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a﻿b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a﻿b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "nel_separator": [
+   {
+    "step": [
+     "add",
+     "text",
+     "ab"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "ab",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "ab b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "ab",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "tab_newline_separator": [
+   {
+    "step": [
+     "add",
+     "text",
+     "a\tb"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a\tb",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a\tb",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "a\nb"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a\tb a\nb",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a a\nb",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "nbsp_separator": [
+   {
+    "step": [
+     "add",
+     "text",
+     "a b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "remove_null_clears": [
+   {
+    "step": [
+     "add",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a b",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     null
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": null,
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     null
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": null,
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "c"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "c",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "remove_missing": [
+   {
+    "step": [
+     "rm",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "undefined",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     null
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "undefined",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "a"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "ab"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "a",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "case_sensitive": [
+   {
+    "step": [
+     "add",
+     "text",
+     "Foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "Foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "Foo foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "FOO"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "Foo foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "Foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "astral": [
+   {
+    "step": [
+     "add",
+     "text",
+     "😀"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "😀",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "😀x"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "😀 😀x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "😀"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "😀x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "."
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "😀x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     ".."
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 0,
+    "text": "😀x",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ],
+  "where_variants": [
+   {
+    "step": [
+     "add",
+     "text",
+     "t"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "t",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "background",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "t",
+    "bg": "b",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "wrap",
+     "w"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "t",
+    "bg": "b",
+    "wrap": "w",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "gutter",
+     "g"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "t",
+    "bg": "b",
+    "wrap": "w",
+    "gutter": "g"
+   },
+   {
+    "step": [
+     "add",
+     "other",
+     "o"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "t",
+    "bg": "b",
+    "wrap": "w o",
+    "gutter": "g"
+   },
+   {
+    "step": [
+     "add",
+     "",
+     "e"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "t",
+    "bg": "b",
+    "wrap": "w o e",
+    "gutter": "g"
+   },
+   {
+    "step": [
+     "rm",
+     "background",
+     "b"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "t",
+    "bg": null,
+    "wrap": "w o e",
+    "gutter": "g"
+   },
+   {
+    "step": [
+     "rm",
+     "gutter",
+     "g"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "t",
+    "bg": null,
+    "wrap": "w o e",
+    "gutter": null
+   },
+   {
+    "step": [
+     "rm",
+     "other",
+     "o"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "t",
+    "bg": null,
+    "wrap": "w e",
+    "gutter": null
+   }
+  ],
+  "add_after_clear_slot_empty_string": [
+   {
+    "step": [
+     "add",
+     "text",
+     ""
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "foo",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "rm",
+     "text",
+     "foo"
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": null,
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   },
+   {
+    "step": [
+     "add",
+     "text",
+     ""
+    ],
+    "err": null,
+    "ret": "line",
+    "redraw": 1,
+    "text": "",
+    "bg": "undefined",
+    "wrap": "undefined",
+    "gutter": "undefined"
+   }
+  ]
+ },
+ "lines": {
+  "number_out_of_range": [
+   {
+    "step": [
+     "add",
+     99,
+     "text",
+     "hi"
+    ],
+    "redraw": 0,
+    "lines": [
+     {
+      "text": "undefined",
+      "bg": "undefined",
+      "wrap": "undefined"
+     },
+     {
+      "text": "hi",
+      "bg": "undefined",
+      "wrap": "undefined"
+     }
+    ]
+   },
+   {
+    "step": [
+     "add",
+     -5,
+     "text",
+     "lo"
+    ],
+    "redraw": 0,
+    "lines": [
+     {
+      "text": "lo",
+      "bg": "undefined",
+      "wrap": "undefined"
+     },
+     {
+      "text": "hi",
+      "bg": "undefined",
+      "wrap": "undefined"
+     }
+    ]
+   },
+   {
+    "step": [
+     "add",
+     1,
+     "text",
+     "in"
+    ],
+    "redraw": 1,
+    "lines": [
+     {
+      "text": "lo",
+      "bg": "undefined",
+      "wrap": "undefined"
+     },
+     {
+      "text": "hi in",
+      "bg": "undefined",
+      "wrap": "undefined"
+     }
+    ]
+   },
+   {
+    "step": [
+     "rm",
+     99,
+     "text",
+     "hi"
+    ],
+    "redraw": 0,
+    "lines": [
+     {
+      "text": "lo",
+      "bg": "undefined",
+      "wrap": "undefined"
+     },
+     {
+      "text": "in",
+      "bg": "undefined",
+      "wrap": "undefined"
+     }
+    ]
+   },
+   {
+    "step": [
+     "rm",
+     -5,
+     "text",
+     "lo"
+    ],
+    "redraw": 0,
+    "lines": [
+     {
+      "text": null,
+      "bg": "undefined",
+      "wrap": "undefined"
+     },
+     {
+      "text": "in",
+      "bg": "undefined",
+      "wrap": "undefined"
+     }
+    ]
+   },
+   {
+    "step": [
+     "add",
+     2,
+     "wrap",
+     "w"
+    ],
+    "redraw": 0,
+    "lines": [
+     {
+      "text": null,
+      "bg": "undefined",
+      "wrap": "undefined"
+     },
+     {
+      "text": "in",
+      "bg": "undefined",
+      "wrap": "w"
+     }
+    ]
+   }
+  ]
+ }
+}
