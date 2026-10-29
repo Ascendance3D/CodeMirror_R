@@ -10,7 +10,9 @@ permissions:
 jobs:
   review:
     name: Review
-    runs-on: ubuntu-latest
+    runs-on:
+      group: xite-ci
+      labels: [self-hosted, Linux, X64]
     steps:
       - name: Code Review
         # Fork of tarmojussila/minimax-code-review adding reasoning-effort and timeout inputs.
