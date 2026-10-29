@@ -33,7 +33,10 @@ pub mod render;
 #[cfg(feature = "gpu")]
 pub mod window;
 
-pub use editor::{CoordSys, Editor, EditorOptions, GutterColumn, GutterSpec, Indent, get_gutters};
+pub use editor::{
+    CoordSys, CoordsStart, Editor, EditorOptions, GutterColumn, GutterSpec, Indent, LineArg,
+    ScrollInfo, ScrollTarget, get_gutters,
+};
 pub use editor_set::EditorSet;
 pub use events::{Cx, EditorEvents, EditorListeners, InputChange};
 pub use keymap::KeyEvent;
