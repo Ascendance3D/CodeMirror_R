@@ -39,8 +39,7 @@
 //! lineWidgetIssue5486, resizeLineWidget, the widget half of jumpTheGap), collapsed
 //! ranges in layout/measurement (collapsedLines, collapsedRangeCoordsChar, clickFold,
 //! everythingFolded, structuredFold, nestedFold, badNestedFold, nestedFoldOnSide,
-//! editInFold), line classes (addLineClass), overlays
-//! (addOverlay, the overlay half of getTokenTypeAt), helpers (`registerHelper`),
+//! editInFold), line classes (addLineClass), helpers (`registerHelper`),
 //! mouse button key bindings and the `configureMouse` option (mouseBinding,
 //! configureMouse), wrapped-line measurement against a real browser
 //! (wrappingAndResizing, measureEndOfLine, measureWrappedEndOfLine,
@@ -1169,12 +1168,93 @@ fn get_token_at() {
     }
 }
 
-/// test.js "getTokenTypeAt" (`mode: "javascript"`); the overlay half is not ported.
+/// An overlay mode object of test.js: `{token: f}` (no `name`, no `startState`).
+struct FnOverlay(fn(&mut StringStream<'_>) -> Option<String>);
+
+impl Mode for FnOverlay {
+    fn name(&self) -> &str {
+        ""
+    }
+    fn token(&self, stream: &mut StringStream<'_>, _state: &mut State) -> Option<String> {
+        (self.0)(stream)
+    }
+}
+
+/// The text of every rendered token with class `cm-<class>` (`byClassName`): the
+/// spans of each line whose style has the word `class`.
+fn tokens_with_class(cm: &Editor, class: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for n in 0..cm.doc.line_count() as i64 {
+        let text = cm.line_text(n);
+        let mut start = 0;
+        for (end, style) in &cm.line_styles(n).spans {
+            if style
+                .as_deref()
+                .is_some_and(|s| s.split(' ').any(|w| w == class))
+            {
+                out.push(String::from_utf16_lossy(&text[start..*end]));
+            }
+            start = *end;
+        }
+    }
+    out
+}
+
+/// test.js "getTokenTypeAt" (`mode: "javascript"`): an overlay style shows as a
+/// token class, and `getTokenTypeAt` cuts it off.
 #[test]
 fn get_token_type_at() {
-    let cm = cm_mode("1 + 'foo'", "javascript");
+    let mut cm = cm_mode("1 + 'foo'", "javascript");
     assert_eq!(cm.get_token_type_at(p(0, 0)).as_deref(), Some("number"));
     assert_eq!(cm.get_token_type_at(p(0, 6)).as_deref(), Some("string"));
+    let ov = FnOverlay(|stream| {
+        if stream.match_str("foo", true, false) {
+            return Some("foo".into());
+        }
+        stream.next();
+        None
+    });
+    cm.add_overlay(
+        cm_view::highlight::OverlaySpec::Mode(Rc::new(ov)),
+        false,
+        0.0,
+    )
+    .unwrap();
+    assert_eq!(tokens_with_class(&cm, "foo").len(), 1);
+    assert_eq!(cm.get_token_type_at(p(0, 6)).as_deref(), Some("string"));
+}
+
+/// test.js "addOverlay" (`mode: "javascript"`): the overlay reads the base token
+/// with `stream.baseToken()`, and an edit re-runs it.
+#[test]
+fn add_overlay() {
+    let mut cm = cm_mode("foo /* 100 */\nbar + 233;\nbaz", "javascript");
+    let ov = FnOverlay(|stream| {
+        let base = stream.base_token().expect("baseToken");
+        let comment = base.0.as_deref().is_some_and(|t| t.contains("comment"));
+        if !comment
+            && stream
+                .match_regexp(
+                    &cm_core::util::regexp::RegExp::new("\\d+", "").unwrap(),
+                    true,
+                )
+                .is_some()
+        {
+            return Some("x".into());
+        }
+        stream.next();
+        None
+    });
+    cm.add_overlay(
+        cm_view::highlight::OverlaySpec::Mode(Rc::new(ov)),
+        false,
+        0.0,
+    )
+    .unwrap();
+    let x = tokens_with_class(&cm, "x");
+    assert_eq!(x, vec!["233".to_string()]);
+    cm.run_op(|cm| cm.doc.replace_range("", p(0, 4), Some(p(0, 6)), None));
+    assert_eq!(tokens_with_class(&cm, "x").len(), 2);
 }
 
 /// test.js "delete_wrapped" (`lineWrapping: true`, `makeItWrapAfter(cm, Pos(0, 2))`).

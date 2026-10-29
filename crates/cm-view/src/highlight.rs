@@ -5,10 +5,9 @@
 //! The cached values live on cm-core's line objects ([`LineHandle::state_after`],
 //! [`LineHandle::styles`]), which `updateLine` clears exactly like the JS.
 //!
-//! `runMode` honors `addModeClass` and a mode's own `flattenSpans`.
-//!
-//! Not ported: overlays (`addOverlay`, `cm.state.overlays`, `baseToken`), so
-//! `highlightLine` runs the mode alone. Mode line classes (`line-*` /
+//! Overlays (`cm.state.overlays`, [`HighlightState::overlays`]) run after the mode
+//! in `highlightLine` and can read the mode's tokens with `baseToken`. `runMode` honors
+//! `addModeClass` and a mode's own `flattenSpans`. Mode line classes (`line-*` /
 //! `line-background-*` tokens) are collected into `Styles::classes`, but the renderer
 //! does not draw them.
 
@@ -21,8 +20,107 @@ use cm_core::util::misc::count_column;
 use cm_core::util::string_stream::{LineOracle, StringStream};
 use cm_core::{Doc, LineHandle, Pos};
 use cm_modes::{
-    ConfigValue, JsArg, Mode, State, copy_state, read_token, start_state, with_inner_mode_mut,
+    ConfigValue, JsArg, Mode, Spec, State, copy_state, read_token, start_state, with_inner_mode_mut,
 };
+
+/// What `addOverlay(spec)` was given: a mode object (`spec.token` exists) or a
+/// mode spec for `CodeMirror.getMode`. `removeOverlay` compares against it.
+#[derive(Clone)]
+pub enum OverlaySpec {
+    Mode(Rc<dyn Mode>),
+    Spec(Spec),
+}
+
+impl std::fmt::Debug for OverlaySpec {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OverlaySpec::Mode(m) => write!(f, "Mode({:?})", m.name()),
+            OverlaySpec::Spec(s) => write!(f, "Spec({s:?})"),
+        }
+    }
+}
+
+impl OverlaySpec {
+    /// `cur == spec` in `removeOverlay`: object identity for a mode object, string
+    /// equality for a string spec. A spec object compares by value here (in JS it
+    /// is the identity of the object passed to `addOverlay`).
+    fn same(&self, other: &OverlaySpec) -> bool {
+        match (self, other) {
+            (OverlaySpec::Mode(a), OverlaySpec::Mode(b)) => {
+                std::ptr::eq(Rc::as_ptr(a) as *const (), Rc::as_ptr(b) as *const ())
+            }
+            (OverlaySpec::Spec(a), OverlaySpec::Spec(b)) => a == b,
+            _ => false,
+        }
+    }
+    /// `cur.name`: a mode object's `name`, a spec object's `name`; a string has
+    /// none. An empty mode name stands for an absent `name` property.
+    fn name(&self) -> Option<&str> {
+        match self {
+            OverlaySpec::Mode(m) => Some(m.name()).filter(|n| !n.is_empty()),
+            OverlaySpec::Spec(Spec::Obj(o)) => Some(o.name.as_str()),
+            OverlaySpec::Spec(_) => None,
+        }
+    }
+    /// `removeOverlay(spec)`'s test for one overlay:
+    /// `cur == spec || typeof spec == "string" && cur.name == spec`.
+    pub fn matches_removal(cur: &OverlaySpec, spec: &OverlaySpec) -> bool {
+        cur.same(spec)
+            || matches!(spec, OverlaySpec::Spec(Spec::Str(s)) if cur.name() == Some(s.as_str()))
+    }
+}
+
+/// One entry of `cm.state.overlays` (src/edit/methods.js:70).
+#[derive(Clone)]
+pub struct Overlay {
+    pub mode: Rc<dyn Mode>,
+    pub mode_spec: OverlaySpec,
+    pub opaque: bool,
+    pub priority: f64,
+}
+
+impl std::fmt::Debug for Overlay {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Overlay")
+            .field("mode", &self.mode.name())
+            .field("mode_spec", &self.mode_spec)
+            .field("opaque", &self.opaque)
+            .field("priority", &self.priority)
+            .finish()
+    }
+}
+
+/// `addOverlay`'s error: "Overlays may not be stateful." (the mode has a
+/// `startState`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatefulOverlay;
+
+impl std::fmt::Display for StatefulOverlay {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Overlays may not be stateful.")
+    }
+}
+
+impl std::error::Error for StatefulOverlay {}
+
+/// `context.baseTokens` / `context.baseTokenPos` while an overlay runs: the style
+/// array being built (as `(end, style)` pairs; the JS index `2k + 1` is pair `k`)
+/// and the pair `baseToken` last stopped at.
+pub struct BaseTokens {
+    pub st: std::cell::RefCell<Vec<(usize, Option<Rc<str>>)>>,
+    pub pos: Cell<usize>,
+}
+
+/// `type.replace(/( |^)overlay .*/, "")`.
+fn strip_overlay_styles(ty: &str) -> String {
+    if ty.starts_with("overlay ") {
+        return String::new();
+    }
+    match ty.find(" overlay ") {
+        Some(i) => ty[..i].to_string(),
+        None => ty.to_string(),
+    }
+}
 
 /// `SavedContext` / a bare saved state: what `line.stateAfter` holds.
 #[derive(Debug)]
@@ -47,6 +145,8 @@ pub struct CtxOracle<'a> {
     pub doc: &'a Doc,
     pub line: i64,
     pub max_look_ahead: Cell<i64>,
+    /// `context.baseTokens`: set only while an overlay runs.
+    pub base: Option<&'a BaseTokens>,
 }
 
 impl LineOracle for CtxOracle<'_> {
@@ -58,9 +158,23 @@ impl LineOracle for CtxOracle<'_> {
         }
         line
     }
-    /// `baseToken`: only overlays set `baseTokens` (overlays are not ported).
-    fn base_token(&self, _pos: usize) -> Option<(Option<String>, i64)> {
-        None
+    /// `Context.prototype.baseToken(n)` (highlight.js:31): the base token that ends
+    /// after `n`, its type without the overlay styles, and its size from `n`.
+    fn base_token(&self, n: usize) -> Option<(Option<String>, i64)> {
+        let base = self.base?;
+        let st = base.st.borrow();
+        let mut p = base.pos.get();
+        while p < st.len() && st[p].0 <= n {
+            p += 1;
+        }
+        base.pos.set(p);
+        // Past the end the JS gives `{type: undefined, size: NaN}`; the style array
+        // always reaches the end of the line, so an overlay token never gets there.
+        let (end, ty) = st.get(p)?;
+        Some((
+            ty.as_deref().map(strip_overlay_styles),
+            *end as i64 - n as i64,
+        ))
     }
 }
 
@@ -111,6 +225,8 @@ pub struct HighlightState {
     pub tab_size: i64,
     pub max_highlight_length: usize,
     pub flatten_spans: bool,
+    /// `cm.state.overlays`, sorted by priority (`addOverlay`).
+    pub overlays: Vec<Overlay>,
     /// `options.addModeClass`: prefix each style with `m-<inner mode name>`.
     pub add_mode_class: bool,
     /// `display.viewFrom` / `display.viewTo`: lines in view get their state saved.
@@ -127,6 +243,7 @@ impl HighlightState {
             tab_size: 4,
             max_highlight_length: 10000,
             flatten_spans: true,
+            overlays: Vec::new(),
             add_mode_class: false,
             view_from: first,
             view_to: first,
@@ -135,7 +252,7 @@ impl HighlightState {
 }
 
 /// The JS `mode.startState` presence test (`if (!doc.mode.startState)`).
-fn has_start_state(mode: &dyn Mode) -> bool {
+pub(crate) fn has_start_state(mode: &dyn Mode) -> bool {
     mode.start_state(JsArg::Undefined, JsArg::Undefined)
         .is_some()
 }
@@ -176,6 +293,7 @@ pub fn process_line(
         doc,
         line: ctx.line,
         max_look_ahead: Cell::new(ctx.max_look_ahead),
+        base: None,
     };
     {
         let mut stream = StringStream::new(text, Some(hs.tab_size), Some(&oracle));
@@ -348,6 +466,7 @@ fn run_mode_line(
     f: &mut dyn FnMut(usize, Option<String>),
     line_classes: &mut (Option<Vec<String>>, Option<Vec<String>>),
     force_to_end: bool,
+    base: Option<&BaseTokens>,
 ) {
     // `mode.flattenSpans`, unless null/undefined, beats `cm.options.flattenSpans`.
     let mut flatten = match mode.prop("flattenSpans") {
@@ -362,6 +481,7 @@ fn run_mode_line(
         doc,
         line: ctx.line,
         max_look_ahead: Cell::new(ctx.max_look_ahead),
+        base,
     };
     let mut need_process_rest: Option<usize> = None;
     let final_pos;
@@ -423,7 +543,8 @@ fn run_mode_line(
     }
 }
 
-/// `highlightLine(cm, line, context, forceToEnd)` (no overlays).
+/// `highlightLine(cm, line, context, forceToEnd)`: the mode's styles, then each
+/// overlay of `cm.state.overlays` in order, splicing its styles into the array.
 pub fn highlight_line(
     doc: &Doc,
     mode: &Rc<dyn Mode>,
@@ -443,7 +564,73 @@ pub fn highlight_line(
         &mut |end, style| spans.push((end, style.map(|s| Rc::from(s.as_str())))),
         &mut classes_vec,
         force_to_end,
+        None,
     );
+
+    // Run overlays, adjust style array.
+    for overlay in &hs.overlays {
+        let base = BaseTokens {
+            st: std::cell::RefCell::new(std::mem::take(&mut spans)),
+            pos: Cell::new(0),
+        };
+        // `context.state = true` while the overlay runs, restored after.
+        let state = std::mem::replace(&mut ctx.state, State::True);
+        let (mut i, mut at) = (0usize, 0usize);
+        let opaque = overlay.opaque;
+        run_mode_line(
+            doc,
+            &overlay.mode,
+            hs,
+            text,
+            ctx,
+            &mut |end, style| {
+                let mut st = base.st.borrow_mut();
+                let mut start = i;
+                // Ensure there's a token end at the current position, and that i
+                // points at it.
+                while at < end {
+                    let Some((i_end, cur)) = st.get(i).cloned() else {
+                        // `st[i]` undefined: `at` becomes NaN and the loop ends.
+                        i += 1;
+                        at = usize::MAX;
+                        break;
+                    };
+                    if i_end > end {
+                        st.insert(i, (end, cur));
+                    }
+                    i += 1;
+                    at = end.min(i_end);
+                }
+                let style = match style {
+                    Some(s) if !s.is_empty() => s,
+                    _ => return,
+                };
+                if opaque {
+                    let hi = i.min(st.len()).max(start);
+                    st.splice(
+                        start..hi,
+                        [(end, Some(Rc::from(format!("overlay {style}"))))],
+                    );
+                    i = start + 1;
+                } else {
+                    while start < i && start < st.len() {
+                        let cur = st[start].1.take();
+                        st[start].1 = Some(Rc::from(match cur.as_deref() {
+                            Some(c) if !c.is_empty() => format!("{c} overlay {style}"),
+                            _ => format!("overlay {style}"),
+                        }));
+                        start += 1;
+                    }
+                }
+            },
+            &mut classes_vec,
+            false,
+            Some(&base),
+        );
+        ctx.state = state;
+        spans = base.st.into_inner();
+    }
+
     let classes = (
         classes_vec.0.map(|v| v.join(" ")),
         classes_vec.1.map(|v| v.join(" ")),
@@ -622,6 +809,7 @@ pub fn take_token(
         doc,
         line: ctx.line,
         max_look_ahead: Cell::new(ctx.max_look_ahead),
+        base: None,
     };
     let mut stream = StringStream::new(&text, Some(hs.tab_size), Some(&oracle));
     let mut tokens = Vec::new();
