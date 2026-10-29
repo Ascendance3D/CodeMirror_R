@@ -83,6 +83,13 @@ pub struct EditorOptions {
     pub line_separator: Option<String>,
     /// The platform is a Mac (`mac`, `flipCtrlCmd`).
     pub mac: bool,
+    /// `showCursorWhenSelecting`: draw a cursor for non-empty ranges too.
+    pub show_cursor_when_selecting: bool,
+    /// `cursorHeight`: the cursor's height as a fraction of its line box.
+    pub cursor_height: f64,
+    /// The `cm-fat-cursor` wrapper class (the vim keymap's normal mode): the
+    /// cursor is as wide as the character it is on.
+    pub fat_cursor: bool,
 }
 
 impl Default for EditorOptions {
@@ -112,6 +119,9 @@ impl Default for EditorOptions {
             add_mode_class: false,
             line_separator: None,
             mac: cfg!(target_os = "macos"),
+            show_cursor_when_selecting: false,
+            cursor_height: 1.0,
+            fat_cursor: false,
         }
     }
 }
@@ -2575,6 +2585,60 @@ impl Editor {
             }
         }
         self.overwrite = !self.overwrite;
+        // `signal(this, "overwriteToggle", this, this.state.overwrite)`.
+        let snap = self.shared.ls.borrow().overwrite_toggle.snapshot();
+        let state = self.overwrite;
+        for e in snap.iter() {
+            (e.f)(
+                &mut Cx {
+                    editor: self,
+                    others: &mut NoEditors,
+                },
+                state,
+            );
+        }
+    }
+    /// `on("overwriteToggle", f)`: `toggleOverwrite` changed the state (immediate).
+    pub fn on_overwrite_toggle(&self, f: impl Fn(&mut Cx, bool) + 'static) -> ListenerId {
+        let f: Rc<crate::events::BoolHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().overwrite_toggle.on_rc(f)
+    }
+    /// The cursors `prepareSelection` draws (src/display/selection.js:13-35) with
+    /// `drawSelectionCursor`'s geometry (:38-60): one for each
+    /// empty range, or for every range with `showCursorWhenSelecting`, among the
+    /// ranges that reach the rendered lines `[viewFrom, viewTo)`, as `(head, rect)`, in
+    /// [`CoordSys::Div`]. The rect is
+    /// `cursorCoords(head, "div")`, `cursorHeight` times as high (its top stays);
+    /// with the fat cursor it is as wide as the character
+    /// (`charCoords(head).right - left`, or `defaultCharWidth()` when that is 0),
+    /// otherwise 0 wide (CM5 draws a 1 px left border; the renderer chooses its
+    /// width).
+    pub fn cursor_rects(&self) -> Vec<(Pos, Rect)> {
+        let (vf, vt) = (self.display.view_from, self.display.view_to);
+        let mut out = Vec::new();
+        for r in self.doc.list_selections() {
+            if r.from().line >= vt || r.to().line < vf {
+                continue;
+            }
+            if !(r.empty() || self.options.show_cursor_when_selecting) {
+                continue;
+            }
+            let mut c = self.cursor_coords(r.head, CoordSys::Div);
+            c.bottom = c.top + (c.bottom - c.top).max(0.0) * self.options.cursor_height;
+            c.right = c.left;
+            if self.options.fat_cursor {
+                let ch = self.char_coords(r.head, CoordSys::Div);
+                let w = ch.right - ch.left;
+                c.right = c.left
+                    + if w > 0.0 {
+                        w
+                    } else {
+                        self.default_char_width()
+                    };
+            }
+            out.push((r.head, c));
+        }
+        out
     }
 
     /// `doHandleBinding(cm, bound, dropShift)`.

@@ -22,7 +22,7 @@ use glyphon::cosmic_text::{
 use glyphon::{Cache, Resolution, TextArea, TextAtlas, TextBounds, TextRenderer, Viewport};
 use wgpu::util::DeviceExt;
 
-use crate::editor::{CoordSys, Editor};
+use crate::editor::Editor;
 use crate::highlight::Styles;
 use crate::measure::{Glyph, LineLayout, Metrics, Rect};
 
@@ -574,16 +574,15 @@ impl Renderer {
         // the text, so a cursor scrolled behind it is clipped to the text area here.
         let mut cursors: Vec<(Rect, Rgba)> = Vec::new();
         if frame.cursor_visible {
-            for r in &sel.ranges {
-                // `showCursorWhenSelecting` is false by default: cursors for empty ranges.
-                if !r.empty() {
+            // prepareSelection / drawSelectionCursor (`showCursorWhenSelecting`,
+            // `cursorHeight`, the fat cursor) in `Editor::cursor_rects`.
+            for (head, c) in editor.cursor_rects() {
+                if head.line < from || head.line >= to {
                     continue;
                 }
-                if r.head.line < from || r.head.line >= to {
-                    continue;
-                }
-                let c = editor.cursor_coords(r.head, CoordSys::Div);
-                let cw = if editor.overwrite {
+                let cw = if c.right > c.left {
+                    (c.right - c.left) as f32
+                } else if editor.overwrite {
                     (m.char_width as f32 / 4.0).max(2.0)
                 } else {
                     (m.char_width as f32 / 8.0).max(1.0).round()

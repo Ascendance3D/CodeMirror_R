@@ -86,6 +86,7 @@ pub type MarkerClearedHandler = dyn Fn(&mut Cx<'_>, &TextMarker, Option<i64>, Op
 pub type NameHandler = dyn Fn(&mut Cx<'_>, &str);
 pub type LineHandler = dyn Fn(&mut Cx<'_>, i64);
 pub type InputReadHandler = dyn Fn(&mut Cx<'_>, &InputChange);
+pub type BoolHandler = dyn Fn(&mut Cx<'_>, bool);
 
 /// The `inputRead` payload: the change typed or pasted text asked for (before
 /// `beforeChange` handlers saw it).
@@ -127,6 +128,8 @@ pub struct EditorListeners {
     /// Immediate: the editor gained or lost focus.
     pub focus: Listeners<EditorHandler>,
     pub blur: Listeners<EditorHandler>,
+    /// Immediate: `toggleOverwrite` changed the overwrite state.
+    pub overwrite_toggle: Listeners<BoolHandler>,
 }
 
 impl EditorListeners {
@@ -151,6 +154,7 @@ impl EditorListeners {
             .or_else(|| removed(self.electric_input.remove(id)))
             .or_else(|| removed(self.focus.remove(id)))
             .or_else(|| removed(self.blur.remove(id)))
+            .or_else(|| removed(self.overwrite_toggle.remove(id)))
     }
 }
 
