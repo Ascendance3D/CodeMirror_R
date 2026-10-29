@@ -11,9 +11,8 @@
 //! Not ported:
 //! * the `scroll`/`swapDoc`/`refresh`/
 //!   `optionChange`/`gutterClick`/DOM editor events.
-//! * `addOverlay`/`removeOverlay`. `getHelper`/`getHelpers` are ported, but
-//!   `findWordAt` and group motion still use plain `isWordChar`, so javascript's
-//!   `wordChars` helper (`[\w$]`) is ignored and `$` is not a word character.
+//! * `addOverlay`/`removeOverlay`. `getHelper`/`getHelpers` are ported; `findWordAt`
+//!   consults the `wordChars` helper (misc.js:129-133).
 //! * `addLineClass`, `setGutterMarker` and the `gutters` option; `addLineWidget`,
 //!   `addWidget`.
 //! * collapsed ranges in layout: line heights and the viewport count every line
@@ -78,6 +77,8 @@ pub struct EditorOptions {
     pub selections_may_touch: bool,
     pub max_highlight_length: usize,
     pub flatten_spans: bool,
+    /// `addModeClass`: styles get an `m-<inner mode name>` prefix.
+    pub add_mode_class: bool,
     /// `lineSeparator`.
     pub line_separator: Option<String>,
     /// The platform is a Mac (`mac`, `flipCtrlCmd`).
@@ -108,6 +109,7 @@ impl Default for EditorOptions {
             selections_may_touch: false,
             max_highlight_length: 10000,
             flatten_spans: true,
+            add_mode_class: false,
             line_separator: None,
             mac: cfg!(target_os = "macos"),
         }
@@ -424,6 +426,7 @@ impl Editor {
         hs.tab_size = options.tab_size;
         hs.max_highlight_length = options.max_highlight_length;
         hs.flatten_spans = options.flatten_spans;
+        hs.add_mode_class = options.add_mode_class;
         let hs = Rc::new(RefCell::new(hs));
         let heights = Rc::new(RefCell::new(HeightCache::default()));
         let shared = EditorShared::new(
@@ -510,6 +513,24 @@ impl Editor {
         self.run_op(|cm| {
             cm.mode = cm.registry.get_mode(&mode_opts, &spec);
             cm.mode_spec = spec;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.force_update = true;
+        });
+    }
+    /// `setOption("flattenSpans", v)`: `resetModeState` (src/edit/options.js:151).
+    pub fn set_flatten_spans(&mut self, v: bool) {
+        self.run_op(|cm| {
+            cm.options.flatten_spans = v;
+            cm.hs.borrow_mut().flatten_spans = v;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.force_update = true;
+        });
+    }
+    /// `setOption("addModeClass", v)`: `resetModeState` (src/edit/options.js:152).
+    pub fn set_add_mode_class(&mut self, v: bool) {
+        self.run_op(|cm| {
+            cm.options.add_mode_class = v;
+            cm.hs.borrow_mut().add_mode_class = v;
             highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
             cm.force_update = true;
         });
@@ -1829,12 +1850,17 @@ impl Editor {
         highlight::highlight_worker(&self.doc, &self.mode, &mut hs, max_lines).1
     }
     /// `getStateAfter(line, precise)` without returning the state.
-    pub fn catch_up_states(&self, line: Option<i64>, precise: bool) {
+    /// Computes and returns the state after the given line, ported from `getStateAfter`.
+    pub fn get_state_after(&self, line: Option<i64>, precise: bool) -> cm_modes::State {
         let doc = &self.doc;
         let l = line.unwrap_or(doc.first_line() + doc.line_count() as i64 - 1);
         let l = l.clamp(doc.first_line(), doc.last_line());
         let mut hs = self.hs.borrow_mut();
-        highlight::get_context_before(doc, &self.mode, &mut hs, l + 1, precise);
+        highlight::get_context_before(doc, &self.mode, &mut hs, l + 1, precise).state
+    }
+    /// Wrapper around `getStateAfter(line, precise)` that discards the returned state.
+    pub fn catch_up_states(&self, line: Option<i64>, precise: bool) {
+        self.get_state_after(line, precise);
     }
     /// `getTokenAt(pos, precise)`.
     pub fn get_token_at(&self, pos: Pos, precise: bool) -> Token {
@@ -2103,6 +2129,22 @@ impl Editor {
         let mut end = pos.ch;
         if !line.is_empty() {
             let len = line.len() as i64;
+            let helper = self.get_helper(pos, "wordChars");
+            let helper_test = helper
+                .as_ref()
+                .and_then(|h| h.downcast_ref::<cm_modes::RegExp>());
+            let test_fn = |ch: &[u16]| helper_test.map(|re| re.test(ch)).unwrap_or(false);
+
+            let helper_ref = helper_test.map(|re| {
+                let s = re.source();
+                let pattern = cm_core::text::to_u16(r"\w");
+                let has_w = s.windows(pattern.len()).any(|w| w == pattern);
+                cm_core::util::misc::WordCharHelper {
+                    source_contains_w: has_w,
+                    test: &test_fn,
+                }
+            });
+
             if (pos.sticky == Some(Sticky::Before) || end == len) && start != 0 {
                 start -= 1;
             } else {
@@ -2116,8 +2158,9 @@ impl Editor {
                 }
             };
             let start_char = char_at(start);
-            let is_w =
-                |c: Option<u16>| c.is_some_and(|c| cm_core::util::misc::is_word_char(&[c], None));
+            let is_w = |c: Option<u16>| {
+                c.is_some_and(|c| cm_core::util::misc::is_word_char(&[c], helper_ref.as_ref()))
+            };
             let is_s = |c: Option<u16>| c.is_some_and(is_js_space);
             let kind = if is_w(start_char) {
                 0
@@ -2130,7 +2173,8 @@ impl Editor {
                 0 => is_w(c),
                 1 => is_s(c),
                 // `!/\s/.test(ch) && !isWordChar(ch)`: "" (out of range) passes.
-                _ => !is_s(c) && !is_w(c),
+                // methods.js:345 tests punctuation with isWordChar(ch), no helper.
+                _ => !is_s(c) && !c.is_some_and(|c| cm_core::util::misc::is_word_char(&[c], None)),
             };
             while start > 0 && check(char_at(start - 1)) {
                 start -= 1;

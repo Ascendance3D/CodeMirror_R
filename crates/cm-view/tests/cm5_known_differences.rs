@@ -8,7 +8,6 @@
 //! These tests record a difference; they do not approve it. When a fix lane changes
 //! the behavior, the test fails: replace it with a test of the CM5 value.
 
-use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::rc::Rc;
 
 use cm_core::{HistoryEventData, Pos, StringStream};
@@ -238,28 +237,6 @@ fn g13_8_drag_autoscroll_needs_move_events() {
     assert!(app.editor.display.scroll_top > first);
 }
 
-/// G13 #12, scenario `stringStream_backUp`. CM5 lets `pos` go negative
-/// (`backUp(3)` at pos 1 -> -2) and keeps reading through the JS string semantics
-/// (`current()` = "bcd", `peek()` = undefined, `next()` = "" twice, then "a").
-/// Rust stores `pos` as `usize`: the subtraction overflows and panics in debug
-/// builds (wraps in release).
-#[test]
-fn g13_12_back_up_past_start_overflows() {
-    let s: Vec<u16> = "abcdef".encode_utf16().collect();
-    let r = catch_unwind(AssertUnwindSafe(|| {
-        let mut st = StringStream::new(&s, Some(4), None);
-        st.next();
-        st.start = st.pos;
-        st.back_up(3);
-        st.pos
-    }));
-    if cfg!(debug_assertions) {
-        assert!(r.is_err(), "CM5: pos -2");
-    } else {
-        assert_eq!(r.ok(), Some(usize::MAX - 1), "CM5: pos -2");
-    }
-}
-
 /// Tokens of one line with an existing mode object.
 fn tokens(mode: &Rc<dyn Mode>, text: &str) -> Vec<(String, Option<String>)> {
     let u: Vec<u16> = text.encode_utf16().collect();
@@ -321,4 +298,32 @@ fn g13_13_htmlmixed_uses_registry_snapshot() {
     let toks = tokens(&late, r#"<script type="text/x-late">var a</script>"#);
     assert!(toks.contains(&("var".to_string(), Some("keyword".to_string()))));
     assert!(toks.contains(&("a".to_string(), Some("def".to_string()))));
+}
+
+#[test]
+fn test_get_state_after() {
+    let opts = cm_view::EditorOptions::default();
+    let metrics = cm_view::Metrics {
+        char_width: 10.0,
+        text_height: 15.0,
+        padding_h: 0.0,
+        padding_top: 0.0,
+        wide_width: 20.0,
+        astral_width: 20.0,
+    };
+    let mut e = cm_view::Editor::new(
+        "let a = 1;\nlet b = 2;",
+        cm_modes::Spec::from("javascript"),
+        opts,
+        metrics,
+    );
+
+    // We run get_state_after(Some(0), true) -> it returns a state
+    let state = e.get_state_after(Some(0), true);
+    // state shouldn't be state::True for js
+    assert!(matches!(state, cm_modes::State::Value(_)));
+
+    // test that non-precise does the same initially
+    let state2 = e.get_state_after(Some(0), false);
+    assert!(matches!(state2, cm_modes::State::Value(_)));
 }

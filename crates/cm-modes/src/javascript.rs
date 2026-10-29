@@ -23,8 +23,7 @@
 //!
 //! Not supported (documented gap): `parserConfig.wordCharacters` (a custom
 //! regexp); it behaves as if absent. The
-//! `registerHelper("wordChars", "javascript", /[\w$]/)` call is not ported (there are
-//! no helpers).
+//! `registerHelper("wordChars", "javascript", /[\w$]/)` call is ported.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
