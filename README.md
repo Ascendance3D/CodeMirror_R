@@ -95,6 +95,8 @@ The longest line (`display.maxLine`) and the parser states its measurement leave
 
 ## C0 suite
 
+The oracle scripts serve the CM5 build through `oracle/server-utils.mjs` (`safeResolve`: decoded path must stay inside the root after `realpath`, malformed URIs get 400). `node oracle/server-utils.test.mjs` checks it; `cargo test -p cm-view --test oracle_server_utils` runs the same check in the workspace suite. A file swapped for a symlink between the check and the read is not prevented (time-of-check race); the servers bind 127.0.0.1 only.
+
 The upstream CM5 browser test suite (1483 tests) runs headless against a rollup build of the vendored tree. Build it in a **disposable copy**, so the reference tree stays unbuilt:
 
 ```

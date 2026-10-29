@@ -33,7 +33,8 @@
 import { createServer } from "node:http";
 import { readFile, writeFile, readdir } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { extname, join, normalize, relative } from "node:path";
+import { extname, join, normalize } from "node:path";
+import { safeResolve } from "./server-utils.mjs";
 import { fileURLToPath } from "node:url";
 
 const HERE = normalize (join (fileURLToPath (import.meta.url), ".."));
@@ -117,8 +118,17 @@ const server = createServer (async (req, res) =>
       res .writeHead (200, { "Content-Type": "text/html", "Cache-Control": "no-store" });
       return res .end (HARNESS);
    }
-   const base = url .pathname === "/__vrml.js" ? join (HERE, "cm5-vrml-mode.js") : normalize (join (ROOT, decodeURIComponent (url .pathname)));
-   if (!base .startsWith (HERE)) { res .writeHead (403); return res .end (); }
+   let base;
+   if (url .pathname === "/__vrml.js") {
+      const s = safeResolve ("cm5-vrml-mode.js", HERE);
+      if (s .status !== 200) { res .writeHead (s .status); return res .end (); }
+      base = s .path;
+   }
+   else {
+      const s = safeResolve (url .pathname, ROOT);
+      if (s .status !== 200) { res .writeHead (s .status); return res .end (); }
+      base = s .path;
+   }
    try
    {
       const body = await readFile (base);
