@@ -369,6 +369,21 @@ pub trait Mode {
     fn electric_input(&self, _text: &[u16]) -> Option<bool> {
         None
     }
+    /// `mode.expressionAllowed(stream, state, backUp)` (the javascript mode exposes
+    /// it for mode/jsx); `None` = no such property. JS `backUp || 0` is `back_up`.
+    fn expression_allowed(
+        &self,
+        _stream: &StringStream<'_>,
+        _state: &State,
+        _back_up: usize,
+    ) -> Option<bool> {
+        None
+    }
+    /// `mode.skipExpression(state)` (javascript, used by mode/jsx). Returns false,
+    /// without touching `state`, when the mode has no such property.
+    fn skip_expression(&self, _state: &mut State) -> bool {
+        false
+    }
     /// Any other mode-object property (`configuration`, `fold`, `closeBrackets`,
     /// `blockCommentContinue`, `jsonMode`, ...), including those `extendMode` and
     /// `modeProps` add. `None` = undefined.
@@ -489,6 +504,17 @@ impl Mode for Named {
     }
     fn electric_input(&self, text: &[u16]) -> Option<bool> {
         self.inner.electric_input(text)
+    }
+    fn expression_allowed(
+        &self,
+        stream: &StringStream<'_>,
+        state: &State,
+        back_up: usize,
+    ) -> Option<bool> {
+        self.inner.expression_allowed(stream, state, back_up)
+    }
+    fn skip_expression(&self, state: &mut State) -> bool {
+        self.inner.skip_expression(state)
     }
     /// `getMode` copies `modeExtensions[name]`, then `spec.modeProps`, onto the mode
     /// object: later sources win over the mode's own properties. An extension that
