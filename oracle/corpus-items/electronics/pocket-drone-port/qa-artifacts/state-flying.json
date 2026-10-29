@@ -1,8 +1,0 @@
-Error: Named node 'Lift' not found.
-    at wp.getNamedNode (http://127.0.0.1:8099/tooling/x_ite-preview/node_modules/x_ite/dist/x_ite.min.js:2:679077)
-    at Object.node (http://127.0.0.1:8099/tooling/x_ite-preview/qa-helpers.js:34:35)
-    at Object.fields (http://127.0.0.1:8099/tooling/x_ite-preview/qa-helpers.js:280:24)
-    at eval (eval at <anonymous> (eval at evaluate (:303:30)), <anonymous>:1:26)
-    at eval (eval at evaluate (:303:30), <anonymous>:4:50)
-    at UtilityScript.evaluate (<anonymous>:305:16)
-    at UtilityScript.<anonymous> (<anonymous>:1:44)

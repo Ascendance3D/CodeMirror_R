@@ -7,3 +7,4 @@ publish.workspace = true
 description = "Evidence policy for the workspace tests: a test that cannot run fails or skips by name, never passes in silence."
 
 [dependencies]
+sha2 = "0.10"

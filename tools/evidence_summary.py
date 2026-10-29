@@ -4,15 +4,15 @@
 LOG is the CM_EVIDENCE_LOG file that cm-evidence writes: one line per permitted skip, with the fields
 test, reason, key, caller and detail, separated by tabs. Prints a Markdown table of every skip, and of the
 tests that GPU_TESTS skips by name (`--skip NAME`). Exits 1 when a line is malformed or names a reason or
-key outside CM_EVIDENCE_ALLOW, or when a line records a key mismatch. An absent or empty LOG prints
+key outside CM_EVIDENCE_ALLOW, or when a line records a key or private-input mismatch. An absent or empty LOG prints
 "0 evidence skips" and exits 0."""
 import os, sys
 
 
 def allowed(allow, reason, key):
-    if reason == "key-mismatch":
+    if reason in ("key-mismatch", "private-input-mismatch"):
         return False
-    if reason == "key-absent":
+    if reason in ("key-absent", "private-input-absent"):
         return key != "-" and key in allow
     return reason in allow
 

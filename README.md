@@ -56,11 +56,13 @@ tools/fetch-upstream.sh
 cargo test --workspace --no-fail-fast
 ```
 
-`tools/fetch-upstream.sh` downloads the pinned CodeMirror 5 source into `upstream/` (gitignored) and checks both reference trees. By default the tests are strict: a missing tool or GPU adapter fails the test. CI uses CI mode, where these tests skip by name:
+`tools/fetch-upstream.sh` downloads the pinned CodeMirror 5 source into `upstream/` (gitignored) and checks both reference trees. By default the tests are strict: a missing tool, GPU adapter or private input fails the test. CI uses CI mode, where these tests skip by name:
 
 ```sh
-CM_EVIDENCE=ci CM_EVIDENCE_ALLOW=no-gpu-adapter,tool-absent cargo test --workspace --no-fail-fast
+CM_EVIDENCE=ci CM_EVIDENCE_ALLOW=no-gpu-adapter,tool-absent,corpus-items,cm5-cmd-ops-baseline.json cargo test --workspace --no-fail-fast
 ```
+
+`corpus-items` (historical Mall item files) and `cm5-cmd-ops-baseline.json` (it embeds their text) are private inputs. They have no redistribution permission and are not in the repository. `oracle/private-inputs.tsv` lists them with their sizes and sha256. The owner keeps a private copy. Put it at `oracle/<name>`, or set `CM_PRIVATE_INPUTS` to the directory that holds it. Without them, `vrml_tokens_match_js_vrml_mode`, `javascript_tokens_match_cm5_runmode` (only its 253 corpus files) and `cmd_fuzz_oracle` fail in strict mode.
 
 [docs/TESTING.md](docs/TESTING.md) describes the reference pin, the browser runs, the upstream CodeMirror test suite (1483 tests) and how to record the oracle data again.
 

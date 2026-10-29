@@ -27,7 +27,9 @@ concurrency:
 env:
   CARGO_TERM_COLOR: never
   CM_EVIDENCE: ci
-  CM_EVIDENCE_ALLOW: no-gpu-adapter,tool-absent
+  # corpus-items and cm5-cmd-ops-baseline.json are private inputs (oracle/private-inputs.tsv,
+  # Ascendance3D/X_ITE_R#168): CI has no copy, so their tests skip by name and log each skip.
+  CM_EVIDENCE_ALLOW: no-gpu-adapter,tool-absent,corpus-items,cm5-cmd-ops-baseline.json
   CM_EVIDENCE_LOG: ${{ github.workspace }}/evidence-skips.tsv
   CARGO_INCREMENTAL: "0"
 

@@ -273,7 +273,28 @@ pub fn check_baseline(key: &str, special: &(dyn Fn(&str) -> Spec + Sync)) -> Rep
                 .push(format!("{key} case {i}: rust mode has indent, js does not"));
         }
     }
-    let files = base["files"].as_array().unwrap();
+    // Files below oracle/corpus-items are a private input (Ascendance3D/X_ITE_R#168): found and
+    // verified by cm-evidence, or (ci mode, allowed by name) skipped once and logged.
+    const PRIVATE: &str = "oracle/corpus-items/";
+    let all = base["files"].as_array().unwrap();
+    let corpus = if all
+        .iter()
+        .any(|f| f["path"].as_str().unwrap().starts_with(PRIVATE))
+    {
+        cm_evidence::private_input("corpus-items")
+    } else {
+        None
+    };
+    let files: Vec<Value> = all
+        .iter()
+        .filter(|f| corpus.is_some() || !f["path"].as_str().unwrap().starts_with(PRIVATE))
+        .cloned()
+        .collect();
+    let corpus = &corpus;
+    let file_path = move |p: &str| match (p.strip_prefix(PRIVATE), corpus) {
+        (Some(rel), Some(dir)) => dir.join(rel),
+        _ => root().join(p),
+    };
     let threads = 12;
     let chunks: Vec<Vec<(usize, &Value)>> = (0..threads)
         .map(|t| {
@@ -293,7 +314,7 @@ pub fn check_baseline(key: &str, special: &(dyn Fn(&str) -> Spec + Sync)) -> Rep
                     let (mut tm, mut im) = (vec![], vec![]);
                     for (_, f) in chunk {
                         let p = f["path"].as_str().unwrap();
-                        let (gz, text) = read_text(&root().join(p));
+                        let (gz, text) = read_text(&file_path(p));
                         assert_eq!(gz, f["gz"].as_bool().unwrap(), "{p}");
                         assert_eq!(text.len() as u64, f["units"].as_u64().unwrap(), "{p}: decoded length");
                         let spec = spec_from_json(&f["spec"], special);
@@ -312,7 +333,7 @@ pub fn check_baseline(key: &str, special: &(dyn Fn(&str) -> Spec + Sync)) -> Rep
             .collect();
         hs.into_iter().map(|h| h.join().unwrap()).collect()
     });
-    for f in files {
+    for f in &files {
         rep.files += 1;
         rep.callbacks += f["callbacks"].as_u64().unwrap() as usize;
         rep.js_errors += !f["error"].is_null() as usize;

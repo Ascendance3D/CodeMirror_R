@@ -36,3 +36,7 @@ CodeMirror_R was extracted from `Ascendance3D/X_ITE_R` on 2026-10-25, under the 
 | `.github/workflows/rust-tests.yml`, `.gitignore`, `.gitattributes`, `README.md`, `CLAUDE.md`, `AGENTS.md`, `NOTICE`, `PROVENANCE.md`, `docs/provenance/*` (new) | repository files | standalone project |
 
 `upstream/codemirror5/` fetched from `https://github.com/codemirror/codemirror5.git` at `4ca3d05` matched the owner's clone exactly: tree `f6d6ff4bd14d85cf65e44f47659ac3eaabcaa5a0`, content digest `582 4918a946…7410`.
+
+## Removal of the private inputs (2026-10-29)
+
+The repository is public. `oracle/corpus-items/` (859 files, 69,552,646 bytes) and `oracle/cm5-cmd-ops-baseline.json` (8,666,084 bytes; it embeds about 4.2 MB of `corpus-items` text) were removed from the tracked tree at `32f3cca`. They have no redistribution permission (Ascendance3D/X_ITE_R#168). `oracle/private-inputs.tsv` records their kind, size and sha256, and `cm-evidence` (`private_input`) finds and verifies them. `docs/provenance/corpus-items-ffe080b.sha256` stays: it lists hashes and paths only, and it verifies the private copy. The mode baselines keep their `oracle/corpus-items/...` file rows, which hold a path, counts and sha256 digests, not file text. Removal from `master` does not erase older commits.
