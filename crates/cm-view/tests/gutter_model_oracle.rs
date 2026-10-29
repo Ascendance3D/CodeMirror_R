@@ -126,3 +126,41 @@ fn gutter_model_matches_cm5() {
         }
     }
 }
+
+/// The recorded cases collapse every marker to "M"; this checks the identity the
+/// `GutterMarker` type promises (CM5 stores the DOM node itself).
+#[test]
+fn gutter_marker_identity_and_mixed_state() {
+    let mut cm = Editor::new(
+        "zero\none",
+        Spec::Null,
+        EditorOptions::default(),
+        Metrics::oracle(),
+    );
+    cm.set_size(600.0, 300.0);
+    let (a, b) = (GutterMarker::new(1u8), GutterMarker::new(1u8));
+    assert!(a != b, "equal payloads are still distinct markers");
+    cm.doc.set_gutter_marker(0, "A", Some(a.clone())).unwrap();
+    cm.doc.set_gutter_marker(0, "B", Some(b.clone())).unwrap();
+    let m = cm.doc.get_line_handle(0).unwrap().gutter_markers().unwrap();
+    assert!(m[0].1.as_ref().unwrap() == &a && m[1].1.as_ref().unwrap() == &b);
+    // Replacing A stores the new marker, not the old one.
+    let c = GutterMarker::new(1u8);
+    cm.doc.set_gutter_marker(0, "A", Some(c.clone())).unwrap();
+    let m = cm.doc.get_line_handle(0).unwrap().gutter_markers().unwrap();
+    assert!(m[0].1.as_ref().unwrap() == &c && m[0].1.as_ref().unwrap() != &a);
+    // Clearing A while B is set keeps a `None` entry for A and B untouched.
+    cm.doc.set_gutter_marker(0, "A", None).unwrap();
+    let m = cm.doc.get_line_handle(0).unwrap().gutter_markers().unwrap();
+    assert_eq!(m.len(), 2);
+    assert!(m[0].1.is_none() && m[1].1.as_ref().unwrap() == &b);
+    // Clearing the last active marker drops the whole map.
+    cm.doc.set_gutter_marker(0, "B", None).unwrap();
+    assert!(
+        cm.doc
+            .get_line_handle(0)
+            .unwrap()
+            .gutter_markers()
+            .is_none()
+    );
+}
