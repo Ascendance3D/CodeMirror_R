@@ -597,7 +597,7 @@ fn check_cursor(gpu: &Gpu, s: &mut Scene, shown: &Image, r: &mut Report) {
     let hidden = s.frame(gpu, false);
     let regions = diff_regions(shown, &hidden);
     let head = s.editor.doc.selection().ranges[0].head;
-    let c = s.editor.cursor_coords(head, CoordSys::Div);
+    let c = s.editor.cursor_coords(head, CoordSys::Doc);
     // `.CodeMirror-cursor { border-left: 1px solid }`: one CSS pixel at this scale.
     let cw = (s.editor.metrics.char_width / 8.0).max(1.0).round();
     let want = px_rect(
@@ -657,11 +657,11 @@ fn expected_selection(s: &Scene) -> Vec<(i64, i64, i64, i64)> {
         let e_ch = if line == b.line { b.ch } else { len };
         let lc = ed.cursor_coords(
             Pos::with_sticky(line, s_ch, Some(Sticky::After)),
-            CoordSys::Div,
+            CoordSys::Doc,
         );
         let rc = ed.cursor_coords(
             Pos::with_sticky(line, e_ch, Some(Sticky::Before)),
-            CoordSys::Div,
+            CoordSys::Doc,
         );
         let end = if line != b.line { right } else { rc.left };
         if lc.top == rc.top {
@@ -808,8 +808,8 @@ fn check_tokens(c: &Case, s: &Scene, img: &Image, r: &mut Report) {
             ));
             continue;
         }
-        let a = s.editor.cursor_coords(Pos::new(line, from), CoordSys::Div);
-        let b = s.editor.cursor_coords(Pos::new(line, to), CoordSys::Div);
+        let a = s.editor.cursor_coords(Pos::new(line, from), CoordSys::Doc);
+        let b = s.editor.cursor_coords(Pos::new(line, to), CoordSys::Doc);
         let (x0, x1, y0, y1) = px_rect(
             s.wx(a.left),
             s.wy(a.top),
@@ -1098,7 +1098,7 @@ fn hscroll_scene(gpu: &Gpu, scale: f32, ch: i64, offset: f64, mode: HMode) -> Sc
     };
     let mut s = Scene::new(gpu, &c);
     s.editor.overwrite = mode.overwrite;
-    let left = s.editor.cursor_coords(p(1, ch), CoordSys::Div).left;
+    let left = s.editor.cursor_coords(p(1, ch), CoordSys::Doc).left;
     s.editor.scroll_to(Some(left - offset), None);
     assert_eq!(
         s.editor.display.scroll_left,
@@ -1122,7 +1122,7 @@ fn check_hscroll(
     let shown = s.frame(gpu, true);
     let hidden = s.frame(gpu, false);
     let g = s.editor.gutter_width;
-    let c = s.editor.cursor_coords(p(1, ch), CoordSys::Div);
+    let c = s.editor.cursor_coords(p(1, ch), CoordSys::Doc);
     let cw = if mode.overwrite {
         (s.editor.metrics.char_width as f32 / 4.0).max(2.0) as f64
     } else {
@@ -1283,11 +1283,11 @@ fn scrollbar_thumb_covers_cursor() {
     let red = [1.0, 0.0, 0.0, 1.0];
     s.renderer.theme.cursor = red;
     // Cursor left edge at window x w - 5, inside the thumb's [w - 8, w - 2).
-    let left = s.editor.cursor_coords(p(1, 80), CoordSys::Div).left;
+    let left = s.editor.cursor_coords(p(1, 80), CoordSys::Doc).left;
     let target = s.w as f64 - 5.0;
     s.editor
         .scroll_to(Some(left + s.editor.gutter_width - target), None);
-    let c = s.editor.cursor_coords(p(1, 80), CoordSys::Div);
+    let c = s.editor.cursor_coords(p(1, 80), CoordSys::Doc);
     let x = s.wx(c.left);
     assert!(
         (x - target).abs() < 1e-6,

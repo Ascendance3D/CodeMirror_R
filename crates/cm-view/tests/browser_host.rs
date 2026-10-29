@@ -54,12 +54,12 @@ fn set_metrics_refreshes_geometry() {
     cm.set_size(400.0, 200.0);
     let g0 = cm.gutter_width;
     assert_eq!(cm.visible_lines(), (0, 9));
-    assert_eq!(cm.cursor_coords(Pos::new(3, 1), CoordSys::Div).top, 60.0);
+    assert_eq!(cm.cursor_coords(Pos::new(3, 1), CoordSys::Doc).top, 60.0);
     assert_eq!(cm.doc_height(), 121.0 * 20.0);
     let m = Metrics::monospace(9.6328125, 19.0);
     cm.set_metrics(m.clone());
     assert_eq!(cm.metrics, m);
-    let c = cm.cursor_coords(Pos::new(3, 1), CoordSys::Div);
+    let c = cm.cursor_coords(Pos::new(3, 1), CoordSys::Doc);
     assert_eq!((c.left, c.top, c.bottom), (4.0 + 9.6328125, 57.0, 76.0));
     assert_eq!(cm.doc_height(), 121.0 * 19.0);
     // updateGutterSpace: three digits at the new char width; lineNumWidth =

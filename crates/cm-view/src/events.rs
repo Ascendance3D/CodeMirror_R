@@ -26,7 +26,7 @@ use std::cell::{Cell, RefCell};
 use std::ops::{Deref, DerefMut};
 use std::rc::{Rc, Weak};
 
-use cm_core::events::{Entry, ListenerId, Listeners, Removed, removed};
+use cm_core::events::{Args, Entry, ListenerId, Listeners, NamedListeners, Removed, removed};
 use cm_core::operation_group::{
     Batch, BeforeChangeFn, BeforeSelectionChangeFn, Delayed, EdCall, EditorId, EditorSink, Editors,
     diagnostic, signal_later,
@@ -86,6 +86,57 @@ pub type MarkerClearedHandler = dyn Fn(&mut Cx<'_>, &TextMarker, Option<i64>, Op
 pub type NameHandler = dyn Fn(&mut Cx<'_>, &str);
 pub type LineHandler = dyn Fn(&mut Cx<'_>, i64);
 pub type InputReadHandler = dyn Fn(&mut Cx<'_>, &InputChange);
+/// A handler of a string-named or custom editor event: the values of the signal.
+pub type NamedEditorHandler = dyn Fn(&mut Cx<'_>, Args<'_>);
+
+/// What `signalDOMEvent(cm, e, override)` hands its handlers (src/util/event.js:51):
+/// the input event the editor is about to handle. A handler pre-empts the editor's
+/// own handling with [`DomEvent::prevent_default`] or by setting
+/// [`DomEvent::set_codemirror_ignore`] (`e.codemirrorIgnore`); see
+/// [`crate::Editor::signal_dom_event`]. Register with
+/// [`crate::Editor::on_dom_event`] under the event type (`"keydown"`,
+/// `"keypress"`, `"mousedown"`, `"paste"`, `"scrollCursorIntoView"`).
+#[derive(Debug, Default)]
+pub struct DomEvent {
+    /// `e.type`.
+    pub kind: String,
+    /// The key of a `keydown` / `keypress`.
+    pub key: Option<crate::keymap::KeyEvent>,
+    /// The typed character of a `keypress`.
+    pub ch: Option<String>,
+    /// The pointer of a `mousedown`.
+    pub mouse: Option<crate::mouse::MouseEvent>,
+    /// The text of a `paste`.
+    pub text: Option<String>,
+    pub(crate) default_prevented: Cell<bool>,
+    pub(crate) codemirror_ignore: Cell<bool>,
+}
+
+impl DomEvent {
+    /// An event with only a type (`signalDOMEvent(cm, "scrollCursorIntoView")`).
+    pub fn new(kind: &str) -> DomEvent {
+        DomEvent {
+            kind: kind.to_string(),
+            ..Default::default()
+        }
+    }
+    /// `e.preventDefault()`.
+    pub fn prevent_default(&self) {
+        self.default_prevented.set(true);
+    }
+    /// `e_defaultPrevented(e)`.
+    pub fn default_prevented(&self) -> bool {
+        self.default_prevented.get()
+    }
+    /// `e.codemirrorIgnore = v`: the editor leaves the event alone, without
+    /// preventing the host's default.
+    pub fn set_codemirror_ignore(&self, v: bool) {
+        self.codemirror_ignore.set(v);
+    }
+    pub fn codemirror_ignore(&self) -> bool {
+        self.codemirror_ignore.get()
+    }
+}
 
 /// The `inputRead` payload: the change typed or pasted text asked for (before
 /// `beforeChange` handlers saw it).
@@ -138,6 +189,9 @@ pub struct EditorListeners {
     pub line_widget_added: Listeners<WidgetHandler>,
     pub line_widget_cleared: Listeners<WidgetHandler>,
     pub line_widget_changed: Listeners<WidgetHandler>,
+    /// String-named and custom events, and the DOM-event hooks (immediate, when
+    /// signalled).
+    pub named: NamedListeners<NamedEditorHandler>,
 }
 
 impl EditorListeners {
@@ -167,6 +221,7 @@ impl EditorListeners {
             .or_else(|| removed(self.line_widget_added.remove(id)))
             .or_else(|| removed(self.line_widget_cleared.remove(id)))
             .or_else(|| removed(self.line_widget_changed.remove(id)))
+            .or_else(|| removed(self.named.remove(id)))
     }
 }
 
@@ -385,6 +440,10 @@ pub(crate) fn editor_of(ed: &mut dyn Any) -> &mut Editor {
 /// `endOperation_finish`: marker `hide`/`unhide`, then `changes`, then the display
 /// events, with the handlers registered at this point.
 pub(crate) fn finish(cx: &mut Cx, rec: OpRecord) {
+    // endOperation_W2: `if (op.selectionChanged) restartBlink(cm)`.
+    if rec.selection_changed {
+        cx.editor.restart_blink();
+    }
     for m in &rec.maybe_hidden {
         if m.line_count() == 0 {
             m.signal_hidden(true);
