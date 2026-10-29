@@ -15,10 +15,14 @@
 //!   maybeoperatorComma`) become variant tests.
 //! * Regexps are hand-coded over UTF-16 code units with the JS source quoted.
 //!
-//! Not supported (documented gaps): `parserConfig.wordCharacters` (a custom
-//! regexp), `parserConfig.localVars` and `parserConfig.globalVars` (objects). They
-//! behave as if absent. The mode object has no `skipExpression` or
-//! `expressionAllowed` property (`expressionAllowed` is internal only). The
+//! `parserConfig.localVars` and `parserConfig.globalVars` take a [`Var`] list
+//! (built with [`var_list`]); `globalVars` may also be any other truthy value, which
+//! turns on the collection of global names without an initial list. The mode object
+//! has `expressionAllowed` and `skipExpression` ([`Mode::expression_allowed`],
+//! [`Mode::skip_expression`]).
+//!
+//! Not supported (documented gap): `parserConfig.wordCharacters` (a custom
+//! regexp); it behaves as if absent. The
 //! `registerHelper("wordChars", "javascript", /[\w$]/)` call is ported.
 
 use std::cell::{Cell, RefCell};
@@ -388,12 +392,49 @@ pub struct Lexical {
 
 type LexRef = Rc<RefCell<Lexical>>;
 
-/// `Var`.
+/// `Var`: a scope's variable list, `{name, next}`.
 #[derive(Debug)]
 pub struct Var {
     /// `undefined` is a possible name: `#x` tokens are "variable" with no content.
     name: Option<U>,
     next: Option<Rc<Var>>,
+}
+
+impl Var {
+    /// The names from the head of the list (`undefined` is `None`).
+    pub fn names(list: Option<&Rc<Var>>) -> Vec<Option<String>> {
+        let mut out = Vec::new();
+        let mut v = list;
+        while let Some(x) = v {
+            out.push(x.name.as_deref().map(String::from_utf16_lossy));
+            v = x.next.as_ref();
+        }
+        out
+    }
+}
+
+/// A `{name, next}` list of `names` (first name at the head), as a parser config
+/// value for `localVars` / `globalVars`.
+pub fn var_list(names: &[&str]) -> ConfigValue {
+    let mut list: Option<Rc<Var>> = None;
+    for n in names.iter().rev() {
+        list = Some(Rc::new(Var {
+            name: Some(u(n)),
+            next: list,
+        }));
+    }
+    match list {
+        Some(l) => ConfigValue::Obj(l),
+        None => ConfigValue::Null,
+    }
+}
+
+/// A parser config `Var` list, if the value is one.
+fn config_var_list(v: Option<&ConfigValue>) -> Option<Rc<Var>> {
+    match v {
+        Some(ConfigValue::Obj(o)) => o.clone().downcast::<Var>().ok(),
+        _ => None,
+    }
 }
 
 /// `Context`.
@@ -522,9 +563,26 @@ pub struct JsState {
     lexical: LexRef,
     local_vars: Option<Rc<Var>>,
     context: Option<Rc<Ctx>>,
+    /// `state.globalVars` (undefined is `None`).
+    global_vars: Option<Rc<Var>>,
     indented: JsNum,
     /// `state.fatArrowAt`: absent/null is `None`.
     fat_arrow_at: Option<i64>,
+}
+
+impl JsState {
+    /// The names of `state.localVars`.
+    pub fn local_var_names(&self) -> Vec<Option<String>> {
+        Var::names(self.local_vars.as_ref())
+    }
+    /// The names of `state.globalVars`; `None` while it is undefined.
+    pub fn global_var_names(&self) -> Option<Vec<Option<String>>> {
+        self.global_vars.as_ref().map(|g| Var::names(Some(g)))
+    }
+    /// Whether `state.context` is set.
+    pub fn has_context(&self) -> bool {
+        self.context.is_some()
+    }
 }
 
 // --------------------------------------------------------------------------------
@@ -539,6 +597,14 @@ pub struct JsMode {
     is_ts: bool,
     /// `parserConfig.doubleIndentSwitch != false`.
     double_indent_switch: bool,
+    /// `parserConfig.localVars` as a list, and whether it is truthy (`context:
+    /// parserConfig.localVars && new Context(null, null, false)`).
+    local_vars: Option<Rc<Var>>,
+    local_vars_truthy: bool,
+    /// `parserConfig.globalVars` is truthy; and its list when it is one (`typeof
+    /// parserConfig.globalVars == "object"`).
+    global_vars_on: bool,
+    global_vars: Option<Rc<Var>>,
     // Scratch variables `type` / `content` (javascript.js: `var type, content`).
     ty: Cell<Option<&'static str>>,
     content: RefCell<Option<U>>,
@@ -643,6 +709,10 @@ impl JsMode {
             track_scope: pc.get("trackScope") != Some(&ConfigValue::Bool(false)),
             is_ts: pc.truthy("typescript"),
             double_indent_switch: !double_off,
+            local_vars: config_var_list(pc.get("localVars")),
+            local_vars_truthy: pc.truthy("localVars"),
+            global_vars_on: pc.truthy("globalVars"),
+            global_vars: config_var_list(pc.get("globalVars")),
             ty: Cell::new(None),
             content: RefCell::new(None),
         }
@@ -1087,7 +1157,13 @@ impl Cx<'_, '_> {
                 return;
             }
         }
-        // Fall through means this is global; `parserConfig.globalVars` is not supported.
+        // Fall through means this is global
+        if self.m.global_vars_on && !in_list(name.as_deref(), self.state.global_vars.as_ref()) {
+            self.state.global_vars = Some(Rc::new(Var {
+                name,
+                next: self.state.global_vars.take(),
+            }));
+        }
     }
 
     fn ty_in(ty: Option<&str>, chars: &str) -> bool {
@@ -2353,8 +2429,15 @@ impl Mode for JsMode {
                 align: Some(false),
                 pos: None,
             })),
-            local_vars: None,
-            context: None,
+            local_vars: self.local_vars.clone(),
+            context: self.local_vars_truthy.then(|| {
+                Rc::new(Ctx {
+                    prev: None,
+                    vars: None,
+                    block: false,
+                })
+            }),
+            global_vars: self.global_vars.clone(),
             indented: base,
             fat_arrow_at: None,
         }))
@@ -2392,6 +2475,36 @@ impl Mode for JsMode {
         };
         self.parse_js(state, style, ty, content, stream)
             .into_style()
+    }
+
+    /// javascript.js: `expressionAllowed: expressionAllowed`.
+    fn expression_allowed(
+        &self,
+        stream: &StringStream<'_>,
+        state: &State,
+        back_up: usize,
+    ) -> Option<bool> {
+        Some(JsMode::expression_allowed(
+            self,
+            stream,
+            state.get::<JsState>(),
+            back_up,
+        ))
+    }
+
+    /// javascript.js: `skipExpression(state)`: `parseJS(state, "atom", "atom",
+    /// "true", new CodeMirror.StringStream("", 2, null))`.
+    fn skip_expression(&self, state: &mut State) -> bool {
+        let empty: [u16; 0] = [];
+        let mut stream = StringStream::new(&empty, Some(2), None);
+        self.parse_js(
+            state.get_mut::<JsState>(),
+            "atom".into(),
+            Some("atom"),
+            Some(u("true")),
+            &mut stream,
+        );
+        true
     }
 
     fn has_indent(&self) -> bool {
