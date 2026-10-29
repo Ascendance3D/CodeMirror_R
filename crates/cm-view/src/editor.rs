@@ -11,9 +11,8 @@
 //! Not ported:
 //! * the `scroll`/`swapDoc`/`refresh`/
 //!   `optionChange`/`gutterClick`/DOM editor events.
-//! * `addOverlay`/`removeOverlay`. `getHelper`/`getHelpers` are ported, but
-//!   `findWordAt` and group motion still use plain `isWordChar`, so javascript's
-//!   `wordChars` helper (`[\w$]`) is ignored and `$` is not a word character.
+//! * `addOverlay`/`removeOverlay`. `getHelper`/`getHelpers` are ported; `findWordAt`
+//!   consults the `wordChars` helper (misc.js:129-133).
 //! * `addLineClass`, `setGutterMarker` and the `gutters` option; `addLineWidget`,
 //!   `addWidget`.
 //! * collapsed ranges in layout: line heights and the viewport count every line
@@ -21,6 +20,7 @@
 //! * bidi in measurement, cursors, selection drawing and clicks (left to right only;
 //!   `moveVisually` and `endOfLine` do use the ported bidi ordering).
 
+use std::any::Any;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
@@ -38,13 +38,15 @@ use cm_core::{
 use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_mode};
 
 use crate::events::{
-    ChangeHandler, ChangesHandler, Cx, DisplayEvent, EditorEvents, EditorHandler, EditorShared,
-    InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler, NameHandler,
-    OpRecord, Parked, ViewChange, ViewportHandler, WithSelf, finish,
+    ChangeHandler, ChangesHandler, Cx, DisplayEvent, DomEvent, EditorEvents, EditorHandler,
+    EditorShared, GutterHandler, InputChange, InputReadHandler, LineHandler, MarkerClearedHandler,
+    MarkerHandler, NameHandler, NamedEditorHandler, OpRecord, Parked, ViewChange, ViewportHandler,
+    WidgetHandler, WithSelf, finish,
 };
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
 use crate::measure::{LineLayout, Metrics, PosInfo, Rect, coords_char_inner};
+use crate::mouse::MouseEvent;
 use crate::movement::{UnitH, UnitV, find_pos_h, find_pos_v};
 
 /// A command (`CodeMirror.commands[name]`); `false` is `CodeMirror.Pass`.
@@ -81,6 +83,8 @@ pub struct EditorOptions {
     pub selections_may_touch: bool,
     pub max_highlight_length: usize,
     pub flatten_spans: bool,
+    /// `addModeClass`: styles get an `m-<inner mode name>` prefix.
+    pub add_mode_class: bool,
     /// `lineSeparator`.
     pub line_separator: Option<String>,
     /// The platform is a Mac (`mac`, `flipCtrlCmd`).
@@ -93,6 +97,75 @@ pub struct EditorOptions {
     pub autofocus: bool,
     /// `finishInit`: run at the end of the constructor, before the init hooks.
     pub finish_init: Option<crate::options::InitHook>,
+    /// `gutters`: gutter columns, left to right. `CodeMirror-linenumbers` places the
+    /// line numbers (it is dropped without `lineNumbers`, and appended when absent).
+    pub gutters: Vec<GutterSpec>,
+    /// The CSS width of a gutter class (`.breakpoints { width: 16px }` in the page's
+    /// style sheet), in px. A spec's own `width: Npx` style wins; a class without a
+    /// width is 0 px wide, like an empty `div.CodeMirror-gutter`.
+    pub gutter_class_widths: Vec<(String, f64)>,
+}
+
+/// One entry of the `gutters` option (src/display/gutters.js:6): a class name, or an
+/// object `{className, style}`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GutterSpec {
+    pub class_name: String,
+    pub style: Option<String>,
+}
+
+impl GutterSpec {
+    pub fn new(class_name: &str) -> GutterSpec {
+        GutterSpec {
+            class_name: class_name.into(),
+            style: None,
+        }
+    }
+}
+
+impl From<&str> for GutterSpec {
+    fn from(s: &str) -> GutterSpec {
+        GutterSpec::new(s)
+    }
+}
+
+/// A drawn gutter column: its spec, left edge and width in px from the editor's left
+/// edge (`gutterLeft`/`gutterWidth` of `getDimensions`, display/update_display.js).
+#[derive(Clone, Debug, PartialEq)]
+pub struct GutterColumn {
+    pub class_name: String,
+    pub left: f64,
+    pub width: f64,
+}
+
+/// `getGutters(gutters, lineNumbers)` (src/display/gutters.js:6).
+pub fn get_gutters(gutters: &[GutterSpec], line_numbers: bool) -> Vec<GutterSpec> {
+    let mut result = Vec::new();
+    let mut saw_line_numbers = false;
+    for g in gutters {
+        if g.class_name == "CodeMirror-linenumbers" {
+            if !line_numbers {
+                continue;
+            }
+            saw_line_numbers = true;
+        }
+        result.push(g.clone());
+    }
+    if line_numbers && !saw_line_numbers {
+        result.push(GutterSpec::new("CodeMirror-linenumbers"));
+    }
+    result
+}
+
+/// The `width: Npx` declaration of an inline style, if any.
+fn style_width(style: &str) -> Option<f64> {
+    style.split(';').find_map(|d| {
+        let (k, v) = d.split_once(':')?;
+        if k.trim() != "width" {
+            return None;
+        }
+        v.trim().strip_suffix("px")?.trim().parse().ok()
+    })
 }
 
 impl Default for EditorOptions {
@@ -120,24 +193,143 @@ impl Default for EditorOptions {
             selections_may_touch: false,
             max_highlight_length: 10000,
             flatten_spans: true,
+            add_mode_class: false,
             line_separator: None,
             mac: cfg!(target_os = "macos"),
             line_number_formatter: None,
             phrases: None,
             autofocus: false,
             finish_init: None,
+            gutters: Vec::new(),
+            gutter_class_widths: Vec::new(),
         }
     }
 }
 
-/// Coordinate systems (`intoCoordSystem` contexts): "line" (line-local), "div"
-/// (`display.lineDiv`, here: document y without the top padding) and "local"
-/// (the sizer, i.e. including `paddingTop`).
+/// Coordinate systems (`intoCoordSystem` / `fromCoordSystem` contexts,
+/// src/measurement/position_measurement.js:305-345).
+///
+/// The native "window" is the host's drawing surface: [`Display::window_origin`]
+/// is where the editor's top-left corner (`display.wrapper.getBoundingClientRect()`)
+/// sits in it, and [`Display::page_scroll`] is the host page's scroll offset
+/// (`pageXOffset`/`pageYOffset`), so "page" = "window" + `page_scroll`. Both
+/// default to (0, 0): a host that does not set them gets window = page = editor
+/// relative coordinates. The text area (`display.lineSpace`) starts at
+/// `window_origin + (gutter_width - scroll_left, paddingTop - scroll_top + viewOffset)`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CoordSys {
+    /// "line": relative to the top of the line.
     Line,
+    /// "div": relative to `display.lineSpace`, whose top is the top of the
+    /// rendered range (document y minus [`Editor::view_offset`]).
     Div,
+    /// "local": relative to the sizer (document y plus `paddingTop`).
     Local,
+    /// "page": the host window plus [`Display::page_scroll`]. The default of the
+    /// `*_in` methods, as in CM5.
+    Page,
+    /// "window": the host window ([`Display::window_origin`]).
+    Window,
+    /// The port's internal frame: document y without the top padding (CM5 "div"
+    /// with a `viewOffset` of 0). The renderer and vertical motion use it, with
+    /// [`Editor::coords_char`] and [`Editor::line_at_height`], which take document y.
+    Doc,
+}
+
+/// The `start` argument of `cm.cursorCoords(start, mode)`: `null` (the primary
+/// head), `true` (`from()`), `false` (`to()`) or a position (clipped).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum CoordsStart {
+    Head,
+    From,
+    To,
+    Pos(Pos),
+}
+
+impl From<Pos> for CoordsStart {
+    fn from(p: Pos) -> Self {
+        CoordsStart::Pos(p)
+    }
+}
+impl From<bool> for CoordsStart {
+    fn from(b: bool) -> Self {
+        if b {
+            CoordsStart::From
+        } else {
+            CoordsStart::To
+        }
+    }
+}
+impl From<Option<bool>> for CoordsStart {
+    fn from(b: Option<bool>) -> Self {
+        b.map_or(CoordsStart::Head, CoordsStart::from)
+    }
+}
+
+/// The `line` argument of `cm.heightAtLine(line, ...)`: a line number or a handle.
+#[derive(Clone, Debug)]
+pub enum LineArg {
+    Number(i64),
+    Handle(LineHandle),
+}
+
+impl From<i64> for LineArg {
+    fn from(n: i64) -> Self {
+        LineArg::Number(n)
+    }
+}
+impl From<LineHandle> for LineArg {
+    fn from(h: LineHandle) -> Self {
+        LineArg::Handle(h)
+    }
+}
+impl From<&LineHandle> for LineArg {
+    fn from(h: &LineHandle) -> Self {
+        LineArg::Handle(h.clone())
+    }
+}
+
+/// `cm.getScrollInfo()` (src/edit/methods.js:365): the scroll offsets, the size of
+/// the scrollable content (`scrollHeight`/`scrollWidth` less the scrollbar gap) and
+/// the visible size (`displayHeight` / `displayWidth`, gutters included).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ScrollInfo {
+    pub left: f64,
+    pub top: f64,
+    pub height: f64,
+    pub width: f64,
+    pub client_height: f64,
+    pub client_width: f64,
+}
+
+/// The `range` argument of `cm.scrollIntoView(range, margin)` (methods.js:373):
+/// `null` (the primary cursor, with `cursorScrollMargin` when no margin is given),
+/// a line number (its start), a position, a `{from, to}` range, a
+/// `{left, top, right, bottom}` box in "local" coordinates, or a range of two boxes.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ScrollTarget {
+    Cursor,
+    Line(i64),
+    Pos(Pos),
+    Range(Pos, Pos),
+    Coords(Rect),
+    CoordsRange(Rect, Rect),
+}
+
+impl From<i64> for ScrollTarget {
+    fn from(n: i64) -> Self {
+        ScrollTarget::Line(n)
+    }
+}
+impl From<Pos> for ScrollTarget {
+    fn from(p: Pos) -> Self {
+        ScrollTarget::Pos(p)
+    }
+}
+impl From<Rect> for ScrollTarget {
+    fn from(r: Rect) -> Self {
+        ScrollTarget::Coords(r)
+    }
 }
 
 /// The parts of `cm.display` the model needs.
@@ -150,6 +342,11 @@ pub struct Display {
     pub window_height: Option<f64>,
     pub scroll_top: f64,
     pub scroll_left: f64,
+    /// Where the editor's top-left corner sits in the host window, for the
+    /// "window" and "page" coordinate systems (see [`CoordSys`]). Set by the host.
+    pub window_origin: (f64, f64),
+    /// The host page's scroll offset (`pageXOffset`, `pageYOffset`), for "page".
+    pub page_scroll: (f64, f64),
     /// `display.shift`: shift is held during the current key/mouse event.
     pub shift: bool,
     pub view_from: i64,
@@ -221,6 +418,9 @@ pub(crate) struct HeightCache {
     /// Width of the widest line (`display.maxLine`), recomputed after changes.
     pub(crate) max_width: Option<f64>,
     pub(crate) max_line: MaxLine,
+    /// A line widget was added at some point: line heights are no longer all
+    /// `textHeight` when lines do not wrap.
+    pub(crate) has_widgets: bool,
 }
 
 /// The longest line: `display.maxLine`, `maxLineLength`, `maxLineChanged` and
@@ -321,6 +521,9 @@ pub struct Editor {
     pub(crate) clicks: crate::mouse::ClickTracker,
     /// Gutter width in px (line numbers), recomputed by [`Editor::update_gutter`].
     pub gutter_width: f64,
+    /// `display.gutterSpecs` and the columns they occupy.
+    pub gutter_specs: Vec<GutterSpec>,
+    pub gutter_columns: Vec<GutterColumn>,
 }
 
 /// Dropping an editor destroys it (D5): its document is detached from it (as
@@ -449,8 +652,13 @@ impl Editor {
         hs.tab_size = options.tab_size;
         hs.max_highlight_length = options.max_highlight_length;
         hs.flatten_spans = options.flatten_spans;
+        hs.add_mode_class = options.add_mode_class;
         let hs = Rc::new(RefCell::new(hs));
         let heights = Rc::new(RefCell::new(HeightCache::default()));
+        heights.borrow_mut().has_widgets = (first..first + doc.line_count() as i64).any(|n| {
+            doc.get_line_handle(n)
+                .is_some_and(|h| !h.widgets().is_empty())
+        });
         let shared = EditorShared::new(
             EditorSemantics {
                 history_event_delay: options.history_event_delay,
@@ -478,6 +686,8 @@ impl Editor {
                 window_height: None,
                 scroll_top: 0.0,
                 scroll_left: 0.0,
+                window_origin: (0.0, 0.0),
+                page_scroll: (0.0, 0.0),
                 shift: false,
                 view_from: first,
                 view_to: first,
@@ -507,6 +717,8 @@ impl Editor {
             mouse: None,
             clicks: Default::default(),
             gutter_width: 0.0,
+            gutter_specs: Vec::new(),
+            gutter_columns: Vec::new(),
             options,
         };
         ed.update_gutter();
@@ -545,6 +757,87 @@ impl Editor {
         self.run_op(|cm| {
             cm.mode = cm.registry.get_mode(&mode_opts, &spec);
             cm.mode_spec = spec;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.force_update = true;
+        });
+    }
+    /// `addOverlay(spec, options)` (src/edit/methods.js:67): a mode object, or a
+    /// spec resolved with `getMode(cm.options, spec)`, joins `cm.state.overlays`
+    /// after those of lower or equal `priority` (`options.priority || 0`: pass 0.0
+    /// for none; NaN counts as 0). Bumps `modeGen` and redraws everything. A mode
+    /// with a `startState` is refused, before anything changes.
+    pub fn add_overlay(
+        &mut self,
+        spec: highlight::OverlaySpec,
+        opaque: bool,
+        priority: f64,
+    ) -> Result<(), highlight::StatefulOverlay> {
+        let mode = match &spec {
+            highlight::OverlaySpec::Mode(m) => m.clone(),
+            highlight::OverlaySpec::Spec(s) => {
+                let mode_opts = ModeOptions {
+                    indent_unit: self.options.indent_unit,
+                    tab_size: self.options.tab_size,
+                    highlight_non_standard_property_keywords: None,
+                };
+                self.registry.get_mode(&mode_opts, s)
+            }
+        };
+        if highlight::has_start_state(&*mode) {
+            return Err(highlight::StatefulOverlay);
+        }
+        let priority = if priority.is_nan() { 0.0 } else { priority };
+        self.run_op(|cm| {
+            let mut hs = cm.hs.borrow_mut();
+            cm_core::util::misc::insert_sorted(
+                &mut hs.overlays,
+                highlight::Overlay {
+                    mode,
+                    mode_spec: spec,
+                    opaque,
+                    priority,
+                },
+                |o| o.priority,
+            );
+            hs.mode_gen += 1;
+            drop(hs);
+            cm.force_update = true;
+        });
+        Ok(())
+    }
+    /// `removeOverlay(spec)` (src/edit/methods.js:77): removes the first overlay
+    /// whose spec is `spec` (the same mode object, or an equal spec) or, for a
+    /// string, whose spec's `name` is that string. Bumps `modeGen` and redraws
+    /// only when one was removed.
+    pub fn remove_overlay(&mut self, spec: &highlight::OverlaySpec) {
+        self.run_op(|cm| {
+            let mut hs = cm.hs.borrow_mut();
+            if let Some(i) = hs
+                .overlays
+                .iter()
+                .position(|o| highlight::OverlaySpec::matches_removal(&o.mode_spec, spec))
+            {
+                hs.overlays.remove(i);
+                hs.mode_gen += 1;
+                drop(hs);
+                cm.force_update = true;
+            }
+        });
+    }
+    /// `setOption("flattenSpans", v)`: `resetModeState` (src/edit/options.js:151).
+    pub fn set_flatten_spans(&mut self, v: bool) {
+        self.run_op(|cm| {
+            cm.options.flatten_spans = v;
+            cm.hs.borrow_mut().flatten_spans = v;
+            highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
+            cm.force_update = true;
+        });
+    }
+    /// `setOption("addModeClass", v)`: `resetModeState` (src/edit/options.js:152).
+    pub fn set_add_mode_class(&mut self, v: bool) {
+        self.run_op(|cm| {
+            cm.options.add_mode_class = v;
+            cm.hs.borrow_mut().add_mode_class = v;
             highlight::reset_mode_state(&cm.doc, &mut cm.hs.borrow_mut());
             cm.force_update = true;
         });
@@ -623,25 +916,225 @@ impl Editor {
         self.doc.last_line()
     }
 
-    /// Gutter width: `lineNumberWidth` + gutter padding (`.CodeMirror-linenumber {
-    /// padding: 0 3px 0 5px; min-width: 20px }`), for the number of the last line
+    /// Gutter width: the columns plus the 1 px border of `.CodeMirror-gutters`; the
+    /// line-number column is `lineNumWidth` for the number of the last line
     /// (`lineNumberFor(options, doc.first + doc.size - 1)`).
+    ///
+    /// With the `gutters` option this is `renderGutters` + `updateGutterSpace`: the
+    /// columns sit side by side, the line-number column is `lineNumWidth` wide, and
+    /// `.CodeMirror-gutters` adds its 1 px right border when there is any column
+    /// (it is `display: none` otherwise).
     pub fn update_gutter(&mut self) {
-        if !self.options.line_numbers {
-            self.gutter_width = 0.0;
+        self.gutter_specs = get_gutters(&self.options.gutters, self.options.line_numbers);
+        let line_num_width = if self.options.line_numbers {
+            let chars = self.last_line_number_chars();
+            // maybeUpdateLineNumberWidth (line_numbers.js:32): the test element is
+            // `min-width: 20px; padding: 0 3px 0 5px` around the number; offsetWidth
+            // rounds; lineNumWidth = lineNumInnerWidth + padding = offsetWidth + 1.
+            let text = chars as f64 * self.metrics.char_width;
+            self.display.line_num_chars = Some(chars);
+            (text.max(20.0) + 8.0).round() + 1.0
+        } else {
             self.display.line_num_chars = None;
-            return;
-        }
-        let chars = self.last_line_number_chars();
-        let inner = (chars as f64 * self.metrics.char_width).max(20.0);
-        self.gutter_width = (inner + 8.0 + 1.0).ceil();
-        self.display.line_num_chars = Some(chars);
+            0.0
+        };
+        let mut left = 0.0;
+        self.gutter_columns = self
+            .gutter_specs
+            .iter()
+            .map(|g| {
+                let width = if g.class_name == "CodeMirror-linenumbers" {
+                    line_num_width
+                } else {
+                    g.style
+                        .as_deref()
+                        .and_then(style_width)
+                        .or_else(|| {
+                            g.class_name.split_whitespace().find_map(|c| {
+                                self.options
+                                    .gutter_class_widths
+                                    .iter()
+                                    .find(|(k, _)| k == c)
+                                    .map(|(_, w)| *w)
+                            })
+                        })
+                        .unwrap_or(0.0)
+                };
+                let col = GutterColumn {
+                    class_name: g.class_name.clone(),
+                    left,
+                    width,
+                };
+                left += width;
+                col
+            })
+            .collect();
+        self.gutter_width = if self.gutter_specs.is_empty() {
+            0.0
+        } else {
+            left + 1.0
+        };
     }
 
+    /// `setOption("gutters", v)`: `updateGutters` (gutters.js:40) — `renderGutters`,
+    /// `regChange`, `alignHorizontally` (the native gutters never scroll, so nothing
+    /// to align).
+    pub fn set_gutters(&mut self, gutters: Vec<GutterSpec>) {
+        self.run_op(|cm| {
+            cm.options.gutters = gutters;
+            cm.update_gutters();
+        });
+    }
+    /// `setOption("lineNumbers", v)`: also `updateGutters` (options.js:107).
+    pub fn set_line_numbers(&mut self, v: bool) {
+        self.run_op(|cm| {
+            cm.options.line_numbers = v;
+            cm.update_gutters();
+        });
+    }
+    fn update_gutters(&mut self) {
+        self.update_gutter();
+        self.shared
+            .reg_change_all(self.doc.first_line(), self.doc.line_count() as i64);
+        self.invalidate_heights();
+        self.force_update = true;
+    }
+
+    /// `gutterEvent(cm, e, type, prevent)` (src/edit/mouse_events.js:370). `wx`/`wy`
+    /// are window pixels relative to the editor. Returns whether the event was in the
+    /// gutters and must not reach the text (`e_defaultPrevented(e)`): a click is
+    /// always prevented there; a context menu only when a handler ran and called
+    /// `prevent_default`, which the native port has no way to express, so a handled
+    /// context menu counts as prevented.
+    fn gutter_event(&mut self, e: &MouseEvent, wx: f64, wy: f64, click: bool) -> bool {
+        if wx >= self.gutter_width.floor() {
+            return false;
+        }
+        // lineDiv.getBoundingClientRect().bottom: the bottom of the rendered lines.
+        let (_, dy) = self.div_from_window(wx, wy);
+        let bottom = if self.display.view_to > self.display.view_from {
+            self.height_at_line(self.display.view_to - 1)
+                + self.line_height(self.display.view_to - 1)
+        } else {
+            0.0
+        };
+        let snap = {
+            let ls = self.shared.ls.borrow();
+            if click {
+                ls.gutter_click.snapshot()
+            } else {
+                ls.gutter_context_menu.snapshot()
+            }
+        };
+        if dy > bottom || snap.is_empty() {
+            return click;
+        }
+        let Some(col) = self
+            .gutter_columns
+            .iter()
+            .find(|c| c.left + c.width >= wx)
+            .cloned()
+        else {
+            return false;
+        };
+        let line = self.line_at_height(dy);
+        for h in snap.iter() {
+            (h.f)(
+                &mut Cx {
+                    editor: self,
+                    others: &mut NoEditors,
+                },
+                line,
+                &col.class_name,
+                e,
+            );
+        }
+        true
+    }
+    /// `clickInGutter(cm, e)`: a mouse down at window `wx`/`wy`. Returns whether it
+    /// was in the gutters (the click then does nothing else).
+    pub fn click_in_gutter(&mut self, e: &MouseEvent, wx: f64, wy: f64) -> bool {
+        self.gutter_event(e, wx, wy, true)
+    }
+    /// `contextMenuInGutter(cm, e)`: only with a `gutterContextMenu` handler.
+    pub fn context_menu_in_gutter(&mut self, e: &MouseEvent, wx: f64, wy: f64) -> bool {
+        if self.shared.ls.borrow().gutter_context_menu.is_empty() {
+            return false;
+        }
+        self.gutter_event(e, wx, wy, false)
+    }
+    /// `on("gutterClick", f)`: `(cm, line, gutter className, event)` (immediate).
+    pub fn on_gutter_click(
+        &self,
+        f: impl Fn(&mut Cx, i64, &str, &MouseEvent) + 'static,
+    ) -> ListenerId {
+        let f: Rc<GutterHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().gutter_click.on_rc(f)
+    }
+    /// `addLineWidget(line, node, options)` (methods.js:294); `height` is the node's
+    /// height in px (CM5 measures the DOM node).
+    pub fn add_line_widget(
+        &mut self,
+        line: impl Into<cm_core::LineSel>,
+        node: Rc<dyn std::any::Any>,
+        height: f64,
+        opts: cm_core::LineWidgetOptions,
+    ) -> cm_core::LineWidget {
+        let line = line.into();
+        self.run_op(|cm| cm.doc.add_line_widget(line, node, height, opts))
+    }
+    /// `removeLineWidget(widget)` (methods.js:297): `widget.clear()`.
+    /// `lineWidgetCleared` is signaled after the operation (delivered with the orphan
+    /// callbacks, [`Editor::fire_orphan_delayed`]).
+    pub fn remove_line_widget(&mut self, widget: &cm_core::LineWidget) {
+        if let Some(no) = self.run_op(|cm| widget.detach(&cm.doc)) {
+            use cm_core::EditorSink;
+            self.shared
+                .signal_line_widget(widget, no, cm_core::LineWidgetEvent::Cleared);
+        }
+    }
+    /// `widget.changed()` once the host's node is `height` px tall.
+    pub fn line_widget_changed(&mut self, widget: &cm_core::LineWidget, height: f64) {
+        self.run_op(|cm| widget.changed(&cm.doc, height));
+    }
+    /// `on("lineWidgetAdded", f)`: `(cm, widget, line)` (delayed).
+    pub fn on_line_widget_added(
+        &self,
+        f: impl Fn(&mut Cx, &cm_core::LineWidget, i64) + 'static,
+    ) -> ListenerId {
+        let f: Rc<WidgetHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().line_widget_added.on_rc(f)
+    }
+    /// `on("lineWidgetCleared", f)` (delayed).
+    pub fn on_line_widget_cleared(
+        &self,
+        f: impl Fn(&mut Cx, &cm_core::LineWidget, i64) + 'static,
+    ) -> ListenerId {
+        let f: Rc<WidgetHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().line_widget_cleared.on_rc(f)
+    }
+    /// `on("lineWidgetChanged", f)` (delayed).
+    pub fn on_line_widget_changed(
+        &self,
+        f: impl Fn(&mut Cx, &cm_core::LineWidget, i64) + 'static,
+    ) -> ListenerId {
+        let f: Rc<WidgetHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().line_widget_changed.on_rc(f)
+    }
+    /// `on("gutterContextMenu", f)` (immediate).
+    pub fn on_gutter_context_menu(
+        &self,
+        f: impl Fn(&mut Cx, i64, &str, &MouseEvent) + 'static,
+    ) -> ListenerId {
+        let f: Rc<GutterHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().gutter_context_menu.on_rc(f)
+    }
+
+    /// `lineNumberFor(cm.options, doc.first + doc.size - 1).length`
+    /// (line_numbers.js:34), with `lineNumberFormatter`.
     fn last_line_number_chars(&self) -> usize {
-        let last =
-            self.options.first_line_number + self.first_line() + self.doc.line_count() as i64 - 1;
-        last.to_string().len()
+        let last = self.first_line() + self.doc.line_count() as i64 - 1;
+        self.line_number_for(last).encode_utf16().count()
     }
 
     /// `maybeUpdateLineNumberWidth(cm)` (src/display/line_numbers.js:32): when the
@@ -867,6 +1360,74 @@ impl Editor {
             );
         }
     }
+    /// `on(cm, name, f)` for a string-named or custom event (addons signal
+    /// `"fold"`, `"startCompletion"`, ...): `f` gets the values of
+    /// [`Editor::signal_event`]. A name of a typed event (`"change"`, ...) is a
+    /// separate entry here and is reached only by `signal_event`. Remove it with
+    /// [`Editor::off`].
+    pub fn on_event(
+        &self,
+        name: &str,
+        f: impl Fn(&mut Cx, cm_core::Args<'_>) + 'static,
+    ) -> ListenerId {
+        self.on_event_rc(name, Rc::new(f))
+    }
+    /// [`Editor::on_event`] with a shared handler, for removal by identity
+    /// ([`Editor::off_event_fn`]).
+    pub fn on_event_rc(&self, name: &str, f: Rc<NamedEditorHandler>) -> ListenerId {
+        self.shared.ls.borrow_mut().named.on_rc(name, f)
+    }
+    /// `off(cm, name, f)`: remove the first handler of `name` that is `f`.
+    pub fn off_event_fn(&self, name: &str, f: &Rc<NamedEditorHandler>) -> bool {
+        let gone = self.shared.ls.borrow_mut().named.remove_fn(name, f);
+        gone.is_some()
+    }
+    /// `getHandlers(cm, name)`: the named handlers of `name` as of now (empty
+    /// when there are none); later `on`/`off` calls do not change it.
+    pub fn get_handlers(&self, name: &str) -> Rc<[cm_core::events::Entry<NamedEditorHandler>]> {
+        self.shared.ls.borrow().named.get_handlers(name)
+    }
+    /// `hasHandler(cm, name)` for the named table.
+    pub fn has_handler(&self, name: &str) -> bool {
+        self.shared.ls.borrow().named.has_handler(name)
+    }
+    /// `signal(cm, name, ...values)`: call the named handlers of `name` now, in
+    /// registration order, over the list as it was when the signal started.
+    pub fn signal_event(&mut self, name: &str, args: cm_core::Args<'_>) {
+        let hs = self.get_handlers(name);
+        for e in hs.iter() {
+            (e.f)(
+                &mut Cx {
+                    editor: self,
+                    others: &mut NoEditors,
+                },
+                args,
+            );
+        }
+    }
+    /// `on(cm, type, f)` for a DOM event the editor handles: `f` sees the event
+    /// before the editor and may pre-empt it ([`DomEvent::prevent_default`],
+    /// [`DomEvent::set_codemirror_ignore`]).
+    pub fn on_dom_event(&self, kind: &str, f: impl Fn(&mut Cx, &DomEvent) + 'static) -> ListenerId {
+        self.on_event(kind, move |cx, args| {
+            if let Some(e) = args.first().and_then(|a| a.downcast_ref::<DomEvent>()) {
+                f(cx, e)
+            }
+        })
+    }
+    /// `signalDOMEvent(cm, e, override)` (src/util/event.js:51): signal `e` to the
+    /// handlers of `override` (or `e.kind`); `true` when one of them called
+    /// `preventDefault` or set `codemirrorIgnore`, and the editor must leave the
+    /// event alone. The editor calls it at its input entry points (`key_down`,
+    /// `key_press`, `mouse_down`, `paste`) and before `maybeScrollWindow`
+    /// (`"scrollCursorIntoView"`); a host calls it for the events it handles itself.
+    pub fn signal_dom_event(&mut self, e: &DomEvent, override_: Option<&str>) -> bool {
+        let name = override_.unwrap_or(&e.kind).to_string();
+        if self.has_handler(&name) {
+            self.signal_event(&name, &[e as &dyn Any]);
+        }
+        e.default_prevented() || e.codemirror_ignore()
+    }
     /// `state.focused`.
     pub fn has_focus(&self) -> bool {
         self.focused
@@ -1030,6 +1591,20 @@ impl Editor {
         // The browser clamps the scroller to the content once `updateDisplay` has
         // resized the sizer, so a change that shortened the document moves the offsets
         // whether or not a scroll is queued; queued scrolls are resolved against them.
+        // line_widget.js adjustScrollWhenAboveVisible: a widget on a line above
+        // the visible top moves the scroll position by its height.
+        for (line, diff) in std::mem::take(&mut rec.widget_scroll) {
+            let Some(no) = self.doc.get_line_number(&line) else {
+                continue;
+            };
+            let top = self.op.scroll_top.unwrap_or(self.display.scroll_top);
+            if diff != 0.0 && self.height_at_line(no) < top {
+                self.add_to_scroll_top(diff);
+            }
+        }
+        if std::mem::take(&mut rec.force_update) {
+            self.force_update = true;
+        }
         self.clamp_scroll();
         self.take_sel_scroll();
         if let Some(st) = self.op.scroll_top.take() {
@@ -1048,7 +1623,11 @@ impl Editor {
             ensure = Some((from.line, to.line));
             // `maybeScrollWindow(cm, rect)` takes this rect; the engine has no window, so
             // an adapter that has one reads it with `take_window_scroll_rect`.
-            self.window_scroll_rect = Some(self.scroll_pos_into_view(from, to, margin));
+            let rect = self.scroll_pos_into_view(from, to, margin);
+            // maybeScrollWindow: `if (signalDOMEvent(cm, "scrollCursorIntoView")) return`.
+            if !self.signal_dom_event(&DomEvent::new("scrollCursorIntoView"), None) {
+                self.window_scroll_rect = Some(rect);
+            }
         }
         // regChange (view_tracking.js:13) and regLineChange (:78), in order, without
         // collapsed spans. The view array is not kept: `replaced` stands for
@@ -1548,7 +2127,9 @@ impl Editor {
         let w = if self.options.line_wrapping {
             0.0
         } else {
-            (self.max_line_width() - self.text_area_width()).max(0.0)
+            // op.maxScrollLeft (operations.js:102): sizer.offsetLeft + adjustWidthTo -
+            // displayWidth, with the gutters left of the text area.
+            (self.sizer_width() - self.text_area_width()).max(0.0)
         };
         (h, w)
     }
@@ -1665,6 +2246,13 @@ impl Editor {
         let w = LineLayout::new(&self.metrics, &t, self.options.tab_size, None).width;
         self.heights.borrow_mut().max_width = Some(w);
         w
+    }
+
+    /// `op.adjustWidthTo` (operations.js:98), the sizer's `minWidth`:
+    /// `measureChar(cm, maxLine, maxLine.text.length).left + 3`, i.e. the left padding,
+    /// the text and 3 px (not the right padding).
+    pub fn sizer_width(&self) -> f64 {
+        self.max_line_width() - self.metrics.padding_h + 3.0
     }
 
     /// `visibleLines(display, doc)`: `[from, to)`.
@@ -1794,8 +2382,12 @@ impl Editor {
         for i in 0..n {
             if h.heights[i].is_nan() {
                 let t = self.line_text(first + i as i64);
-                h.heights[i] =
-                    LineLayout::new(&self.metrics, &t, self.options.tab_size, Some(ww)).height();
+                let text = if self.options.line_wrapping {
+                    LineLayout::new(&self.metrics, &t, self.options.tab_size, Some(ww)).height()
+                } else {
+                    self.metrics.text_height
+                };
+                h.heights[i] = text + self.widgets_height(first + i as i64);
             }
             acc += h.heights[i];
             prefix.push(acc);
@@ -1803,9 +2395,121 @@ impl Editor {
         h.prefix = Some(prefix);
     }
 
+    /// Every line is `textHeight` tall: no wrapping and no line widget.
+    fn uniform_heights(&self) -> bool {
+        !self.options.line_wrapping && !self.heights.borrow().has_widgets
+    }
+    /// The widgets' share of line `n`'s height (`line.height` includes them unless
+    /// the line is hidden).
+    pub fn widgets_height(&self, n: i64) -> f64 {
+        let Some(h) = self.doc.get_line_handle(n) else {
+            return 0.0;
+        };
+        if self.doc.line_is_hidden(n) {
+            return 0.0;
+        }
+        h.widgets().iter().map(|w| w.height()).sum()
+    }
+    /// The top of line `n`'s text: below the widgets above it.
+    pub fn text_top(&self, n: i64) -> f64 {
+        self.height_at_line(n) + self.widget_top_height(n)
+    }
+    /// The boxes of the widgets of the rendered lines, for the host to draw its
+    /// nodes in (`insertLineWidgetsFor` + `positionLineWidget`, update_line.js:157-191):
+    /// `left`/`right` are window x, `top`/`bottom` document y. A widget spans the text
+    /// area; `coverGutter` extends it over the gutters; `noHScroll` keeps it at the
+    /// editor's left edge (it does not scroll horizontally).
+    pub fn line_widget_boxes(&self) -> Vec<(cm_core::LineWidget, Rect)> {
+        let mut out = Vec::new();
+        for n in self.display.view_from..self.display.view_to {
+            let Some(h) = self.doc.get_line_handle(n) else {
+                continue;
+            };
+            let ws = h.widgets();
+            if ws.is_empty() || self.doc.line_is_hidden(n) {
+                continue;
+            }
+            let mut above = self.height_at_line(n);
+            let mut below = above + self.widget_top_height(n) + self.text_rows_height(n);
+            for w in ws {
+                let o = w.options();
+                let ht = w.height();
+                let y = if o.above {
+                    above += ht;
+                    above - ht
+                } else {
+                    below += ht;
+                    below - ht
+                };
+                let sl = if o.no_h_scroll {
+                    0.0
+                } else {
+                    self.display.scroll_left
+                };
+                // A noHScroll widget sits at `fixedPos` with the gutters as left
+                // padding (update_line.js:177): its box starts at the wrapper's edge.
+                let left = if o.cover_gutter || o.no_h_scroll {
+                    0.0
+                } else {
+                    self.gutter_width
+                } - sl;
+                let right = if o.no_h_scroll {
+                    self.display.width
+                } else {
+                    self.gutter_width
+                        + self.text_area_width().max(if self.options.line_wrapping {
+                            0.0
+                        } else {
+                            self.max_line_width()
+                        })
+                        - sl
+                };
+                out.push((
+                    w,
+                    Rect {
+                        left,
+                        right,
+                        top: y,
+                        bottom: y + ht,
+                    },
+                ));
+            }
+        }
+        out
+    }
+    /// Line `n`'s text rows (its height without widgets).
+    pub fn text_rows_height(&self, n: i64) -> f64 {
+        self.line_height(n) - self.widgets_height(n)
+    }
+    /// `eventInWidget(display, e)` for a point in "div" coordinates (`x` from the
+    /// text area's left edge): inside a widget that does not handle mouse events.
+    pub fn event_in_widget(&self, x: f64, y: f64) -> bool {
+        let wx = x + self.gutter_width - self.display.scroll_left;
+        self.line_widget_boxes().iter().any(|(w, r)| {
+            !w.options().handle_mouse_events
+                && wx >= r.left
+                && wx < r.right
+                && y >= r.top
+                && y < r.bottom
+        })
+    }
+
+    /// `widgetTopHeight(lineObj)` (position_measurement.js:297): the height of the
+    /// widgets above the line's text.
+    pub fn widget_top_height(&self, n: i64) -> f64 {
+        let Some(h) = self.doc.get_line_handle(self.doc.visual_line_no(n)) else {
+            return 0.0;
+        };
+        h.widgets()
+            .iter()
+            .filter(|w| w.above())
+            .map(|w| w.height())
+            .sum()
+    }
+
     /// Height of one line.
     pub fn line_height(&self, n: i64) -> f64 {
-        if !self.options.line_wrapping {
+        if self.uniform_heights() {
             return self.metrics.text_height;
         }
         self.ensure_heights();
@@ -1819,7 +2523,7 @@ impl Editor {
     /// `heightAtLine(line)`: top of line `n`, document coordinates.
     pub fn height_at_line(&self, n: i64) -> f64 {
         let i = (n - self.first_line()).max(0);
-        if !self.options.line_wrapping {
+        if self.uniform_heights() {
             return i as f64 * self.metrics.text_height;
         }
         self.ensure_heights();
@@ -1835,7 +2539,7 @@ impl Editor {
     pub fn line_at_height(&self, y: f64) -> i64 {
         let first = self.first_line();
         let size = self.doc.line_count() as i64;
-        if !self.options.line_wrapping {
+        if self.uniform_heights() {
             let n = if y < 0.0 {
                 0
             } else {
@@ -1863,15 +2567,169 @@ impl Editor {
         first + lo as i64
     }
 
-    fn into_coords(&self, line: i64, mut r: Rect, sys: CoordSys) -> Rect {
-        let off = match sys {
-            CoordSys::Line => 0.0,
-            CoordSys::Div => self.height_at_line(line),
-            CoordSys::Local => self.height_at_line(line) + self.metrics.padding_top,
-        };
-        r.top += off;
-        r.bottom += off;
+    /// `display.viewOffset`: the height above the rendered range
+    /// (`heightAtLine(getLine(doc, display.viewFrom))`, update_display.js:128).
+    pub fn view_offset(&self) -> f64 {
+        self.height_at_line(self.display.view_from)
+    }
+
+    /// `display.lineSpace.getBoundingClientRect()`'s left/top in "window"
+    /// coordinates (see [`CoordSys`]).
+    fn line_space_origin(&self) -> (f64, f64) {
+        let (ox, oy) = self.display.window_origin;
+        (
+            ox + self.gutter_width - self.display.scroll_left,
+            oy + self.metrics.padding_top - self.display.scroll_top + self.view_offset(),
+        )
+    }
+
+    /// `intoCoordSystem(cm, lineObj, rect, context, includeWidgets)`
+    /// (position_measurement.js:308): a box relative to line `line` into `sys`.
+    /// Without `include_widgets` the box is moved below the widgets above the
+    /// line (`widgetTopHeight`), as CM5 does before the "line" early return.
+    pub fn into_coord_system(
+        &self,
+        line: i64,
+        mut r: Rect,
+        sys: CoordSys,
+        include_widgets: bool,
+    ) -> Rect {
+        if !include_widgets {
+            let wt = self.widget_top_height(line);
+            r.top += wt;
+            r.bottom += wt;
+        }
+        if sys == CoordSys::Line {
+            return r;
+        }
+        let mut y_off = self.height_at_line(line);
+        match sys {
+            CoordSys::Local => y_off += self.metrics.padding_top,
+            CoordSys::Doc => {}
+            _ => y_off -= self.view_offset(),
+        }
+        if matches!(sys, CoordSys::Page | CoordSys::Window) {
+            let (lx, ly) = self.line_space_origin();
+            let (px, py) = if sys == CoordSys::Page {
+                self.display.page_scroll
+            } else {
+                (0.0, 0.0)
+            };
+            y_off += ly + py;
+            r.left += lx + px;
+            r.right += lx + px;
+        }
+        r.top += y_off;
+        r.bottom += y_off;
         r
+    }
+
+    /// `fromCoordSystem(cm, coords, context)` (position_measurement.js:330): a
+    /// point in `sys` to CM5 "div" coordinates (relative to `display.lineSpace`).
+    /// As in CM5, "line" is taken as "window"; [`CoordSys::Doc`] subtracts the
+    /// view offset.
+    pub fn from_coord_system(&self, left: f64, top: f64, sys: CoordSys) -> (f64, f64) {
+        let (mut left, mut top) = (left, top);
+        match sys {
+            CoordSys::Div => return (left, top),
+            CoordSys::Doc => return (left, top - self.view_offset()),
+            CoordSys::Page => {
+                left -= self.display.page_scroll.0;
+                top -= self.display.page_scroll.1;
+            }
+            CoordSys::Local => {
+                // `display.sizer.getBoundingClientRect()`.
+                let (ox, oy) = self.display.window_origin;
+                left += ox + self.gutter_width - self.display.scroll_left;
+                top += oy - self.display.scroll_top;
+            }
+            CoordSys::Window | CoordSys::Line => {}
+        }
+        let (lx, ly) = self.line_space_origin();
+        (left - lx, top - ly)
+    }
+
+    /// The selection-free part of [`Editor::into_coord_system`] for the internal
+    /// measurement functions.
+    fn into_coords(&self, line: i64, r: Rect, sys: CoordSys) -> Rect {
+        self.into_coord_system(line, r, sys, false)
+    }
+
+    /// `cm.cursorCoords(start, mode)` (methods.js:184): `start` is the primary
+    /// head ([`CoordsStart::Head`], `null`), its `from()` (`true`), its `to()`
+    /// (`false`) or a position, clipped to the document. `mode` `None` is "page".
+    pub fn cursor_coords_in(&self, start: impl Into<CoordsStart>, mode: Option<CoordSys>) -> Rect {
+        let range = self.doc.selection().primary();
+        let pos = match start.into() {
+            CoordsStart::Head => range.head,
+            CoordsStart::Pos(p) => self.doc.clip_pos(p),
+            CoordsStart::From => range.from(),
+            CoordsStart::To => range.to(),
+        };
+        self.cursor_coords(pos, mode.unwrap_or(CoordSys::Page))
+    }
+    /// `cm.charCoords(pos, mode)` (methods.js:192): `pos` is clipped; `mode`
+    /// `None` is "page".
+    pub fn char_coords_in(&self, pos: Pos, mode: Option<CoordSys>) -> Rect {
+        self.char_coords(self.doc.clip_pos(pos), mode.unwrap_or(CoordSys::Page))
+    }
+    /// `cm.coordsChar(coords, mode)` (methods.js:196): `mode` `None` is "page".
+    pub fn coords_char_in(&self, left: f64, top: f64, mode: Option<CoordSys>) -> PosInfo {
+        let (x, y) = self.from_coord_system(left, top, mode.unwrap_or(CoordSys::Page));
+        // `coordsChar(cm, x, y)` adds `display.viewOffset`; ours takes document y.
+        self.coords_char(x, y + self.view_offset())
+    }
+    /// `cm.lineAtHeight(height, mode)` (methods.js:201): `mode` `None` is "page".
+    /// As in CM5, a height above the document gives the first line and one below
+    /// it gives `first + size` (one past the last line).
+    pub fn line_at_height_in(&self, height: f64, mode: Option<CoordSys>) -> i64 {
+        let (_, top) = self.from_coord_system(0.0, height, mode.unwrap_or(CoordSys::Page));
+        self.line_at_height(top + self.view_offset())
+    }
+    /// `cm.heightAtLine(line, mode, includeWidgets)` (methods.js:205): the top of
+    /// a line in `mode` (`None` = "page"). A number is clamped to the document; a
+    /// number past the last line gives the bottom of the document. A handle of a
+    /// line no longer in the document gives NaN. Line widgets are not ported, so
+    /// `include_widgets` changes nothing.
+    pub fn height_at_line_in(
+        &self,
+        line: impl Into<LineArg>,
+        mode: Option<CoordSys>,
+        include_widgets: bool,
+    ) -> f64 {
+        let mode = mode.unwrap_or(CoordSys::Page);
+        let mut end = false;
+        let n = match line.into() {
+            LineArg::Number(n) => {
+                let last = self.last_line();
+                if n < self.first_line() {
+                    self.first_line()
+                } else if n > last {
+                    end = true;
+                    last
+                } else {
+                    n
+                }
+            }
+            LineArg::Handle(h) => match self.doc.get_line_number(&h) {
+                Some(n) => n,
+                None => return f64::NAN,
+            },
+        };
+        let zero = Rect {
+            left: 0.0,
+            right: 0.0,
+            top: 0.0,
+            bottom: 0.0,
+        };
+        let top = self
+            .into_coord_system(n, zero, mode, include_widgets || end)
+            .top;
+        if end {
+            top + self.doc_height() - self.height_at_line(n)
+        } else {
+            top
+        }
     }
 
     /// `cursorCoords(cm, pos, context)` (left-to-right lines).
@@ -1911,7 +2769,9 @@ impl Editor {
         }
         let x = x.max(0.0);
         let (t, l) = self.layout(line_n);
-        coords_char_inner(&l, &t, line_n, x, y - self.height_at_line(line_n))
+        // coordsCharInner measures boxes below the widgets above the line.
+        let y = y - self.height_at_line(line_n) - self.widget_top_height(line_n);
+        coords_char_inner(&l, &t, line_n, x, y)
     }
     /// `cm.coordsChar(coords, "local")`.
     pub fn coords_char_local(&self, x: f64, y: f64) -> PosInfo {
@@ -1971,12 +2831,17 @@ impl Editor {
         highlight::highlight_worker(&self.doc, &self.mode, &mut hs, max_lines).1
     }
     /// `getStateAfter(line, precise)` without returning the state.
-    pub fn catch_up_states(&self, line: Option<i64>, precise: bool) {
+    /// Computes and returns the state after the given line, ported from `getStateAfter`.
+    pub fn get_state_after(&self, line: Option<i64>, precise: bool) -> cm_modes::State {
         let doc = &self.doc;
         let l = line.unwrap_or(doc.first_line() + doc.line_count() as i64 - 1);
         let l = l.clamp(doc.first_line(), doc.last_line());
         let mut hs = self.hs.borrow_mut();
-        highlight::get_context_before(doc, &self.mode, &mut hs, l + 1, precise);
+        highlight::get_context_before(doc, &self.mode, &mut hs, l + 1, precise).state
+    }
+    /// Wrapper around `getStateAfter(line, precise)` that discards the returned state.
+    pub fn catch_up_states(&self, line: Option<i64>, precise: bool) {
+        self.get_state_after(line, precise);
     }
     /// `getTokenAt(pos, precise)`.
     pub fn get_token_at(&self, pos: Pos, precise: bool) -> Token {
@@ -2148,7 +3013,7 @@ impl Editor {
         }
         let mut cur = (self.doc.clip_pos(from), false);
         for _ in 0..amount {
-            let mut coords = self.cursor_coords(cur.0, CoordSys::Div);
+            let mut coords = self.cursor_coords(cur.0, CoordSys::Doc);
             match x {
                 None => x = Some(coords.left),
                 Some(v) => coords.left = v,
@@ -2178,7 +3043,7 @@ impl Editor {
                     heads.push(if dir < 0 { range.from() } else { range.to() });
                     continue;
                 }
-                let mut head_pos = cm.cursor_coords(range.head, CoordSys::Div);
+                let mut head_pos = cm.cursor_coords(range.head, CoordSys::Doc);
                 if let Some(g) = goal_cols[i] {
                     head_pos.left = g;
                 }
@@ -2186,7 +3051,7 @@ impl Editor {
                 let (target, _) = find_pos_v(cm, head_pos, dir, unit);
                 let pos = target.pos();
                 if unit == UnitV::Page && i == primary {
-                    scroll_add = Some(cm.char_coords(pos, CoordSys::Div).top - head_pos.top);
+                    scroll_add = Some(cm.char_coords(pos, CoordSys::Doc).top - head_pos.top);
                 }
                 heads.push(pos);
             }
@@ -2245,6 +3110,22 @@ impl Editor {
         let mut end = pos.ch;
         if !line.is_empty() {
             let len = line.len() as i64;
+            let helper = self.get_helper(pos, "wordChars");
+            let helper_test = helper
+                .as_ref()
+                .and_then(|h| h.downcast_ref::<cm_modes::RegExp>());
+            let test_fn = |ch: &[u16]| helper_test.map(|re| re.test(ch)).unwrap_or(false);
+
+            let helper_ref = helper_test.map(|re| {
+                let s = re.source();
+                let pattern = cm_core::text::to_u16(r"\w");
+                let has_w = s.windows(pattern.len()).any(|w| w == pattern);
+                cm_core::util::misc::WordCharHelper {
+                    source_contains_w: has_w,
+                    test: &test_fn,
+                }
+            });
+
             if (pos.sticky == Some(Sticky::Before) || end == len) && start != 0 {
                 start -= 1;
             } else {
@@ -2258,8 +3139,9 @@ impl Editor {
                 }
             };
             let start_char = char_at(start);
-            let is_w =
-                |c: Option<u16>| c.is_some_and(|c| cm_core::util::misc::is_word_char(&[c], None));
+            let is_w = |c: Option<u16>| {
+                c.is_some_and(|c| cm_core::util::misc::is_word_char(&[c], helper_ref.as_ref()))
+            };
             let is_s = |c: Option<u16>| c.is_some_and(is_js_space);
             let kind = if is_w(start_char) {
                 0
@@ -2272,7 +3154,8 @@ impl Editor {
                 0 => is_w(c),
                 1 => is_s(c),
                 // `!/\s/.test(ch) && !isWordChar(ch)`: "" (out of range) passes.
-                _ => !is_s(c) && !is_w(c),
+                // methods.js:345 tests punctuation with isWordChar(ch), no helper.
+                _ => !is_s(c) && !c.is_some_and(|c| cm_core::util::misc::is_word_char(&[c], None)),
             };
             while start > 0 && check(char_at(start - 1)) {
                 start -= 1;
@@ -2648,6 +3531,14 @@ impl Editor {
 
     /// `handlePaste`: paste text from the clipboard.
     pub fn paste(&mut self, text: &str) {
+        // `if (signalDOMEvent(cm, e) || handlePaste(e, cm)) return` (TextareaInput.js:50).
+        let dom = DomEvent {
+            text: Some(text.to_string()),
+            ..DomEvent::new("paste")
+        };
+        if self.signal_dom_event(&dom, None) {
+            return;
+        }
         if text.is_empty() || self.is_read_only() {
             return;
         }
@@ -2796,6 +3687,14 @@ impl Editor {
     pub fn key_down(&mut self, e: &KeyEvent) -> bool {
         // input.js: `on(d.input, "keydown", operation(cm, onKeyDown))`
         self.run_op(|cm| {
+            // `if (signalDOMEvent(cm, e)) return` (key_events.js:111).
+            let dom = DomEvent {
+                key: Some(e.clone()),
+                ..DomEvent::new("keydown")
+            };
+            if cm.signal_dom_event(&dom, None) {
+                return false;
+            }
             cm.display.shift = e.key == "Shift" || e.shift;
             cm.handle_key_binding(e)
         })
@@ -2807,6 +3706,16 @@ impl Editor {
         self.run_op(|cm| cm.key_press_in_op(ch, e))
     }
     fn key_press_in_op(&mut self, ch: &str, e: &KeyEvent) -> bool {
+        // `if (... || signalDOMEvent(cm, e) || e.ctrlKey && !e.altKey || ...) return`
+        // (key_events.js:154).
+        let dom = DomEvent {
+            key: Some(e.clone()),
+            ch: Some(ch.to_string()),
+            ..DomEvent::new("keypress")
+        };
+        if self.signal_dom_event(&dom, None) {
+            return false;
+        }
         if e.ctrl && !e.alt || self.options.mac && e.meta {
             return false;
         }
@@ -2861,6 +3770,78 @@ impl Editor {
             cm.resolve_scroll_to_pos();
             cm.op.scroll_to_pos = Some((from, to, margin));
         });
+    }
+    /// `cm.scrollIntoView(range, margin)` (src/edit/methods.js:373, a methodOp)
+    /// with every form of `range` ([`ScrollTarget`]). A position form queues
+    /// `op.scrollToPos` (`scrollToRange`), resolved at the end of the operation; a
+    /// box form computes the scroll position now (`scrollToCoordsRange`,
+    /// scrolling.js:149) and sets `op.scrollLeft`/`op.scrollTop`. `margin` `None`
+    /// is 0, except for [`ScrollTarget::Cursor`], where it is `cursorScrollMargin`.
+    pub fn scroll_into_view_target(
+        &mut self,
+        target: impl Into<ScrollTarget>,
+        margin: Option<f64>,
+    ) {
+        let target = target.into();
+        self.run_op(|cm| {
+            let margin = match target {
+                ScrollTarget::Cursor => margin.unwrap_or(cm.options.cursor_scroll_margin),
+                _ => margin.unwrap_or(0.0),
+            };
+            // `range.margin = margin || 0`.
+            let margin = if margin.is_nan() { 0.0 } else { margin };
+            let (from, to) = match target {
+                ScrollTarget::Cursor => {
+                    let h = cm.doc.selection().primary().head;
+                    (h, h)
+                }
+                ScrollTarget::Line(n) => (Pos::new(n, 0), Pos::new(n, 0)),
+                ScrollTarget::Pos(p) => (p, p),
+                ScrollTarget::Range(a, b) => (a, b),
+                ScrollTarget::Coords(r) => return cm.scroll_to_coords_range(r, r, margin),
+                ScrollTarget::CoordsRange(a, b) => return cm.scroll_to_coords_range(a, b, margin),
+            };
+            cm.resolve_scroll_to_pos();
+            cm.op.scroll_to_pos = Some((from, to, margin));
+        });
+    }
+    /// `scrollToCoordsRange(cm, from, to, margin)` (src/display/scrolling.js:149):
+    /// boxes in "local" coordinates.
+    fn scroll_to_coords_range(&mut self, from: Rect, to: Rect, margin: f64) {
+        let (st, sl) = self.calculate_scroll_pos(Rect {
+            left: from.left.min(to.left),
+            top: from.top.min(to.top) - margin,
+            right: from.right.max(to.right),
+            bottom: from.bottom.max(to.bottom) + margin,
+        });
+        self.scroll_to_coords(sl, st);
+    }
+    /// `scrollIntoView(cm, rect)` (src/display/scrolling.js:70): scroll a box in
+    /// "local" coordinates into view at once, through the thresholded
+    /// `updateScrollTop` / `setScrollLeft` (a change under 2 px is dropped). Runs as
+    /// an operation, so the rendered range follows (`updateDisplaySimple`).
+    pub fn scroll_rect_into_view(&mut self, rect: Rect) {
+        self.run_op(|cm| {
+            let (st, sl) = cm.calculate_scroll_pos(rect);
+            if let Some(v) = st {
+                cm.update_scroll_top(v);
+            }
+            if let Some(v) = sl {
+                cm.update_scroll_left(v);
+            }
+        });
+    }
+    /// `cm.getScrollInfo()` (src/edit/methods.js:365).
+    pub fn get_scroll_info(&self) -> ScrollInfo {
+        let (mh, mw) = self.max_scroll();
+        ScrollInfo {
+            left: self.display.scroll_left,
+            top: self.display.scroll_top,
+            height: mh + self.display_height(),
+            width: mw + self.display.width,
+            client_height: self.display_height(),
+            client_width: self.display.width,
+        }
     }
     /// `removeKeyMap(name)`.
     pub fn remove_key_map(&mut self, name: &str) -> bool {

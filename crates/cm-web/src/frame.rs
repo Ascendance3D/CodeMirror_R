@@ -183,7 +183,7 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
     let from = editor.display.view_from.min(vis_from).max(first);
     let to = editor.display.view_to.max(vis_to + 1).min(end);
     let wrap = editor.options.line_wrapping;
-    let content_width = if wrap { 0.0 } else { editor.max_line_width() };
+    let content_width = if wrap { 0.0 } else { editor.sizer_width() };
 
     let mut lines = Vec::new();
     for line in from..to {
@@ -193,14 +193,15 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
         let number = editor
             .options
             .line_numbers
-            .then(|| (line + editor.options.first_line_number - first).to_string());
+            .then(|| editor.line_number_for(line));
         let styles = editor.line_styles(line);
         lines.push(FrameLine {
             id: handle.id(),
             line,
             number,
-            top: editor.height_at_line(line),
-            height: editor.line_height(line),
+            // The text below any widgets above it; the adapter draws no widget nodes.
+            top: editor.text_top(line),
+            height: editor.text_rows_height(line),
             text: handle.text_utf16(),
             classes: LineClasses::of(&styles, &handle),
             styles,
@@ -225,7 +226,7 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
         let (a, b) = (r.from(), r.to());
         for line in a.line.max(from)..=b.line.min(to - 1) {
             let (t, l) = editor.layout(line);
-            let top = editor.height_at_line(line);
+            let top = editor.text_top(line);
             let s_ch = if line == a.line { a.ch } else { 0 };
             let e_ch = if line == b.line { b.ch } else { t.len() as i64 };
             let lc = l.cursor_coords(&t, s_ch, Some(Sticky::After));
@@ -250,7 +251,7 @@ pub fn build(editor: &Editor, focused: bool) -> Frame {
         if !r.empty() || r.head.line < from || r.head.line >= to {
             continue;
         }
-        cursors.push(editor.cursor_coords(r.head, CoordSys::Div));
+        cursors.push(editor.cursor_coords(r.head, CoordSys::Doc));
     }
 
     Frame {

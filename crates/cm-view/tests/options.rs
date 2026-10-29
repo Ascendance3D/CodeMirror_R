@@ -205,3 +205,24 @@ fn autofocus_focuses_after_20ms() {
     assert_eq!(plain.next_timer_in(), None);
     cm_core::clock::set_override(None);
 }
+
+/// The gutter measures `lineNumberFor(doc.first + doc.size - 1)` with the
+/// formatter (maybeUpdateLineNumberWidth, line_numbers.js:34): a longer
+/// formatted number widens the line-number column.
+#[test]
+fn line_number_formatter_sizes_gutter() {
+    let mut cm = editor_with(EditorOptions {
+        line_numbers: true,
+        ..Default::default()
+    });
+    let plain = cm.gutter_width;
+    let cw = cm.metrics.char_width;
+    let f = LineNumberFormatter::new(|n| format!("line {n}"));
+    cm.set_option("lineNumberFormatter", OptionValue::Formatter(f))
+        .unwrap();
+    assert_eq!(cm.line_number_for(2), "line 3");
+    // 6 characters instead of 1: lineNumWidth = round(max(6 * cw, 20) + 8) + 1.
+    let want = ((6.0 * cw).max(20.0) + 8.0).round() + 1.0;
+    let was = ((1.0 * cw).max(20.0) + 8.0).round() + 1.0;
+    assert_eq!(cm.gutter_width - plain, want - was);
+}

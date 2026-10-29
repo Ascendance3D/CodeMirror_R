@@ -12,7 +12,7 @@ use crate::operation_group::LineChange;
 /// The result of `lineInfo(line)`. `textClass`, `bgClass` and `wrapClass` are the line's
 /// properties (`None` is unset or cleared, which JS tells apart as `undefined` and
 /// `null`). `gutterClass` is not a key of CM5's object, so it is not a field; read it
-/// from the handle. `widgets` waits for line widgets.
+/// from the handle.
 #[derive(Clone)]
 pub struct LineInfo {
     pub line: i64,
@@ -22,6 +22,8 @@ pub struct LineInfo {
     pub text_class: Option<String>,
     pub bg_class: Option<String>,
     pub wrap_class: Option<String>,
+    /// `widgets`: the line's widgets (`None` without any).
+    pub widgets: Option<Vec<crate::LineWidget>>,
 }
 
 /// `isEmpty(markers)`: no entry holds a truthy value.
@@ -101,6 +103,7 @@ impl Doc {
             text_class: l.text_class.clone(),
             bg_class: l.bg_class.clone(),
             wrap_class: l.wrap_class.clone(),
+            widgets: l.widgets.clone(),
             handle: handle.clone(),
         })
     }
