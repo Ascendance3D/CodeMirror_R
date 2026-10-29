@@ -38,12 +38,13 @@ use cm_modes::{ConfigValue, Mode, ModeOptions, ModeSpec, Registry, Spec, inner_m
 
 use crate::events::{
     ChangeHandler, ChangesHandler, Cx, DisplayEvent, EditorEvents, EditorHandler, EditorShared,
-    InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler, NameHandler,
-    OpRecord, Parked, ViewChange, ViewportHandler, WithSelf, finish,
+    GutterHandler, InputChange, InputReadHandler, LineHandler, MarkerClearedHandler, MarkerHandler,
+    NameHandler, OpRecord, Parked, ViewChange, ViewportHandler, WithSelf, finish,
 };
 use crate::highlight::{self, HighlightState, Styles, Token};
 use crate::keymap::{Binding, KeyEvent, KeyMap, KeyMapRef, KeyMaps, Lookup, key_name, lookup_key};
 use crate::measure::{LineLayout, Metrics, PosInfo, Rect, coords_char_inner};
+use crate::mouse::MouseEvent;
 use crate::movement::{UnitH, UnitV, find_pos_h, find_pos_v};
 
 /// A command (`CodeMirror.commands[name]`); `false` is `CodeMirror.Pass`.
@@ -83,6 +84,75 @@ pub struct EditorOptions {
     pub line_separator: Option<String>,
     /// The platform is a Mac (`mac`, `flipCtrlCmd`).
     pub mac: bool,
+    /// `gutters`: gutter columns, left to right. `CodeMirror-linenumbers` places the
+    /// line numbers (it is dropped without `lineNumbers`, and appended when absent).
+    pub gutters: Vec<GutterSpec>,
+    /// The CSS width of a gutter class (`.breakpoints { width: 16px }` in the page's
+    /// style sheet), in px. A spec's own `width: Npx` style wins; a class without a
+    /// width is 0 px wide, like an empty `div.CodeMirror-gutter`.
+    pub gutter_class_widths: Vec<(String, f64)>,
+}
+
+/// One entry of the `gutters` option (src/display/gutters.js:6): a class name, or an
+/// object `{className, style}`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GutterSpec {
+    pub class_name: String,
+    pub style: Option<String>,
+}
+
+impl GutterSpec {
+    pub fn new(class_name: &str) -> GutterSpec {
+        GutterSpec {
+            class_name: class_name.into(),
+            style: None,
+        }
+    }
+}
+
+impl From<&str> for GutterSpec {
+    fn from(s: &str) -> GutterSpec {
+        GutterSpec::new(s)
+    }
+}
+
+/// A drawn gutter column: its spec, left edge and width in px from the editor's left
+/// edge (`gutterLeft`/`gutterWidth` of `getDimensions`, display/update_display.js).
+#[derive(Clone, Debug, PartialEq)]
+pub struct GutterColumn {
+    pub class_name: String,
+    pub left: f64,
+    pub width: f64,
+}
+
+/// `getGutters(gutters, lineNumbers)` (src/display/gutters.js:6).
+pub fn get_gutters(gutters: &[GutterSpec], line_numbers: bool) -> Vec<GutterSpec> {
+    let mut result = Vec::new();
+    let mut saw_line_numbers = false;
+    for g in gutters {
+        if g.class_name == "CodeMirror-linenumbers" {
+            if !line_numbers {
+                continue;
+            }
+            saw_line_numbers = true;
+        }
+        result.push(g.clone());
+    }
+    if line_numbers && !saw_line_numbers {
+        result.push(GutterSpec::new("CodeMirror-linenumbers"));
+    }
+    result
+}
+
+/// The `width: Npx` declaration of an inline style, if any.
+fn style_width(style: &str) -> Option<f64> {
+    style.split(';').find_map(|d| {
+        let (k, v) = d.split_once(':')?;
+        if k.trim() != "width" {
+            return None;
+        }
+        v.trim().strip_suffix("px")?.trim().parse().ok()
+    })
 }
 
 impl Default for EditorOptions {
@@ -112,6 +182,8 @@ impl Default for EditorOptions {
             add_mode_class: false,
             line_separator: None,
             mac: cfg!(target_os = "macos"),
+            gutters: Vec::new(),
+            gutter_class_widths: Vec::new(),
         }
     }
 }
@@ -298,6 +370,9 @@ pub struct Editor {
     pub(crate) clicks: crate::mouse::ClickTracker,
     /// Gutter width in px (line numbers), recomputed by [`Editor::update_gutter`].
     pub gutter_width: f64,
+    /// `display.gutterSpecs` and the columns they occupy.
+    pub gutter_specs: Vec<GutterSpec>,
+    pub gutter_columns: Vec<GutterColumn>,
 }
 
 /// Dropping an editor destroys it (D5): its document is detached from it (as
@@ -481,6 +556,8 @@ impl Editor {
             mouse: None,
             clicks: Default::default(),
             gutter_width: 0.0,
+            gutter_specs: Vec::new(),
+            gutter_columns: Vec::new(),
             options,
         };
         ed.update_gutter();
@@ -672,19 +749,168 @@ impl Editor {
         self.doc.last_line()
     }
 
-    /// Gutter width: `lineNumberWidth` + gutter padding (`.CodeMirror-linenumber {
-    /// padding: 0 3px 0 5px; min-width: 20px }`), for the number of the last line
+    /// Gutter width: the columns plus the 1 px border of `.CodeMirror-gutters`; the
+    /// line-number column is `lineNumWidth` for the number of the last line
     /// (`lineNumberFor(options, doc.first + doc.size - 1)`).
+    ///
+    /// With the `gutters` option this is `renderGutters` + `updateGutterSpace`: the
+    /// columns sit side by side, the line-number column is `lineNumWidth` wide, and
+    /// `.CodeMirror-gutters` adds its 1 px right border when there is any column
+    /// (it is `display: none` otherwise).
     pub fn update_gutter(&mut self) {
-        if !self.options.line_numbers {
-            self.gutter_width = 0.0;
+        self.gutter_specs = get_gutters(&self.options.gutters, self.options.line_numbers);
+        let line_num_width = if self.options.line_numbers {
+            let chars = self.last_line_number_chars();
+            // maybeUpdateLineNumberWidth (line_numbers.js:32): the test element is
+            // `min-width: 20px; padding: 0 3px 0 5px` around the number; offsetWidth
+            // rounds; lineNumWidth = lineNumInnerWidth + padding = offsetWidth + 1.
+            let text = chars as f64 * self.metrics.char_width;
+            self.display.line_num_chars = Some(chars);
+            (text.max(20.0) + 8.0).round() + 1.0
+        } else {
             self.display.line_num_chars = None;
-            return;
+            0.0
+        };
+        let mut left = 0.0;
+        self.gutter_columns = self
+            .gutter_specs
+            .iter()
+            .map(|g| {
+                let width = if g.class_name == "CodeMirror-linenumbers" {
+                    line_num_width
+                } else {
+                    g.style
+                        .as_deref()
+                        .and_then(style_width)
+                        .or_else(|| {
+                            g.class_name.split_whitespace().find_map(|c| {
+                                self.options
+                                    .gutter_class_widths
+                                    .iter()
+                                    .find(|(k, _)| k == c)
+                                    .map(|(_, w)| *w)
+                            })
+                        })
+                        .unwrap_or(0.0)
+                };
+                let col = GutterColumn {
+                    class_name: g.class_name.clone(),
+                    left,
+                    width,
+                };
+                left += width;
+                col
+            })
+            .collect();
+        self.gutter_width = if self.gutter_specs.is_empty() {
+            0.0
+        } else {
+            left + 1.0
+        };
+    }
+
+    /// `setOption("gutters", v)`: `updateGutters` (gutters.js:40) — `renderGutters`,
+    /// `regChange`, `alignHorizontally` (the native gutters never scroll, so nothing
+    /// to align).
+    pub fn set_gutters(&mut self, gutters: Vec<GutterSpec>) {
+        self.run_op(|cm| {
+            cm.options.gutters = gutters;
+            cm.update_gutters();
+        });
+    }
+    /// `setOption("lineNumbers", v)`: also `updateGutters` (options.js:107).
+    pub fn set_line_numbers(&mut self, v: bool) {
+        self.run_op(|cm| {
+            cm.options.line_numbers = v;
+            cm.update_gutters();
+        });
+    }
+    fn update_gutters(&mut self) {
+        self.update_gutter();
+        self.shared
+            .reg_change_all(self.doc.first_line(), self.doc.line_count() as i64);
+        self.invalidate_heights();
+        self.force_update = true;
+    }
+
+    /// `gutterEvent(cm, e, type, prevent)` (src/edit/mouse_events.js:370). `wx`/`wy`
+    /// are window pixels relative to the editor. Returns whether the event was in the
+    /// gutters and must not reach the text (`e_defaultPrevented(e)`): a click is
+    /// always prevented there; a context menu only when a handler ran and called
+    /// `prevent_default`, which the native port has no way to express, so a handled
+    /// context menu counts as prevented.
+    fn gutter_event(&mut self, e: &MouseEvent, wx: f64, wy: f64, click: bool) -> bool {
+        if wx >= self.gutter_width.floor() {
+            return false;
         }
-        let chars = self.last_line_number_chars();
-        let inner = (chars as f64 * self.metrics.char_width).max(20.0);
-        self.gutter_width = (inner + 8.0 + 1.0).ceil();
-        self.display.line_num_chars = Some(chars);
+        // lineDiv.getBoundingClientRect().bottom: the bottom of the rendered lines.
+        let (_, dy) = self.div_from_window(wx, wy);
+        let bottom = if self.display.view_to > self.display.view_from {
+            self.height_at_line(self.display.view_to - 1)
+                + self.line_height(self.display.view_to - 1)
+        } else {
+            0.0
+        };
+        let snap = {
+            let ls = self.shared.ls.borrow();
+            if click {
+                ls.gutter_click.snapshot()
+            } else {
+                ls.gutter_context_menu.snapshot()
+            }
+        };
+        if dy > bottom || snap.is_empty() {
+            return click;
+        }
+        let Some(col) = self
+            .gutter_columns
+            .iter()
+            .find(|c| c.left + c.width >= wx)
+            .cloned()
+        else {
+            return false;
+        };
+        let line = self.line_at_height(dy);
+        for h in snap.iter() {
+            (h.f)(
+                &mut Cx {
+                    editor: self,
+                    others: &mut NoEditors,
+                },
+                line,
+                &col.class_name,
+                e,
+            );
+        }
+        true
+    }
+    /// `clickInGutter(cm, e)`: a mouse down at window `wx`/`wy`. Returns whether it
+    /// was in the gutters (the click then does nothing else).
+    pub fn click_in_gutter(&mut self, e: &MouseEvent, wx: f64, wy: f64) -> bool {
+        self.gutter_event(e, wx, wy, true)
+    }
+    /// `contextMenuInGutter(cm, e)`: only with a `gutterContextMenu` handler.
+    pub fn context_menu_in_gutter(&mut self, e: &MouseEvent, wx: f64, wy: f64) -> bool {
+        if self.shared.ls.borrow().gutter_context_menu.is_empty() {
+            return false;
+        }
+        self.gutter_event(e, wx, wy, false)
+    }
+    /// `on("gutterClick", f)`: `(cm, line, gutter className, event)` (immediate).
+    pub fn on_gutter_click(
+        &self,
+        f: impl Fn(&mut Cx, i64, &str, &MouseEvent) + 'static,
+    ) -> ListenerId {
+        let f: Rc<GutterHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().gutter_click.on_rc(f)
+    }
+    /// `on("gutterContextMenu", f)` (immediate).
+    pub fn on_gutter_context_menu(
+        &self,
+        f: impl Fn(&mut Cx, i64, &str, &MouseEvent) + 'static,
+    ) -> ListenerId {
+        let f: Rc<GutterHandler> = Rc::new(f);
+        self.shared.ls.borrow_mut().gutter_context_menu.on_rc(f)
     }
 
     fn last_line_number_chars(&self) -> usize {
@@ -1490,7 +1716,9 @@ impl Editor {
         let w = if self.options.line_wrapping {
             0.0
         } else {
-            (self.max_line_width() - self.text_area_width()).max(0.0)
+            // op.maxScrollLeft (operations.js:102): sizer.offsetLeft + adjustWidthTo -
+            // displayWidth, with the gutters left of the text area.
+            (self.sizer_width() - self.text_area_width()).max(0.0)
         };
         (h, w)
     }
@@ -1607,6 +1835,13 @@ impl Editor {
         let w = LineLayout::new(&self.metrics, &t, self.options.tab_size, None).width;
         self.heights.borrow_mut().max_width = Some(w);
         w
+    }
+
+    /// `op.adjustWidthTo` (operations.js:98), the sizer's `minWidth`:
+    /// `measureChar(cm, maxLine, maxLine.text.length).left + 3`, i.e. the left padding,
+    /// the text and 3 px (not the right padding).
+    pub fn sizer_width(&self) -> f64 {
+        self.max_line_width() - self.metrics.padding_h + 3.0
     }
 
     /// `visibleLines(display, doc)`: `[from, to)`.

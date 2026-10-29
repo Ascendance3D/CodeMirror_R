@@ -303,6 +303,13 @@ impl App {
                 time,
             } => {
                 let e = self.mouse_event(x, y, button, &mods, time);
+                // onMouseDown: clickInGutter; onContextMenu: contextMenuInGutter.
+                if button == 3 {
+                    return self.editor.context_menu_in_gutter(&e, x, y);
+                }
+                if self.editor.click_in_gutter(&e, x, y) {
+                    return true;
+                }
                 if e.x < 0.0 {
                     return false;
                 }
