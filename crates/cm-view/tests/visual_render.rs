@@ -1414,3 +1414,62 @@ fn golden_set_rule_on_scratch_sets() {
     );
     std::fs::remove_dir_all(&root).unwrap();
 }
+
+/// Line classes through `Theme::class_backgrounds`: `bgClass` and `wrapClass` lie under
+/// the selection layer, `textClass` (on `pre.CodeMirror-line`, z-index 2) above it
+/// (update_line.js:34 and :77; codemirror.css). Lines 1 and 2 are fully selected.
+#[test]
+fn line_class_backgrounds() {
+    let gpu = match gpu() {
+        Ok((g, _)) => g,
+        Err(e) => return cm_evidence::no_gpu(e),
+    };
+    let mut s = Scene::new(
+        gpu,
+        &Case::new("line_classes", "zero\none\ntwo\nthree\nfour", p(3, 0)).select(p(1, 0)),
+    );
+    let (bg, tx, wr) = (
+        [0.0, 0.5, 0.0, 1.0],
+        [0.0, 0.0, 1.0, 1.0],
+        [1.0, 0.0, 0.0, 1.0],
+    );
+    s.renderer.theme.class_backgrounds =
+        vec![("bg".into(), bg), ("tx".into(), tx), ("wr".into(), wr)];
+    use cm_core::LineWhere;
+    for (line, place, cls) in [
+        (1, LineWhere::Background, "bg"),
+        (2, LineWhere::Text, "tx"),
+        (3, LineWhere::Wrap, "wr"),
+        (4, LineWhere::Background, "other"),
+    ] {
+        s.editor.doc.add_line_class(line, place, cls).unwrap();
+    }
+    let img = s.frame(gpu, false);
+    let x = s.w - 40;
+    let mid = |s: &Scene, line: i64| {
+        s.wy(s.editor.height_at_line(line) + s.editor.line_height(line) / 2.0) as u32
+    };
+    let theme = s.renderer.theme.clone();
+    let want = [
+        (0, theme_px(theme.background)),
+        (1, theme_px(theme.selection_focused)),
+        (2, theme_px(tx)),
+        (3, theme_px(wr)),
+        (4, theme_px(theme.background)),
+    ];
+    for (line, c) in want {
+        assert_eq!(
+            hex(img.at(x, mid(&s, line))),
+            hex(c),
+            "line {line} at x {x}"
+        );
+    }
+    // The bgClass shows where the selection does not reach: line 1 with nothing
+    // selected.
+    s.editor.doc.set_selection(p(0, 0), None, sel_dont_scroll());
+    let img = s.frame(gpu, false);
+    assert_eq!(hex(img.at(x, mid(&s, 1))), hex(theme_px(bg)), "line 1 bg");
+    assert_eq!(hex(img.at(x, mid(&s, 2))), hex(theme_px(tx)), "line 2 text");
+    // Nothing is drawn over the gutter area (no line numbers here: gutter 0).
+    assert_eq!(s.editor.gutter_width, 0.0);
+}

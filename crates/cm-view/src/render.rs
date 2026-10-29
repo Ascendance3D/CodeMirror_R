@@ -508,6 +508,46 @@ impl Renderer {
         let end = first + editor.doc.line_count() as i64;
         let (from, to) = (vis_from.max(first), (vis_to + 1).min(end));
 
+        // Line classes through the theme's class backgrounds. The wrapper (`wrapClass`)
+        // and `div.CodeMirror-linebackground` (mode `line-background-*` + `bgClass`,
+        // update_line.js:34) cover the whole line view, widgets included, below the
+        // selection layer; `pre.CodeMirror-line` (mode `line-*` + `textClass`,
+        // update_line.js:77) covers the text rows above it (z-index 2).
+        let line_left = gutter - sl;
+        let line_right = (editor.display.width as f32).max(gutter);
+        let mut text_class_quads: Vec<(Rect, Rgba)> = Vec::new();
+        for line in from..to {
+            let Some(handle) = editor.doc.get_line_handle(line) else {
+                continue;
+            };
+            if editor.doc.line_is_hidden(line) {
+                continue;
+            }
+            let styles = editor.line_styles(line);
+            let (mode_bg, mode_text) = styles.classes.clone().unwrap_or_default();
+            let join = |a: Option<String>, b: Option<String>| match (a, b) {
+                (Some(a), Some(b)) => Some(format!("{a} {b}")),
+                (a, b) => a.or(b),
+            };
+            let top = wy(editor.height_at_line(line));
+            let bottom = top + editor.line_height(line) as f32;
+            for cls in [handle.wrap_class(), join(mode_bg, handle.bg_class())]
+                .into_iter()
+                .flatten()
+            {
+                if let Some(c) = theme.class_background(&cls) {
+                    quads.push((full(line_left, top, line_right, bottom), c));
+                }
+            }
+            if let Some(c) =
+                join(mode_text, handle.text_class()).and_then(|cls| theme.class_background(&cls))
+            {
+                let t = wy(editor.text_top(line));
+                let b = t + editor.text_rows_height(line) as f32;
+                text_class_quads.push((full(line_left, t, line_right, b), c));
+            }
+        }
+
         // Selections (`drawSelectionRange`) and cursors (`drawSelectionCursor`).
         let sel = editor.doc.selection();
         let sel_color = if frame.focused {
@@ -583,6 +623,7 @@ impl Renderer {
                 }
             }
         }
+        quads.extend(text_class_quads);
         // Cursors are drawn above the text (`div.CodeMirror-cursors { z-index: 3 }`),
         // but below the gutters, which also have z-index 3 and come later in the DOM
         // (`d.scroller` = [sizer, heightForcer, gutters]). The gutter is filled before

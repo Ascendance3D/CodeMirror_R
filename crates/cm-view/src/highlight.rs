@@ -8,8 +8,8 @@
 //! Overlays (`cm.state.overlays`, [`HighlightState::overlays`]) run after the mode
 //! in `highlightLine` and can read the mode's tokens with `baseToken`. `runMode` honors
 //! `addModeClass` and a mode's own `flattenSpans`. Mode line classes (`line-*` /
-//! `line-background-*` tokens) are collected into `Styles::classes`, but the renderer
-//! does not draw them.
+//! `line-background-*` tokens) are collected into `Styles::classes`; the renderer
+//! draws them with the line's own classes.
 
 use std::any::Any;
 use std::cell::Cell;
