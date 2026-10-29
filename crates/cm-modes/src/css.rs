@@ -236,7 +236,7 @@ fn re_callee(s: &[u16]) -> Option<RegexMatch> {
         .iter()
         .take_while(|&&c| is_js_word(c) || c == u('-') || c == u('.'))
         .count();
-    (n > 0 && s.get(n) == Some(&u('('))).then(|| RegexMatch { index: 0, len: n })
+    (n > 0 && s.get(n) == Some(&u('('))).then_some(RegexMatch { index: 0, len: n })
 }
 
 /// `/^\s*[\"\')]/`
@@ -276,7 +276,7 @@ fn re_word_dash_run(s: &[u16]) -> Option<RegexMatch> {
         .iter()
         .take_while(|&&c| is_js_word(c) || c == u('-'))
         .count();
-    (n > 0).then(|| RegexMatch { index: 0, len: n })
+    (n > 0).then_some(RegexMatch { index: 0, len: n })
 }
 
 /// ASCII case-insensitive `s.startsWith(lit)` (`/i` in a non-unicode regexp).
@@ -321,7 +321,7 @@ fn re_less_at_keyword(s: &[u16]) -> Option<RegexMatch> {
     }
     let n = len?;
     // `\b`: the matched text ends in a word character.
-    (!s.get(n).is_some_and(|&c| is_js_word(c))).then(|| RegexMatch { index: 0, len: n })
+    (!s.get(n).is_some_and(|&c| is_js_word(c))).then_some(RegexMatch { index: 0, len: n })
 }
 
 /// `/^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(s)`
@@ -417,11 +417,10 @@ impl CssMode {
     /// css.js: `tokenBase`.
     fn token_base(&self, stream: &mut StringStream<'_>, state: &mut CssState) -> Res {
         let ch = stream.next().expect("tokenBase at end of line");
-        if let Some(result) = self.hook(ch, stream, state) {
-            if !matches!(result, Res::False) {
+        if let Some(result) = self.hook(ch, stream, state)
+            && !matches!(result, Res::False) {
                 return result;
             }
-        }
         if ch == u('@') {
             stream.eat_while(w_bs_dash);
             let cur = String::from_utf16_lossy(stream.current());

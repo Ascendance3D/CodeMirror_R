@@ -452,13 +452,12 @@ impl XmlMode {
             StateFn::CloseTagName => {
                 if ty == "word" {
                     let tag_name = stream.current().to_vec();
-                    if let Some(cx) = &state.context {
-                        if cx.tag_name != tag_name
+                    if let Some(cx) = &state.context
+                        && cx.tag_name != tag_name
                             && c.implicitly_closed.contains(lower(&cx.tag_name).as_str())
                         {
                             Self::pop_context(state);
                         }
-                    }
                     if state
                         .context
                         .as_ref()
@@ -595,8 +594,8 @@ impl XmlMode {
             return Some(js::space_len(full_line) as f64);
         }
         // Indent the starts of attribute names.
-        if let Some(tag_name) = &state.tag_name {
-            if !tag_name.is_empty() {
+        if let Some(tag_name) = &state.tag_name
+            && !tag_name.is_empty() {
                 // `null + n` is n in JS.
                 let start = state.tag_start.unwrap_or(0.0);
                 return Some(if c.multiline_tag_indent_past_tag {
@@ -605,7 +604,6 @@ impl XmlMode {
                     start + self.indent_unit * c.multiline_tag_indent_factor
                 });
             }
-        }
         if c.align_cdata
             && cm_core::text::index_of(text_after, &js::to_u16("<![CDATA["), 0).is_some()
         {

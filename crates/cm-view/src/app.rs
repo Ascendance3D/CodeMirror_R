@@ -368,7 +368,7 @@ impl App {
     /// whether more remains.
     pub fn idle(&mut self) -> bool {
         self.deliver_pending();
-        self.editor.highlight_work(200)
+        self.editor.highlight_step(200)
     }
 
     /// Deliver event callbacks queued outside an operation (the orphan queue) and

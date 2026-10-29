@@ -877,33 +877,3 @@ fn update_only_for_changes_in_the_rendered_range() {
     rr(&mut cm, "Z", p(from, 0));
     assert_eq!(take(&log).first().map(String::as_str), Some("A:cm.update"));
 }
-
-#[test]
-fn test_find_word_at_javascript() {
-    let opts = cm_view::EditorOptions::default();
-    let metrics = cm_view::Metrics {
-        char_width: 10.0,
-        text_height: 15.0,
-        padding_h: 0.0,
-        padding_top: 0.0,
-        wide_width: 20.0,
-        astral_width: 20.0,
-    };
-    let e = cm_view::Editor::new(
-        "let a$b = 1;\nlet á = 2;",
-        cm_modes::Spec::from("javascript"),
-        opts,
-        metrics,
-    );
-
-    // Test the $ which is a word char in JS
-    let (start, end) = e.find_word_at(cm_core::Pos::new(0, 5)); // inside a$b
-    assert_eq!(start.ch, 4); // "a$b" starts at 4
-    assert_eq!(end.ch, 7); // "a$b" ends at 7
-
-    // Test non-ascii letter which triggers isWordChar fallback
-    // pos 1:4 is 'á'
-    let (start2, end2) = e.find_word_at(cm_core::Pos::new(1, 4));
-    assert_eq!(start2.ch, 4); // "á" starts at 4
-    assert_eq!(end2.ch, 5);
-}

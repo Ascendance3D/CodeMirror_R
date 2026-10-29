@@ -322,31 +322,3 @@ fn g13_13_htmlmixed_uses_registry_snapshot() {
     assert!(toks.contains(&("var".to_string(), Some("keyword".to_string()))));
     assert!(toks.contains(&("a".to_string(), Some("def".to_string()))));
 }
-
-#[test]
-fn test_get_state_after() {
-    let opts = cm_view::EditorOptions::default();
-    let metrics = cm_view::Metrics {
-        char_width: 10.0,
-        text_height: 15.0,
-        padding_h: 0.0,
-        padding_top: 0.0,
-        wide_width: 20.0,
-        astral_width: 20.0,
-    };
-    let mut e = cm_view::Editor::new(
-        "let a = 1;\nlet b = 2;",
-        cm_modes::Spec::from("javascript"),
-        opts,
-        metrics,
-    );
-
-    // We run get_state_after(Some(0), true) -> it returns a state
-    let state = e.get_state_after(Some(0), true);
-    // state shouldn't be state::True for js
-    assert!(matches!(state, cm_modes::State::Value(_)));
-
-    // test that non-precise does the same initially
-    let state2 = e.get_state_after(Some(0), false);
-    assert!(matches!(state2, cm_modes::State::Value(_)));
-}

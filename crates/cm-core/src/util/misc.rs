@@ -111,7 +111,7 @@ pub fn is_word_char_basic(ch: &[u16]) -> bool {
 }
 
 /// A `helper` regexp for [`is_word_char`]: the JS checks whether its source contains
-/// `\w`, then calls `helper.test(ch)`.
+/// `\w`, then calls `helper.test(ch)`. Ported from `misc.js:129-133`.
 pub struct WordCharHelper<'a> {
     pub source_contains_w: bool,
     pub test: &'a dyn Fn(&[u16]) -> bool,

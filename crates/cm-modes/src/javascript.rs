@@ -19,7 +19,8 @@
 //! regexp), `parserConfig.localVars` and `parserConfig.globalVars` (objects). They
 //! behave as if absent. The mode object has no `skipExpression` or
 //! `expressionAllowed` property (`expressionAllowed` is internal only). The
-//! `registerHelper("wordChars", "javascript", /[\w$]/)` call is ported.
+//! `registerHelper("wordChars", "javascript", /[\w$]/)` call is not ported (there are
+//! no helpers).
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -182,7 +183,7 @@ fn spaces(s: &[u16], i: usize) -> usize {
 
 /// `/^\s*$/`
 fn re_blank(s: &[u16]) -> Option<RegexMatch> {
-    (spaces(s, 0) == s.len()).then(|| RegexMatch {
+    (spaces(s, 0) == s.len()).then_some(RegexMatch {
         index: 0,
         len: s.len(),
     })
@@ -322,13 +323,11 @@ fn re_ts_arrow_return(s: &[u16]) -> Option<usize> {
         let w = s[i..].iter().take_while(|&&c| is_js_word(c)).count();
         if w > 0 {
             let j = i + w;
-            if is_c(at(s, j), b'<') {
-                if let Some(k) = s[j + 1..].iter().position(|&c| c == b'>' as u16) {
-                    if rest_blank(j + 2 + k) {
+            if is_c(at(s, j), b'<')
+                && let Some(k) = s[j + 1..].iter().position(|&c| c == b'>' as u16)
+                    && rest_blank(j + 2 + k) {
                         return true;
                     }
-                }
-            }
             if is_c(at(s, j), b'[') && is_c(at(s, j + 1), b']') && rest_blank(j + 2) {
                 return true;
             }
@@ -1077,14 +1076,12 @@ impl Cx<'_, '_> {
                 // FIXME function decls are also not block scoped
                 if let Some(nc) = register_var_scoped(name.as_deref(), Some(&context)) {
                     self.state.context = Some(nc);
-                    return;
                 }
             } else if !in_list(name.as_deref(), self.state.local_vars.as_ref()) {
                 self.state.local_vars = Some(Rc::new(Var {
                     name,
                     next: self.state.local_vars.take(),
                 }));
-                return;
             }
         }
         // Fall through means this is global; `parserConfig.globalVars` is not supported.
@@ -2204,11 +2201,10 @@ impl Cx<'_, '_> {
                 return self.cont(vec![GetterSetter]);
             }
             // Work around fat-arrow-detection complication for detecting typescript typed arrow params
-            if is_ts && self.state.fat_arrow_at == Some(self.stream.start as i64) {
-                if let Some(mm) = self.matches(re_sp_colon_sp) {
+            if is_ts && self.state.fat_arrow_at == Some(self.stream.start as i64)
+                && let Some(mm) = self.matches(re_sp_colon_sp) {
                     self.state.fat_arrow_at = Some((self.stream.pos + mm.len) as i64);
                 }
-            }
             self.cont(vec![AfterProp])
         } else if t("number") || t("string") {
             self.marked = Some(if self.m.jsonld_mode {

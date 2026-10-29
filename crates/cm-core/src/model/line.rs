@@ -23,51 +23,9 @@ pub(crate) struct Line {
     pub state_after: Option<Rc<dyn Any>>,
     /// `line.styles`, owned by a view; `updateLine` clears it.
     pub styles: Option<Rc<dyn Any>>,
-    /// `line.textClass`, `bgClass`, `wrapClass`, `gutterClass` (`addLineClass`).
-    pub text_class: Option<String>,
-    pub bg_class: Option<String>,
-    pub wrap_class: Option<String>,
-    pub gutter_class: Option<String>,
-    /// `line.gutterMarkers` (`setGutterMarker`): `None` is JS `null`.
-    pub gutter_markers: Option<GutterMarkers>,
     /// Line handle listeners (`change`, `delete`), allocated on first use.
     pub events: Option<Box<LineEvents>>,
 }
-
-/// A gutter marker value. CM5 stores any truthy value, in practice a DOM node; here it is
-/// opaque and compared by identity. The JS falsy values (`null`, `undefined`, `0`, `""`)
-/// are all `None` in a [`GutterMarkers`] entry; a `Some` marker is always truthy.
-#[derive(Clone)]
-pub struct GutterMarker(pub Rc<dyn Any>);
-
-impl GutterMarker {
-    pub fn new<T: Any>(v: T) -> GutterMarker {
-        GutterMarker(Rc::new(v))
-    }
-    /// The marker as a `T`, when it is one.
-    pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
-        self.0.downcast_ref()
-    }
-}
-
-impl PartialEq for GutterMarker {
-    fn eq(&self, o: &Self) -> bool {
-        Rc::ptr_eq(&self.0, &o.0)
-    }
-}
-
-impl std::fmt::Debug for GutterMarker {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("GutterMarker")
-    }
-}
-
-/// The `line.gutterMarkers` object: gutter id to marker, in insertion order. An entry
-/// whose marker was cleared stays as `None` while another entry is set, as in JS where
-/// `setGutterMarker(line, id, null)` assigns `null` and only an all-falsy object is
-/// dropped (`isEmpty`, util/misc.js:135). (JS orders integer-like ids first; this keeps
-/// insertion order.)
-pub type GutterMarkers = Vec<(String, Option<GutterMarker>)>;
 
 pub(crate) type LineChangeHandler = dyn Fn(&LineHandle, &ChangeObj);
 
@@ -122,11 +80,6 @@ pub(crate) fn new_line(text: Text, spans: Option<SpanArr>) -> LineRef {
         parent: None,
         state_after: None,
         styles: None,
-        text_class: None,
-        bg_class: None,
-        wrap_class: None,
-        gutter_class: None,
-        gutter_markers: None,
         events: None,
     }));
     attach_marked_spans(&line, spans);
@@ -138,26 +91,6 @@ pub(crate) fn new_line(text: Text, spans: Option<SpanArr>) -> LineRef {
 pub struct LineHandle(pub(crate) LineRef);
 
 impl LineHandle {
-    /// `line.textClass`: the classes `addLineClass(line, "text", ...)` set.
-    pub fn text_class(&self) -> Option<String> {
-        self.0.borrow().text_class.clone()
-    }
-    /// `line.bgClass` (`addLineClass(line, "background", ...)`).
-    pub fn bg_class(&self) -> Option<String> {
-        self.0.borrow().bg_class.clone()
-    }
-    /// `line.wrapClass` (`addLineClass(line, "wrap", ...)`).
-    pub fn wrap_class(&self) -> Option<String> {
-        self.0.borrow().wrap_class.clone()
-    }
-    /// `line.gutterClass` (`addLineClass(line, "gutter", ...)`).
-    pub fn gutter_class(&self) -> Option<String> {
-        self.0.borrow().gutter_class.clone()
-    }
-    /// `line.gutterMarkers`.
-    pub fn gutter_markers(&self) -> Option<GutterMarkers> {
-        self.0.borrow().gutter_markers.clone()
-    }
     /// `on("change", f)`: the line's text or markers changed (delayed).
     pub fn on_change<F: Fn(&LineHandle, &ChangeObj) + 'static>(&self, f: F) -> ListenerId {
         let mut l = self.0.borrow_mut();
