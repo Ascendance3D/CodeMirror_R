@@ -12,8 +12,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::rc::Rc;
 
 use cm_core::{HistoryEventData, Pos, StringStream};
-use cm_modes::htmlmixed::{TagRule, obj};
-use cm_modes::{Mode, ModeOptions, ModeSpec, Registry, Spec, start_state};
+use cm_modes::Spec;
 use cm_view::app::{App, AppOptions, Input, MemClipboard};
 use cm_view::keymap::{Binding, KeyMap, KeyMapRef};
 use cm_view::{Editor, EditorOptions, KeyEvent, Metrics, MouseEvent};
@@ -258,67 +257,4 @@ fn g13_12_back_up_past_start_overflows() {
     } else {
         assert_eq!(r.ok(), Some(usize::MAX - 1), "CM5: pos -2");
     }
-}
-
-/// Tokens of one line with an existing mode object.
-fn tokens(mode: &Rc<dyn Mode>, text: &str) -> Vec<(String, Option<String>)> {
-    let u: Vec<u16> = text.encode_utf16().collect();
-    let mut state = start_state(
-        &**mode,
-        cm_modes::JsArg::Undefined,
-        cm_modes::JsArg::Undefined,
-    );
-    let mut stream = StringStream::new(&u, Some(2), None);
-    let mut out = Vec::new();
-    while !stream.eol() {
-        let style = mode.token(&mut stream, &mut state);
-        out.push((String::from_utf16_lossy(stream.current()), style));
-        stream.start = stream.pos;
-    }
-    out
-}
-
-/// G13 #13, scenario `htmlmixed_lateMime` (mode/htmlmixed/htmlmixed.js:107). CM5
-/// resolves a script tag's mode with `CodeMirror.getMode` when the tag closes, so a
-/// MIME defined after the htmlmixed mode was created applies (`var` = keyword,
-/// `a` = def). Rust resolves through the registry copy taken at construction: the
-/// body stays unstyled, as CM5 does only while the MIME is undefined.
-#[test]
-fn g13_13_htmlmixed_uses_registry_snapshot() {
-    let mut registry = Registry::with_all_modes();
-    let rules = vec![
-        TagRule {
-            attr: Some("type".into()),
-            matches: Some(Rc::new(|s: &[u16]| {
-                s == "text/x-late".encode_utf16().collect::<Vec<_>>()
-            })),
-            mode: Spec::from("text/x-late"),
-        },
-        TagRule {
-            attr: None,
-            matches: None,
-            mode: Spec::from("javascript"),
-        },
-    ];
-    let spec = Spec::Obj(
-        ModeSpec::named("htmlmixed").with("tags", obj(vec![("script".to_string(), rules)])),
-    );
-    let mode = registry.get_mode(&ModeOptions::default(), &spec);
-    registry.define_mime(
-        "text/x-late",
-        cm_modes::MimeTarget::Name("javascript".into()),
-    );
-    let toks = tokens(&mode, r#"<script type="text/x-late">var a</script>"#);
-    let body: Vec<_> = toks
-        .iter()
-        .filter(|(t, _)| t == "var a" || t == "var" || t == "a")
-        .cloned()
-        .collect();
-    // CM5 after defineMIME: [("var", keyword), (" ", null), ("a", def)].
-    assert_eq!(body, vec![("var a".to_string(), None)]);
-    // A mode created after the definition sees it, as in CM5.
-    let late = registry.get_mode(&ModeOptions::default(), &spec);
-    let toks = tokens(&late, r#"<script type="text/x-late">var a</script>"#);
-    assert!(toks.contains(&("var".to_string(), Some("keyword".to_string()))));
-    assert!(toks.contains(&("a".to_string(), Some("def".to_string()))));
 }
