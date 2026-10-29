@@ -4,6 +4,7 @@ pub mod change_measurement;
 pub mod changes;
 pub mod doc;
 pub mod document_data;
+pub mod gutter;
 pub mod history;
 pub mod line;
 pub mod line_class;
