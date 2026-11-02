@@ -1,4 +1,6 @@
-# Rust tests for pull requests, on a standard GitHub-hosted Linux runner (no GPU).
+# Rust tests for pull requests, on the organization's self-hosted Linux runner (no GPU). Pull requests from forks
+# run on a GitHub-hosted runner instead, so untrusted code never reaches the self-hosted machine. Set the repository
+# variable CM_RUNNER_LABELS (a JSON array or string) to override the labels, e.g. "ubuntu-24.04" to force hosted.
 #
 # Missing evidence never passes in silence (crates/cm-evidence). CM_EVIDENCE=ci lets a test skip only
 # for a reason in CM_EVIDENCE_ALLOW; each permitted skip is one line in CM_EVIDENCE_LOG, and the
@@ -35,7 +37,7 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (vars.CM_RUNNER_LABELS || '["self-hosted","Linux","X64"]') || '"ubuntu-24.04"') }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
@@ -53,9 +55,22 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: System libraries
+        # libxkbcommon-x11-0 and the Mesa software Vulkan driver (lavapipe) let winit_event_loop_under_xvfb
+        # run the real cm-edit binary on a private X display; without them it crashes (first CI run).
+        # Self-hosted runners have no sudo: the packages must already be on the runner image.
         run: |
-          sudo apt-get update
-          # libxkbcommon-x11-0 and the Mesa software Vulkan driver (lavapipe) let winit_event_loop_under_xvfb
+          pkgs="pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 mesa-vulkan-drivers xvfb"
+          missing=""
+          for p in $pkgs; do dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"; done
+          if [ -n "$missing" ]; then
+            if [ "$RUNNER_ENVIRONMENT" = self-hosted ]; then
+              echo "::error::missing packages on this self-hosted runner:$missing (install them on the runner image)"
+              exit 1
+            fi
+            sudo apt-get update
+            # shellcheck disable=SC2086
+            sudo apt-get install -y --no-install-recommends $missing
+          fi
           # run the real cm-edit binary on a private X display; without them it crashes (first CI run).
           sudo apt-get install -y --no-install-recommends pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 mesa-vulkan-drivers xvfb
 
